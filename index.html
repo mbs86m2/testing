@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WA FCC Portal Report</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style> 
     body { font-family: 'Inter', sans-serif; } 
@@ -18,8 +20,9 @@
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800">
 
+  <!-- YOUR FRESH NEW WEB APP URL -->
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxiIdPffoL4oVxFwWBQi6l8B21VG2cgd5DO5OG7fJby5RdQ1TW3rvjBENweOv0QkpzE2w/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbxIfx8KNjG2gsEA0n5JcG7Ll3grWjEzRRnEODwZUAUD3qTXWNEE57PkDZyypA-3sBAaBg/exec"; 
   </script>
 
   <!-- LOGIN SCREEN -->
@@ -222,7 +225,7 @@
           </div>
 
           <div id="records-list" class="min-h-[250px]">
-            <div class="text-center py-12 text-gray-400">Please select a Year above to load month tabs.</div>
+            <div class="text-center py-12 text-gray-400">Loading years...</div>
           </div>
         `;
 
@@ -242,7 +245,6 @@
           selYear.innerHTML = `<option value="">-- Select Year --</option>`;
           if (res.years && res.years.length > 0) {
             res.years.forEach(y => { selYear.innerHTML += `<option value="${y}">${y}</option>`; });
-            // Auto select 2026 and load month tabs immediately
             selYear.value = res.years[0];
             onYearSelected(section);
           } else {
@@ -280,9 +282,6 @@
             selMonth.innerHTML = `<option value="ALL">All Months</option>`;
             listArea.innerHTML = `<div class="p-4 rounded-xl bg-red-50 text-red-700 text-center text-sm font-medium">⚠️ ${res.message || "Could not read month tabs."}</div>`;
           }
-        })
-        .catch(err => {
-          listArea.innerHTML = `<div class="p-4 rounded-xl bg-red-50 text-red-700 text-center text-sm font-medium">⚠️ Connection error reading tabs.</div>`;
         });
     }
 
