@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WA FCC Portal Report</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style> 
     body { font-family: 'Inter', sans-serif; } 
@@ -20,7 +18,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800">
 
-  <!-- YOUR FRESH NEW WEB APP URL -->
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxIfx8KNjG2gsEA0n5JcG7Ll3grWjEzRRnEODwZUAUD3qTXWNEE57PkDZyypA-3sBAaBg/exec"; 
   </script>
@@ -80,7 +77,6 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
-      <!-- Section Buttons -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 no-print">
         <button onclick="showSection('toc')" class="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition border flex flex-col items-center text-center">
           <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-2">📷</div>
@@ -182,10 +178,7 @@
           <div class="flex flex-col items-center mb-6">
             <h2 class="text-xl font-bold text-gray-900 mb-4 text-center">${title}</h2>
             
-            <!-- 1-LINER CONTROL BAR -->
             <div class="flex flex-nowrap items-center justify-center gap-2 bg-gray-50 p-3 rounded-2xl border border-gray-200 w-full overflow-x-auto">
-              
-              <!-- 1. Year Dropdown -->
               <div class="flex items-center space-x-1 flex-shrink-0">
                 <label class="text-xs font-semibold text-gray-600 whitespace-nowrap">1. Year:</label>
                 <select id="sel-year" onchange="onYearSelected('${section}')" class="px-3 py-2 border rounded-xl text-sm bg-white font-medium text-center shadow-sm">
@@ -193,7 +186,6 @@
                 </select>
               </div>
 
-              <!-- 2. Month Dropdown -->
               <div class="flex items-center space-x-1 flex-shrink-0">
                 <label class="text-xs font-semibold text-gray-600 whitespace-nowrap">2. Month:</label>
                 <select id="sel-month" onchange="fetchRecordsData()" class="px-3 py-2 border rounded-xl text-sm bg-white font-medium text-center shadow-sm" disabled>
@@ -201,7 +193,6 @@
                 </select>
               </div>
 
-              <!-- Search Bar -->
               <div class="relative flex items-center flex-shrink-0">
                 <input id="search-input" type="text" placeholder="Search..." oninput="toggleClearBtn()" onkeyup="if(event.key==='Enter') executeSearch()" class="px-3 py-2 pr-7 border rounded-xl text-sm w-36 sm:w-44 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-center shadow-sm">
                 <button id="clear-btn" onclick="clearSearchInput()" class="hidden absolute right-2 text-gray-400 hover:text-gray-700 font-bold text-xs w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">✕</button>
@@ -213,14 +204,17 @@
 
               <div class="h-6 w-px bg-gray-300 flex-shrink-0"></div>
 
-              <!-- Print & Email Buttons -->
               <button onclick="printReportTextOnly()" class="bg-gray-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-semibold shadow-sm flex items-center space-x-1 flex-shrink-0 whitespace-nowrap">
                 <span>🖨️ Print</span>
               </button>
               <button onclick="emailReportTextOnly()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-semibold shadow-sm flex items-center space-x-1 flex-shrink-0 whitespace-nowrap">
                 <span>✉️ Email</span>
               </button>
+            </div>
 
+            <!-- ON-SCREEN DIAGNOSTIC BAR -->
+            <div id="debug-info" class="mt-3 text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-mono">
+              Initializing controls...
             </div>
           </div>
 
@@ -259,6 +253,7 @@
       const year = document.getElementById("sel-year").value;
       const selMonth = document.getElementById("sel-month");
       const listArea = document.getElementById("records-list");
+      const debugBox = document.getElementById("debug-info");
 
       if (!year) {
         selMonth.innerHTML = `<option value="">-- Select Month --</option>`;
@@ -269,19 +264,25 @@
 
       selMonth.disabled = false;
       selMonth.innerHTML = `<option value="">Reading tabs...</option>`;
-      listArea.innerHTML = `<div class="text-center py-12"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-gray-500">Reading worksheet tabs for year ${year}...</p></div>`;
+      if (debugBox) debugBox.innerText = `[1/2] Requesting Month Tabs for ${section.toUpperCase()} (${year})...`;
 
       fetch(`${API_URL}?action=getMonths&type=${section}&year=${year}`)
         .then(r => r.json())
         .then(res => {
-          if (res.status === "success" && res.months && res.months.length > 0) {
-            selMonth.innerHTML = `<option value="ALL">All Months</option>`;
-            res.months.forEach(m => { selMonth.innerHTML += `<option value="${m}">${m}</option>`; });
-            fetchRecordsData();
-          } else {
-            selMonth.innerHTML = `<option value="ALL">All Months</option>`;
-            listArea.innerHTML = `<div class="p-4 rounded-xl bg-red-50 text-red-700 text-center text-sm font-medium">⚠️ ${res.message || "Could not read month tabs."}</div>`;
+          if (debugBox) {
+            debugBox.innerText = `[2/2] Response received! Months count: ${res.months ? res.months.length : 0}. List: ${res.months ? res.months.join(', ') : 'None'}`;
           }
+
+          selMonth.innerHTML = `<option value="ALL">-- All Months --</option>`;
+          if (res.months && res.months.length > 0) {
+            res.months.forEach(m => { selMonth.innerHTML += `<option value="${m}">${m}</option>`; });
+          }
+          fetchRecordsData();
+        })
+        .catch(err => {
+          if (debugBox) debugBox.innerText = `[ERROR]: ${err.message}`;
+          selMonth.innerHTML = `<option value="ALL">-- All Months --</option>`;
+          fetchRecordsData();
         });
     }
 
