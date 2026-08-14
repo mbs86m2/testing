@@ -744,22 +744,29 @@
       html += `<div class="space-y-3">`;
 
       displayRecords.forEach(r => {
-        const isResolved = (r['Status'] || '').toLowerCase().includes('resolved');
+        const status = r['Status'] || 'Pending';
+        const isResolved = status.toLowerCase().includes('resolved');
         const badgeClass = isResolved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30';
-        const photoImg = convertDriveUrl(r['Photo Link'] || r['Photo']);
-        let cleanDate = (r.Date || 'N/A').toString().split(' ')[0];
+        
+        const photoImg = convertDriveUrl(r['Photo Link'] || r['Photo'] || r['Photo URL'] || r['Image']);
+        const dateTime = r['Date/Time'] || r['Date'] || 'N/A';
+        const asset = r['Asset Unit'] || r['Asset'] || 'Asset';
+        const brand = r['Asset Brand/Type'] || r['Brand/Type'] || '-';
+        const issue = r['Issue / Fault'] || r['Issue'] || r['Fault'] || '-';
+        const action = r['Action Taken / Result'] || r['Action Taken'] || r['Result'] || '-';
 
         html += `
           <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-red-400/50 transition">
             <div class="flex-1">
               <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                <span class="font-bold text-white text-base tracking-wide">${r['Asset Unit'] || 'Asset'}</span>
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeClass}">${r['Status'] || 'Pending'}</span>
-                <span class="text-xs text-slate-400 font-medium">📅 ${cleanDate}</span>
+                <span class="font-bold text-white text-base tracking-wide">${asset}</span>
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeClass}">${status}</span>
+                <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
+                <span class="text-xs text-slate-400 font-medium">📅 ${dateTime}</span>
               </div>
-              <p class="text-xs text-slate-300 mt-1"><strong>Brand/Type:</strong> ${r['Asset Brand/Type'] || '-'}</p>
-              <p class="text-xs text-red-400 mt-0.5"><strong>Issue/Fault:</strong> ${r['Issue / Fault'] || '-'}</p>
-              <p class="text-xs text-slate-300 mt-0.5"><strong>Action Taken:</strong> ${r['Action Taken / Result'] || '-'}</p>
+              <p class="text-xs text-slate-300 mt-1"><strong>Brand/Type:</strong> ${brand}</p>
+              <p class="text-xs text-red-400 mt-0.5"><strong>Issue/Fault:</strong> ${issue}</p>
+              <p class="text-xs text-slate-300 mt-0.5"><strong>Action Taken:</strong> ${action}</p>
             </div>
             <div class="w-full md:w-32 flex-shrink-0">
               ${renderPhotoThumbnail(photoImg, 'Photo')}
@@ -780,7 +787,6 @@
       }
       listArea.innerHTML = html;
     }
-
     function renderPhotoGrid(photos, grid) {
       let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">`;
       photos.forEach(p => {
