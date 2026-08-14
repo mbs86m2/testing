@@ -156,7 +156,6 @@
     let currentSection = "";
     let currentDisplayLimit = 30;
 
-    // IMMEDIATE INITIALIZATION FOR MODULE SCRIPTS
     initPortal();
 
     function initPortal() {
@@ -277,7 +276,7 @@
     }
 
     // =========================================================================
-    // DYNAMIC YEAR POPULATION FROM GOOGLE DRIVE
+    // DYNAMIC YEAR POPULATION
     // =========================================================================
     async function populateYearDropdown() {
       const yearSel = document.getElementById("sel-year");
@@ -297,19 +296,22 @@
         } else {
           yearSel.innerHTML = `
             <option value="" class="bg-slate-900">-- Select Year --</option>
-            <option value="${new Date().getFullYear()}" class="bg-slate-900">${new Date().getFullYear()}</option>
+            <option value="2026" class="bg-slate-900">2026</option>
+            <option value="2025" class="bg-slate-900">2025</option>
+            <option value="2024" class="bg-slate-900">2024</option>
           `;
         }
       } catch (err) {
         yearSel.innerHTML = `
           <option value="" class="bg-slate-900">-- Select Year --</option>
           <option value="2026" class="bg-slate-900">2026</option>
+          <option value="2025" class="bg-slate-900">2025</option>
         `;
       }
     }
 
     // =========================================================================
-    // SECTION NAVIGATION & PARKING VIOLATIONS
+    // SECTION NAVIGATION & PARKING / BREAKDOWN
     // =========================================================================
     function showSection(section) {
       currentSection = section;
@@ -323,13 +325,11 @@
 
         area.innerHTML = `
           <div class="flex flex-col h-full">
-            <!-- FIXED CONTROLS HEADER -->
             <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
 
                 <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
-                  <!-- 1. DYNAMIC YEAR (Populates only existing years from Drive) -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
                     <select id="sel-year" onchange="onReportYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
@@ -337,7 +337,6 @@
                     </select>
                   </div>
 
-                  <!-- 2. MONTH (Disabled until Year is chosen) -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
                     <select id="sel-month" onchange="fetchDirectDriveReportRecords()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
@@ -362,7 +361,6 @@
               <div id="debug-info" class="mt-2 text-center"></div>
             </div>
 
-            <!-- SCROLLABLE CARDS VIEWPORT -->
             <div id="records-list" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px]">
               <p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>
             </div>
@@ -378,7 +376,6 @@
       }
     }
 
-    // When Year is selected, populate Month tabs descending
     async function onReportYearSelected() {
       const year = document.getElementById("sel-year").value;
       const monthSel = document.getElementById("sel-month");
@@ -402,7 +399,6 @@
         const data = await res.json();
 
         if (data.status === "success" && data.tabs && data.tabs.length > 0) {
-          // Descending Month List
           monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months (${data.tabs.length} Months) --</option>`;
           data.tabs.forEach(t => {
             monthSel.innerHTML += `<option value="${t}" class="bg-slate-900">${t}</option>`;
@@ -422,9 +418,8 @@
       }
     }
 
-    // Fetches live records from Google Sheet & sorts descending
     async function fetchDirectDriveReportRecords() {
-      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : "";
+      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : new Date().getFullYear();
       const month = document.getElementById("sel-month") ? document.getElementById("sel-month").value : "ALL";
       const listArea = document.getElementById("records-list");
       const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
@@ -434,15 +429,24 @@
         return;
       }
 
-      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching records directly from Google Drive (${month})...</p></div>`;
+      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching records (${month})...</p></div>`;
       updateStatusBadge("debug-info", "loading", `Loading records for ${month}...`);
 
       try {
-        const res = await fetch(`${API_URL}?action=getReportRecords&spreadsheetId=${ssId}&month=${encodeURIComponent(month)}`);
+        const res = await fetch(`${API_URL}?action=getReportRecords&spreadsheetId=${ssId}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`);
         const data = await res.json();
 
         if (data.status === "success" && data.records && data.records.length > 0) {
           currentRawData = data.records;
+
+          // Client-side safeguard to ensure absolute newest-first order
+          currentRawData.sort((a, b) => {
+            let epA = Number(a.epoch) || 0;
+            let epB = Number(b.epoch) || 0;
+            if (epB !== epA) return epB - epA;
+            return (Number(b.rowNumber) || 0) - (Number(a.rowNumber) || 0);
+          });
+
           updateStatusBadge("debug-info", "success", `Loaded ${currentRawData.length} records in descending order (Newest first)!`);
           executeSearch();
         } else {
@@ -457,7 +461,7 @@
     }
 
     // =========================================================================
-    // DIRECT DRIVE TOC CAMERA
+    // TOC & STAIRCASE
     // =========================================================================
     function renderTocUI() {
       const area = document.getElementById("content-area");
@@ -587,9 +591,6 @@
       }
     }
 
-    // =========================================================================
-    // DIRECT DRIVE L2 STAIRCASE
-    // =========================================================================
     function renderStaircaseUI() {
       const area = document.getElementById("content-area");
       area.innerHTML = `
@@ -647,7 +648,7 @@
     }
 
     // =========================================================================
-    // RENDERING & PARKING CARDS
+    // SEARCH & RENDERING
     // =========================================================================
     function executeSearch() {
       const query = (document.getElementById("search-input") ? document.getElementById("search-input").value : "").toLowerCase().trim();
@@ -668,6 +669,7 @@
       executeSearch();
     }
 
+    // PARKING VIOLATIONS CARDS
     function renderParkingCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -682,22 +684,28 @@
       html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
 
       displayRecords.forEach(r => {
-        const plateImg = convertDriveUrl(r['Plate Photo Link'] || r['Plate Photo']);
-        const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo']);
-        const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo']);
+        // Read Column A (Date) & Column B (Time) & Column C (Officer Name)
+        let cleanDate = (r['Date'] || r['Date/Time'] || 'N/A').toString().split(' ')[0].trim();
+        let cleanTime = (r['Time'] || '').toString().trim();
+        let officer = r['Officer Name'] || r['Officer'] || '-';
+        let plate = r['License Plate'] || r['Plate'] || 'N/A';
+        let level = r['Level'] || '-';
+        let tabMonth = r['_tabMonth'] || '';
 
-        let cleanDate = (r.Date || 'N/A').toString().split(' ')[0];
+        const plateImg = convertDriveUrl(r['Plate Photo Link'] || r['Plate Photo'] || r['Plate Image'] || r['Plate']);
+        const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo'] || r['Notice Image'] || r['Notice']);
+        const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo'] || r['Vehicle Image'] || r['Vehicle']);
 
         html += `
           <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start mb-2">
-                <span class="font-bold text-blue-400 text-lg tracking-wide">${r['License Plate'] || 'N/A'}</span>
-                <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
+                <span class="font-bold text-blue-400 text-lg tracking-wide">${plate}</span>
+                <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-700">${tabMonth}</span>
               </div>
-              <p class="text-xs text-slate-300 mb-1"><strong>Officer:</strong> ${r['Officer Name'] || '-'}</p>
-              <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${cleanDate} ${r['Time'] || ''}</p>
-              <p class="text-xs text-slate-300 mb-3"><strong>Level:</strong> ${r['Level'] || '-'}</p>
+              <p class="text-xs text-slate-300 mb-1"><strong>Officer:</strong> ${officer}</p>
+              <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${cleanDate} ${cleanTime}</p>
+              <p class="text-xs text-slate-300 mb-3"><strong>Level:</strong> ${level}</p>
             </div>
 
             <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/80 mt-2">
@@ -722,6 +730,7 @@
       listArea.innerHTML = html;
     }
 
+    // BREAKDOWN LOGS CARDS
     function renderBreakdownCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -820,11 +829,12 @@
 
       currentFilteredData.forEach((r, idx) => {
         let cleanDate = (r.Date || '').toString().split(' ')[0];
+        let cleanTime = (r.Time || '').toString();
         html += `
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
             ${currentSection === 'parking' ? `
-              <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate} ${r['Time'] || ''}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate} ${cleanTime}</td>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['License Plate'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Officer Name'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Level'] || '-'}</td>
@@ -853,8 +863,9 @@
 
       currentFilteredData.forEach((r, idx) => {
         let cleanDate = (r.Date || '').toString().split(' ')[0];
+        let cleanTime = (r.Time || '').toString();
         if (currentSection === 'parking') {
-          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date: ${cleanDate}%0D%0A`;
+          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date/Time: ${cleanDate} ${cleanTime}%0D%0A`;
         } else {
           bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date: ${cleanDate}%0D%0A`;
         }
@@ -863,11 +874,12 @@
       window.location.href = `mailto:?subject=${subject}&body=${bodyText}`;
     }
 
+    // ROBUST DRIVE URL CONVERTER
     function convertDriveUrl(url) {
       if (!url || url === '-' || url.toString().trim() === '') return '';
       let s = url.toString().trim();
-      let match = s.match(/(?:\/d\/|id=|=HYPERLINK\(")(a-zA-Z0-9_-]{25,})/i) || s.match(/([a-zA-Z0-9_-]{25,})/);
-      if (match && match[1] && !match[1].startsWith('http')) {
+      let match = s.match(/(?:\/d\/|id=)([\w-]{25,})/i) || s.match(/([\w-]{28,})/i);
+      if (match && match[1]) {
         return `https://lh3.googleusercontent.com/d/${match[1]}`;
       }
       if (s.startsWith('http')) return s;
@@ -906,7 +918,7 @@
       }
     }
 
-    // EXPOSE TO GLOBAL WINDOW
+    // EXPOSE TO GLOBAL SCOPE
     window.loginUser = loginUser;
     window.logout = logout;
     window.showSection = showSection;
