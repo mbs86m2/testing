@@ -476,182 +476,226 @@
     }
 
     // ==========================================
-    // METADATA-POWERED REALTIME TOC CAMERA (<10ms)
-    // ==========================================
-    function renderTocUI() {
-      const area = document.getElementById("content-area");
-      area.innerHTML = `
-        <div class="flex flex-col h-full">
-          <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">📷 TOC Camera Photo Navigator</h2>
+// PURE REALTIME TOC CAMERA (MATCHES YYYY -> MM-MMM -> DD)
+// ==========================================
+let activeTocUnsubscribe = null;
+let tocStructureTree = {};
 
-              <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
-                <!-- 1. YEAR -->
-                <div class="flex items-center space-x-1 flex-shrink-0">
-                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
-                  <select id="sel-toc-year" onchange="onFirestoreTocYearChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
-                    <option value="" class="bg-slate-900">Loading...</option>
-                  </select>
-                </div>
+function renderTocUI() {
+  const area = document.getElementById("content-area");
+  area.innerHTML = `
+    <div class="flex flex-col h-full">
+      <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">📷 TOC Camera Photo Navigator</h2>
 
-                <!-- 2. MONTH -->
-                <div class="flex items-center space-x-1 flex-shrink-0">
-                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month:</label>
-                  <select id="sel-toc-month" onchange="onFirestoreTocMonthChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
-                    <option value="" class="bg-slate-900">-- Select Month --</option>
-                  </select>
-                </div>
-
-                <!-- 3. DATE -->
-                <div class="flex items-center space-x-1 flex-shrink-0">
-                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">3. Date:</label>
-                  <select id="sel-toc-date" onchange="listenFirestoreTocPhotos()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none min-w-[120px]" disabled>
-                    <option value="" class="bg-slate-900">-- Select Date --</option>
-                  </select>
-                </div>
-              </div>
+          <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
+            <!-- 1. YEAR (YYYY) -->
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+              <select id="sel-toc-year" onchange="onFirestoreTocYearChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                <option value="" class="bg-slate-900">Loading Years...</option>
+              </select>
             </div>
-            <div id="toc-status-bar" class="mt-2 text-center"></div>
-          </div>
 
-          <div id="photo-grid" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px] text-center text-slate-400 py-16 font-medium">
-            Select Year, Month, and Date above to view live photos.
+            <!-- 2. MONTH (MM-MMM) -->
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month:</label>
+              <select id="sel-toc-month" onchange="onFirestoreTocMonthChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
+                <option value="" class="bg-slate-900">-- Select Month --</option>
+              </select>
+            </div>
+
+            <!-- 3. DATE (DD) -->
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">3. Date:</label>
+              <select id="sel-toc-date" onchange="listenFirestoreTocPhotos()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none min-w-[120px]" disabled>
+                <option value="" class="bg-slate-900">-- Select Date --</option>
+              </select>
+            </div>
           </div>
         </div>
+        <div id="toc-status-bar" class="mt-2 text-center"></div>
+      </div>
+
+      <div id="photo-grid" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px] text-center text-slate-400 py-16 font-medium">
+        Select Year, Month, and Date above to view photos.
+      </div>
+    </div>
+  `;
+
+  initFirestoreTocDropdowns();
+}
+
+// 1. Fetch available Years (YYYY)
+async function initFirestoreTocDropdowns() {
+  const yearSelect = document.getElementById("sel-toc-year");
+  updateStatusBadge("toc-status-bar", "loading", "Connecting to live Firestore database...");
+
+  try {
+    const { collection, getDocs } = window.fs;
+    const querySnapshot = await getDocs(collection(window.db, "toc_metadata"));
+
+    let totalCount = "4,600+";
+    tocStructureTree = {};
+
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.totalPhotos) totalCount = data.totalPhotos;
+      if (data.tree) {
+        try {
+          tocStructureTree = typeof data.tree === "string" ? JSON.parse(data.tree) : data.tree;
+        } catch (e) {}
+      }
+    });
+
+    const years = Object.keys(tocStructureTree).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+    if (years.length > 0) {
+      yearSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
+      years.forEach(y => {
+        yearSelect.innerHTML += `<option value="${y}" class="bg-slate-900">${y}</option>`;
+      });
+      updateStatusBadge("toc-status-bar", "success", `⚡ Real-Time Stream Connected (${totalCount} photos indexed).`);
+    } else {
+      yearSelect.innerHTML = `
+        <option value="" class="bg-slate-900">-- Select Year --</option>
+        <option value="2026" class="bg-slate-900" selected>2026</option>
+        <option value="2025" class="bg-slate-900">2025</option>
       `;
-
-      initFirestoreTocDropdowns();
+      onFirestoreTocYearChange();
     }
+  } catch (err) {
+    yearSelect.innerHTML = `
+      <option value="" class="bg-slate-900">-- Select Year --</option>
+      <option value="2026" class="bg-slate-900" selected>2026</option>
+    `;
+    onFirestoreTocYearChange();
+  }
+}
 
-    // Reads only 1 single metadata document for instant dropdown load
-    async function initFirestoreTocDropdowns() {
-      const yearSelect = document.getElementById("sel-toc-year");
-      updateStatusBadge("toc-status-bar", "loading", "Connecting to live Firestore database...");
+// 2. Fetch available Months (MM-MMM) when Year is picked
+function onFirestoreTocYearChange() {
+  const year = document.getElementById("sel-toc-year").value;
+  const monthSelect = document.getElementById("sel-toc-month");
+  const dateSelect = document.getElementById("sel-toc-date");
 
-      try {
-        const { collection, getDocs } = window.fs;
-        const querySnapshot = await getDocs(collection(window.db, "toc_metadata"));
+  dateSelect.disabled = true;
+  dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
 
-        let totalCount = "4,600+";
-        tocStructureTree = {};
+  if (!year) {
+    monthSelect.disabled = true;
+    monthSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
+    return;
+  }
 
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.totalPhotos) totalCount = data.totalPhotos;
-          if (data.tree) {
-            try {
-              tocStructureTree = typeof data.tree === "string" ? JSON.parse(data.tree) : data.tree;
-            } catch (e) {}
-          }
-        });
+  monthSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
 
-        const years = Object.keys(tocStructureTree).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+  if (tocStructureTree[year]) {
+    const months = Object.keys(tocStructureTree[year]).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    months.forEach(m => {
+      monthSelect.innerHTML += `<option value="${m}" class="bg-slate-900">${m}</option>`;
+    });
+  } else {
+    const defaultMonths = ["08-AUG", "07-JUL", "06-JUN", "05-MAY", "04-APR", "03-MAR", "02-FEB", "01-JAN"];
+    defaultMonths.forEach(m => {
+      monthSelect.innerHTML += `<option value="${m}" class="bg-slate-900">${m}</option>`;
+    });
+  }
 
-        if (years.length > 0) {
-          yearSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
-          years.forEach(y => {
-            yearSelect.innerHTML += `<option value="${y}" class="bg-slate-900">${y}</option>`;
-          });
-          updateStatusBadge("toc-status-bar", "success", `⚡ Connected to Real-Time Firestore (${totalCount} photos ready).`);
-        } else {
-          // If metadata doc not yet generated, query Drive folders directly
-          loadTocDriveFoldersDirectly();
+  monthSelect.disabled = false;
+  updateStatusBadge("toc-status-bar", "idle", "Please select a Month.");
+}
+
+// 3. Fetch available Days (DD) when Month is picked
+function onFirestoreTocMonthChange() {
+  const year = document.getElementById("sel-toc-year").value;
+  const month = document.getElementById("sel-toc-month").value;
+  const dateSelect = document.getElementById("sel-toc-date");
+
+  if (!month) {
+    dateSelect.disabled = true;
+    dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
+    return;
+  }
+
+  dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
+
+  if (tocStructureTree[year] && tocStructureTree[year][month]) {
+    const dates = tocStructureTree[year][month];
+    dates.forEach(d => {
+      let dVal = d.toString().padStart(2, '0');
+      dateSelect.innerHTML += `<option value="${dVal}" class="bg-slate-900">${dVal}</option>`;
+    });
+  } else {
+    for (let i = 31; i >= 1; i--) {
+      let dVal = String(i).padStart(2, '0');
+      dateSelect.innerHTML += `<option value="${dVal}" class="bg-slate-900">${dVal}</option>`;
+    }
+  }
+
+  dateSelect.disabled = false;
+  updateStatusBadge("toc-status-bar", "idle", "Please select a Date.");
+}
+
+// 4. Listen to Real-Time Firestore stream for that exact Date
+function listenFirestoreTocPhotos() {
+  const year = document.getElementById("sel-toc-year").value.trim();
+  const month = document.getElementById("sel-toc-month").value.trim();
+  let date = document.getElementById("sel-toc-date").value.trim();
+  const grid = document.getElementById("photo-grid");
+
+  if (!date || !year || !month) {
+    grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">Please select a Date above.</p>`;
+    return;
+  }
+
+  if (activeTocUnsubscribe) {
+    activeTocUnsubscribe();
+    activeTocUnsubscribe = null;
+  }
+
+  grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Listening to live Firestore stream...</p></div>`;
+  updateStatusBadge("toc-status-bar", "loading", "Listening to live Firestore stream...");
+
+  try {
+    const { collection, query, where, onSnapshot } = window.fs;
+    const colRef = collection(window.db, "toc_photos");
+
+    // Standard query matching Year & Month
+    const q = query(
+      colRef,
+      where("year", "==", year),
+      where("month", "==", month)
+    );
+
+    activeTocUnsubscribe = onSnapshot(q, (querySnapshot) => {
+      let photos = [];
+      let targetDayNum = parseInt(date, 10);
+
+      querySnapshot.forEach(doc => {
+        let d = doc.data();
+        let docDayNum = parseInt(d.date || d.rawDate || '0', 10);
+        if (docDayNum === targetDayNum || d.date === date) {
+          photos.push(d);
         }
-      } catch (err) {
-        loadTocDriveFoldersDirectly();
-      }
-    }
+      });
 
-    async function loadTocDriveFoldersDirectly() {
-      const yearSelect = document.getElementById("sel-toc-year");
-      try {
-        const res = await fetch(`${API_URL}?action=getSubfolders&folderId=${DEFAULT_FOLDERS.TOC}`);
-        const data = await res.json();
-        if (data.status === "success" && data.folders && data.folders.length > 0) {
-          yearSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
-          data.folders.forEach(f => {
-            yearSelect.innerHTML += `<option value="${f.name}" data-id="${f.id}" class="bg-slate-900">${f.name}</option>`;
-          });
-          updateStatusBadge("toc-status-bar", "idle", `Loaded ${data.folders.length} years from Drive.`);
-        } else {
-          yearSelect.innerHTML = `<option value="2026" class="bg-slate-900">2026</option>`;
-          onFirestoreTocYearChange();
-        }
-      } catch (e) {
-        yearSelect.innerHTML = `<option value="2026" class="bg-slate-900">2026</option>`;
-        onFirestoreTocYearChange();
-      }
-    }
-
-    function onFirestoreTocYearChange() {
-      const year = document.getElementById("sel-toc-year").value;
-      const monthSelect = document.getElementById("sel-toc-month");
-      const dateSelect = document.getElementById("sel-toc-date");
-
-      dateSelect.disabled = true;
-      dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
-
-      if (!year) {
-        monthSelect.disabled = true;
-        monthSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
-        return;
-      }
-
-      if (tocStructureTree[year]) {
-        const months = Object.keys(tocStructureTree[year]).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-        monthSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
-        months.forEach(m => {
-          monthSelect.innerHTML += `<option value="${m}" class="bg-slate-900">${m}</option>`;
-        });
-        monthSelect.disabled = false;
-        updateStatusBadge("toc-status-bar", "idle", "Please select a Month.");
+      if (photos.length > 0) {
+        updateStatusBadge("toc-status-bar", "success", `⚡ Loaded ${photos.length} photos in <50ms (Live Stream Active)!`);
+        renderPhotoGrid(photos, grid);
       } else {
-        // Fallback standard months list
-        monthSelect.innerHTML = `
-          <option value="" class="bg-slate-900">-- Select Month --</option>
-          <option value="08-AUG" class="bg-slate-900">08-AUG</option>
-          <option value="07-JUL" class="bg-slate-900">07-JUL</option>
-          <option value="06-JUN" class="bg-slate-900">06-JUN</option>
-          <option value="05-MAY" class="bg-slate-900">05-MAY</option>
-          <option value="04-APR" class="bg-slate-900">04-APR</option>
-          <option value="03-MAR" class="bg-slate-900">03-MAR</option>
-          <option value="02-FEB" class="bg-slate-900">02-FEB</option>
-          <option value="01-JAN" class="bg-slate-900">01-JAN</option>
-        `;
-        monthSelect.disabled = false;
+        updateStatusBadge("toc-status-bar", "idle", "No photos found for this date.");
+        grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No TOC Camera photos found for ${date}/${month}/${year}.</p>`;
       }
-    }
+    }, (error) => {
+      updateStatusBadge("toc-status-bar", "error", "Firestore stream error.");
+    });
 
-    function onFirestoreTocMonthChange() {
-      const year = document.getElementById("sel-toc-year").value;
-      const month = document.getElementById("sel-toc-month").value;
-      const dateSelect = document.getElementById("sel-toc-date");
-
-      if (!month) {
-        dateSelect.disabled = true;
-        dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
-        return;
-      }
-
-      dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
-
-      if (tocStructureTree[year] && tocStructureTree[year][month]) {
-        const dates = tocStructureTree[year][month];
-        dates.forEach(d => {
-          dateSelect.innerHTML += `<option value="${d}" class="bg-slate-900">${d}</option>`;
-        });
-      } else {
-        for (let i = 31; i >= 1; i--) {
-          let dStr = String(i).padStart(2, '0');
-          dateSelect.innerHTML += `<option value="${dStr}" class="bg-slate-900">${dStr}</option>`;
-        }
-      }
-
-      dateSelect.disabled = false;
-      updateStatusBadge("toc-status-bar", "idle", "Please select a Date.");
-    }
-
+  } catch (err) {
+    updateStatusBadge("toc-status-bar", "error", "Error loading photos.");
+  }
+}
     // Real-Time onSnapshot stream for only this date's photos (<50ms)
     function listenFirestoreTocPhotos() {
       const year = document.getElementById("sel-toc-year").value;
