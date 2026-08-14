@@ -64,7 +64,6 @@
           <div>
             <div class="flex items-center space-x-2">
               <h1 class="text-base md:text-lg font-bold tracking-wide leading-tight">WA FCC Master Portal Report</h1>
-              <!-- LIVE SGT COUNTDOWN BADGE -->
               <span id="temp-timer-badge" class="hidden text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-lg font-mono font-bold animate-pulse"></span>
             </div>
             <p class="text-[11px] text-slate-400 leading-tight" id="user-badge"></p>
@@ -231,7 +230,7 @@
         <button onclick="closeAdminModal('users-management-modal')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
       </div>
 
-      <!-- ADD NEW USER FORM (WITH DURATION SELECTOR) -->
+      <!-- ADD NEW USER FORM -->
       <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 mb-3">
         <h4 class="text-xs font-bold text-blue-400 mb-2">Add New User / Temporary Access</h4>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
@@ -317,12 +316,10 @@
       BREAKDOWN: "1rbjfI3G4DsnAojN7O0w04xRNE6efFPs11ESDDAE76oY"
     };
 
+    // DEFAULT SYSTEM USERS (M2 & FCC)
     const DEFAULT_USERS = [
-      { name: "FCC Supervisor", role: "Admin", password: "123", duration: "permanent" },
-      { name: "Duty Controller", role: "Viewer", password: "123", duration: "permanent" },
-      { name: "Security Officer", role: "Viewer", password: "123", duration: "permanent" },
-      { name: "Operations Staff", role: "Viewer", password: "123", duration: "permanent" },
-      { name: "Management", role: "Viewer", password: "123", duration: "permanent" }
+      { name: "M2", role: "Admin", password: "123", duration: "permanent" },
+      { name: "FCC", role: "Viewer", password: "123", duration: "permanent" }
     ];
 
     let PORTAL_USERS = loadStoredUsers();
@@ -342,21 +339,33 @@
       restoreSessionIfValid();
     }
 
-    // Helper: Returns current Singapore Date String (YYYY-MM-DD)
     function getSingaporeDateStr() {
       return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore' }).format(new Date());
     }
 
     function loadStoredUsers() {
+      let users = [...DEFAULT_USERS];
       try {
-        const stored = localStorage.getItem("fcc_portal_users_v3");
-        if (stored) return JSON.parse(stored);
+        const stored = localStorage.getItem("fcc_portal_users_v4");
+        if (stored) {
+          users = JSON.parse(stored);
+        }
       } catch (e) {}
-      return [...DEFAULT_USERS];
+
+      // Guarantee M2 and FCC always exist
+      if (!users.some(u => u.name === "M2")) {
+        users.unshift({ name: "M2", role: "Admin", password: "123", duration: "permanent" });
+      }
+      if (!users.some(u => u.name === "FCC")) {
+        users.push({ name: "FCC", role: "Viewer", password: "123", duration: "permanent" });
+      }
+
+      localStorage.setItem("fcc_portal_users_v4", JSON.stringify(users));
+      return users;
     }
 
     function saveStoredUsers() {
-      localStorage.setItem("fcc_portal_users_v3", JSON.stringify(PORTAL_USERS));
+      localStorage.setItem("fcc_portal_users_v4", JSON.stringify(PORTAL_USERS));
     }
 
     function updateActivityTimestamp() {
@@ -368,14 +377,13 @@
       window.addEventListener(evt, updateActivityTimestamp, { passive: true });
     });
 
-    // 1-Second Global Heartbeat (Inactivity & Temporary User Expiry Countdown)
     setInterval(() => {
-      // 1. Inactivity Logout
+      // Inactivity
       if (loggedInUser && (Date.now() - lastActivityTime >= INACTIVITY_LIMIT_MS)) {
         triggerAutoLogout();
       }
 
-      // 2. Temporary User Duration Expiry Countdown (Singapore Timing)
+      // Temporary User Expiry (Singapore Time)
       if (loggedInUser && loggedInUser.duration && loggedInUser.duration !== "permanent") {
         const remaining = (loggedInUser.expiresAt || 0) - Date.now();
         const badge = document.getElementById("temp-timer-badge");
@@ -418,10 +426,1120 @@
       document.getElementById("inactivity-modal").classList.remove("hidden");
     }
 
-    // Triggered when temporary access timer runs out
     function triggerTempUserExpiry() {
       const todaySGT = getSingaporeDateStr();
 
-      // Lock user for the rest of today SGT
       if (loggedInUser) {
         const uIdx = PORTAL_USERS.findIndex(u => u.name === loggedInUser.name);
+        if (uIdx !== -1) {
+          PORTAL_USERS[uIdx].lockedDateSGT = todaySGT;
+          PORTAL_USERS[uIdx].expiresAt = null;
+          saveStoredUsers();
+        }
+      }
+
+      sessionStorage.removeItem("fcc_session_v8");
+      loggedInUser = null;
+      currentSection = "";
+      currentRawData = [];
+      currentFilteredData = [];
+
+      const passInput = document.getElementById("user-password");
+      if (passInput) passInput.value = "";
+
+      document.getElementById("temp-timer-badge").classList.add("hidden");
+      document.getElementById("admin-settings-container").classList.add("hidden");
+      document.getElementById("dashboard-screen").classList.add("hidden");
+      document.getElementById("login-screen").classList.remove("hidden");
+      document.getElementById("temp-expiry-modal").classList.remove("hidden");
+    }
+
+    function closeInactivityModal() {
+      document.getElementById("inactivity-modal").classList.add("hidden");
+      const passInput = document.getElementById("user-password");
+      if (passInput) passInput.focus();
+    }
+
+    function closeTempExpiryModal() {
+      document.getElementById("temp-expiry-modal").classList.add("hidden");
+      loadPortalUsers();
+    }
+
+    function saveSessionState() {
+      if (!loggedInUser) {
+        sessionStorage.removeItem("fcc_session_v8");
+        return;
+      }
+      sessionStorage.setItem("fcc_session_v8", JSON.stringify({
+        user: loggedInUser,
+        lastActivity: lastActivityTime
+      }));
+    }
+
+    function restoreSessionIfValid() {
+      const stored = sessionStorage.getItem("fcc_session_v8");
+      if (!stored) return false;
+
+      try {
+        const session = JSON.parse(stored);
+        if (session.user && session.lastActivity && (Date.now() - session.lastActivity < INACTIVITY_LIMIT_MS)) {
+          if (session.user.duration && session.user.duration !== "permanent") {
+            if (Date.now() >= (session.user.expiresAt || 0)) {
+              sessionStorage.removeItem("fcc_session_v8");
+              return false;
+            }
+          }
+
+          loggedInUser = session.user;
+          lastActivityTime = Date.now();
+
+          document.getElementById("login-screen").classList.add("hidden");
+          document.getElementById("dashboard-screen").classList.remove("hidden");
+          document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
+
+          if (loggedInUser.role === 'Admin') {
+            document.getElementById("admin-settings-container").classList.remove("hidden");
+          }
+
+          const area = document.getElementById("content-area");
+          if (area) {
+            area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+          }
+          return true;
+        }
+      } catch(e) {}
+      sessionStorage.removeItem("fcc_session_v8");
+      return false;
+    }
+
+    function loadPortalUsers() {
+      const select = document.getElementById("user-name-select");
+      if (!select) return;
+
+      const currentVal = select.value;
+      select.innerHTML = `<option value="" class="bg-slate-900 text-white">-- Select Your Name --</option>`;
+      PORTAL_USERS.forEach(u => {
+        select.innerHTML += `<option value="${u.name}" class="bg-slate-900 text-white">${u.name}</option>`;
+      });
+      if (currentVal) select.value = currentVal;
+    }
+
+    function loginUser() {
+      const name = document.getElementById("user-name-select").value;
+      const passInput = document.getElementById("user-password");
+      const pass = passInput ? passInput.value : "";
+      const statusBox = document.getElementById("auth-status");
+
+      if (!name || !pass) { 
+        alert("Please select your name and enter password."); 
+        return; 
+      }
+
+      statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-blue-500/20 text-blue-300 border border-blue-500/30 block font-semibold";
+      statusBox.innerText = "Verifying credentials...";
+
+      const userIndex = PORTAL_USERS.findIndex(u => u.name === name);
+      const foundUser = PORTAL_USERS[userIndex];
+
+      if (foundUser && foundUser.password === pass) {
+        const todaySGT = getSingaporeDateStr();
+
+        if (foundUser.duration && foundUser.duration !== "permanent") {
+          if (foundUser.lockedDateSGT === todaySGT) {
+            statusBox.className = "mt-4 p-3 rounded-lg text-xs bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold text-left";
+            statusBox.innerHTML = `⚠️ <strong>Access Expired for Today (${todaySGT} SGT)</strong><br>Your temporary duration has ended. You cannot log in again today.`;
+            return;
+          }
+
+          if (!foundUser.expiresAt) {
+            const durationMins = parseInt(foundUser.duration, 10) || 15;
+            foundUser.expiresAt = Date.now() + (durationMins * 60 * 1000);
+            saveStoredUsers();
+          } else if (Date.now() >= foundUser.expiresAt) {
+            foundUser.lockedDateSGT = todaySGT;
+            foundUser.expiresAt = null;
+            saveStoredUsers();
+
+            statusBox.className = "mt-4 p-3 rounded-lg text-xs bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold text-left";
+            statusBox.innerHTML = `⚠️ <strong>Access Expired for Today (${todaySGT} SGT)</strong><br>Your temporary duration has ended.`;
+            return;
+          }
+        }
+
+        loggedInUser = { 
+          name: foundUser.name, 
+          role: foundUser.role || "Viewer",
+          duration: foundUser.duration || "permanent",
+          expiresAt: foundUser.expiresAt || null
+        };
+
+        lastActivityTime = Date.now();
+        currentSection = "";
+        currentRawData = [];
+        currentFilteredData = [];
+        saveSessionState();
+
+        if (passInput) passInput.value = "";
+
+        statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block font-semibold";
+        statusBox.innerText = "✓ Access Granted";
+
+        setTimeout(() => {
+          document.getElementById("login-screen").classList.add("hidden");
+          document.getElementById("dashboard-screen").classList.remove("hidden");
+          document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
+
+          if (loggedInUser.role === 'Admin') {
+            document.getElementById("admin-settings-container").classList.remove("hidden");
+          } else {
+            document.getElementById("admin-settings-container").classList.add("hidden");
+          }
+
+          if (loggedInUser.duration && loggedInUser.duration !== "permanent") {
+            document.getElementById("temp-timer-badge").classList.remove("hidden");
+          } else {
+            document.getElementById("temp-timer-badge").classList.add("hidden");
+          }
+          
+          const area = document.getElementById("content-area");
+          if (area) {
+            area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+          }
+        }, 150);
+      } else {
+        statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold";
+        statusBox.innerText = "Incorrect Password. (Default is 123)";
+      }
+    }
+
+    function logout() {
+      loggedInUser = null;
+      currentSection = "";
+      currentRawData = [];
+      currentFilteredData = [];
+      sessionStorage.removeItem("fcc_session_v8");
+
+      const passInput = document.getElementById("user-password");
+      if (passInput) passInput.value = "";
+
+      const area = document.getElementById("content-area");
+      if (area) {
+        area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+      }
+
+      const statusBox = document.getElementById("auth-status");
+      if (statusBox) statusBox.className = "hidden";
+
+      document.getElementById("temp-timer-badge").classList.add("hidden");
+      document.getElementById("admin-settings-container").classList.add("hidden");
+      document.getElementById("dashboard-screen").classList.add("hidden");
+      document.getElementById("login-screen").classList.remove("hidden");
+    }
+
+    // =========================================================================
+    // ADMIN SETTINGS: MODALS & FUNCTIONS
+    // =========================================================================
+
+    function closeAdminModal(modalId) {
+      document.getElementById(modalId).classList.add("hidden");
+    }
+
+    function openChangePasswordModal() {
+      if (!loggedInUser) return;
+      document.getElementById("cp-current-user").value = `${loggedInUser.name} (${loggedInUser.role})`;
+      document.getElementById("cp-old-pass").value = "";
+      document.getElementById("cp-new-pass").value = "";
+      document.getElementById("cp-confirm-pass").value = "";
+      document.getElementById("cp-status").className = "hidden";
+      document.getElementById("change-password-modal").classList.remove("hidden");
+    }
+
+    function submitChangePassword() {
+      const oldPass = document.getElementById("cp-old-pass").value;
+      const newPass = document.getElementById("cp-new-pass").value;
+      const confPass = document.getElementById("cp-confirm-pass").value;
+      const statusBox = document.getElementById("cp-status");
+
+      if (!oldPass || !newPass || !confPass) {
+        statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-red-500/20 text-red-300 border border-red-500/30 block";
+        statusBox.innerText = "Please fill in all password fields.";
+        return;
+      }
+
+      const userIndex = PORTAL_USERS.findIndex(u => u.name === loggedInUser.name);
+      if (userIndex === -1 || PORTAL_USERS[userIndex].password !== oldPass) {
+        statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-red-500/20 text-red-300 border border-red-500/30 block";
+        statusBox.innerText = "Current password is incorrect.";
+        return;
+      }
+
+      if (newPass !== confPass) {
+        statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-red-500/20 text-red-300 border border-red-500/30 block";
+        statusBox.innerText = "New passwords do not match.";
+        return;
+      }
+
+      PORTAL_USERS[userIndex].password = newPass;
+      saveStoredUsers();
+
+      statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block";
+      statusBox.innerText = "✓ Password updated successfully!";
+
+      setTimeout(() => {
+        closeAdminModal("change-password-modal");
+      }, 1200);
+    }
+
+    function openUsersManagementModal() {
+      renderUsersTable();
+      document.getElementById("new-user-name").value = "";
+      document.getElementById("new-user-pass").value = "";
+      document.getElementById("new-user-duration").value = "permanent";
+      document.getElementById("users-management-modal").classList.remove("hidden");
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById("users-table-body");
+      if (!tbody) return;
+
+      const todaySGT = getSingaporeDateStr();
+      tbody.innerHTML = "";
+
+      PORTAL_USERS.forEach((u, idx) => {
+        const isAdmin = u.role === "Admin";
+        const isSelf = loggedInUser && loggedInUser.name === u.name;
+        const isPerm = !u.duration || u.duration === "permanent";
+        const isLockedToday = u.lockedDateSGT === todaySGT;
+
+        let durationBadge = "";
+        if (isPerm) {
+          durationBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">🟢 Permanent</span>`;
+        } else if (isLockedToday) {
+          durationBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">🔒 Expired (${todaySGT} SGT)</span>`;
+        } else if (u.expiresAt && Date.now() < u.expiresAt) {
+          const rem = Math.max(0, Math.floor((u.expiresAt - Date.now()) / 60000));
+          durationBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">⏳ Active (${rem}m left)</span>`;
+        } else {
+          durationBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">⏳ ${u.duration} Mins (Unused)</span>`;
+        }
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-800/50 transition">
+            <td class="p-2.5 font-semibold text-white">${u.name}</td>
+            <td class="p-2.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isAdmin ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">
+                ${u.role || 'Viewer'}
+              </span>
+            </td>
+            <td class="p-2.5">${durationBadge}</td>
+            <td class="p-2.5 text-right space-x-2">
+              ${isLockedToday ? `
+                <button onclick="unlockUserForToday(${idx})" class="text-amber-400 hover:text-amber-300 text-[11px] font-semibold hover:underline">
+                  Unlock
+                </button>
+              ` : ''}
+              ${isSelf ? '<span class="text-slate-500 text-[10px] italic">Active (You)</span>' : `
+                <button onclick="removeUser(${idx})" class="text-red-400 hover:text-red-300 text-[11px] font-semibold hover:underline">
+                  Delete
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function addNewUser() {
+      const name = document.getElementById("new-user-name").value.trim();
+      const role = document.getElementById("new-user-role").value;
+      const duration = document.getElementById("new-user-duration").value;
+      const pass = document.getElementById("new-user-pass").value.trim() || "123";
+
+      if (!name) {
+        alert("Please enter a user name.");
+        return;
+      }
+
+      if (PORTAL_USERS.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+        alert("A user with this name already exists.");
+        return;
+      }
+
+      PORTAL_USERS.push({ 
+        name: name, 
+        role: role, 
+        password: pass,
+        duration: duration,
+        expiresAt: null,
+        lockedDateSGT: null
+      });
+
+      saveStoredUsers();
+      loadPortalUsers();
+      renderUsersTable();
+
+      document.getElementById("new-user-name").value = "";
+      document.getElementById("new-user-pass").value = "";
+      document.getElementById("new-user-duration").value = "permanent";
+    }
+
+    function unlockUserForToday(idx) {
+      if (PORTAL_USERS[idx]) {
+        PORTAL_USERS[idx].lockedDateSGT = null;
+        PORTAL_USERS[idx].expiresAt = null;
+        saveStoredUsers();
+        renderUsersTable();
+      }
+    }
+
+    function removeUser(idx) {
+      if (!confirm(`Are you sure you want to remove ${PORTAL_USERS[idx].name}?`)) return;
+      PORTAL_USERS.splice(idx, 1);
+      saveStoredUsers();
+      loadPortalUsers();
+      renderUsersTable();
+    }
+
+    function openLinkStatusModal() {
+      document.getElementById("link-status-modal").classList.remove("hidden");
+      runLinkDiagnostics();
+    }
+
+    async function runLinkDiagnostics() {
+      const box = document.getElementById("diagnostic-results");
+      const sum = document.getElementById("diagnostic-summary");
+
+      box.innerHTML = `
+        <div class="text-center py-10">
+          <div class="animate-spin inline-block w-7 h-7 border-3 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+          <p class="text-xs text-slate-400 font-medium">Testing Google Drive folders & spreadsheet connections...</p>
+        </div>
+      `;
+      sum.innerText = "Running diagnostics...";
+
+      try {
+        const res = await fetch(`${API_URL}?action=checkHealthStatus`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.diagnostic) {
+          let html = "";
+          let okCount = 0;
+
+          data.diagnostic.forEach(item => {
+            const isOk = item.status === "ok";
+            if (isOk) okCount++;
+
+            html += `
+              <div class="p-2.5 rounded-lg border ${isOk ? 'bg-slate-900/80 border-emerald-500/30' : 'bg-red-950/40 border-red-500/40'} flex items-start justify-between gap-3 text-xs">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">${isOk ? '✅' : '❌'}</span>
+                    <span class="font-bold ${isOk ? 'text-white' : 'text-red-300'}">${item.target}</span>
+                    <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">${item.type}</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-1 pl-6 font-mono break-all">ID: ${item.id}</p>
+                  <p class="text-[11px] ${isOk ? 'text-emerald-400' : 'text-red-400'} pl-6 mt-0.5 font-medium">${item.message}</p>
+                </div>
+                <div class="flex-shrink-0 pt-0.5">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${isOk ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}">
+                    ${isOk ? '✓ ONLINE' : '✗ FAILED'}
+                  </span>
+                </div>
+              </div>
+            `;
+          });
+
+          box.innerHTML = html;
+          sum.innerText = `Result: ${okCount} / ${data.diagnostic.length} links verified active.`;
+        } else {
+          box.innerHTML = `<p class="text-center text-red-400 py-6 text-xs">Failed to run diagnostic test from backend.</p>`;
+          sum.innerText = "Error encountered.";
+        }
+      } catch (err) {
+        box.innerHTML = `<p class="text-center text-red-400 py-6 text-xs">Could not reach Apps Script URL. Connection failed.</p>`;
+        sum.innerText = "Connection Failed.";
+      }
+    }
+
+    // =========================================================================
+    // DYNAMIC YEAR POPULATION
+    // =========================================================================
+    async function populateYearDropdown() {
+      const yearSel = document.getElementById("sel-year");
+      if (!yearSel) return;
+
+      yearSel.innerHTML = `<option value="" class="bg-slate-900">Scanning Years...</option>`;
+
+      try {
+        const res = await fetch(`${API_URL}?action=getAvailableYears`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.years && data.years.length > 0) {
+          yearSel.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
+          data.years.forEach(y => {
+            yearSel.innerHTML += `<option value="${y}" class="bg-slate-900">${y}</option>`;
+          });
+        } else {
+          const curYear = new Date().getFullYear().toString();
+          yearSel.innerHTML = `
+            <option value="" class="bg-slate-900">-- Select Year --</option>
+            <option value="${curYear}" class="bg-slate-900">${curYear}</option>
+          `;
+        }
+      } catch (err) {
+        const curYear = new Date().getFullYear().toString();
+        yearSel.innerHTML = `
+          <option value="" class="bg-slate-900">-- Select Year --</option>
+          <option value="${curYear}" class="bg-slate-900">${curYear}</option>
+        `;
+      }
+    }
+
+    // =========================================================================
+    // SECTION NAVIGATION & PARKING / BREAKDOWN
+    // =========================================================================
+    function showSection(section) {
+      currentSection = section;
+      currentDisplayLimit = 30;
+      currentRawData = [];
+      const area = document.getElementById("content-area");
+
+      if (section === 'parking' || section === 'breakdown') {
+        const title = section === 'parking' ? '🚗 Parking Violations Report' : '⚠️ Breakdown Logs Report';
+
+        area.innerHTML = `
+          <div class="flex flex-col h-full min-h-0">
+            <div class="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-xl mb-3 flex-shrink-0">
+              <div class="flex flex-wrap items-center justify-between gap-2.5">
+                <h2 class="text-sm md:text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
+
+                <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
+                  <div class="flex items-center space-x-1 flex-shrink-0">
+                    <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+                    <select id="sel-year" onchange="onReportYearSelected()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none">
+                      <option value="" class="bg-slate-900">Loading Years...</option>
+                    </select>
+                  </div>
+
+                  <div class="flex items-center space-x-1 flex-shrink-0">
+                    <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
+                    <select id="sel-month" onchange="fetchDirectDriveReportRecords()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none" disabled>
+                      <option value="" class="bg-slate-900">-- Select Month --</option>
+                    </select>
+                  </div>
+
+                  <div class="relative flex items-center flex-shrink-0">
+                    <input id="search-input" type="text" placeholder="Search..." oninput="executeSearch()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs w-32 sm:w-48 bg-slate-800 text-white placeholder-slate-400 outline-none">
+                  </div>
+
+                  <div class="h-4 w-px bg-slate-700 flex-shrink-0"></div>
+
+                  <button onclick="printReportTextOnly()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm flex items-center space-x-1 whitespace-nowrap transition">
+                    <span>🖨️ Print</span>
+                  </button>
+                  <button onclick="emailReportTextOnly()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm flex items-center space-x-1 whitespace-nowrap transition">
+                    <span>✉️ Email</span>
+                  </button>
+                </div>
+              </div>
+              <div id="debug-info" class="mt-1 text-center"></div>
+            </div>
+
+            <div id="records-list" class="flex-1 overflow-y-auto pr-1 min-h-0">
+              <p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>
+            </div>
+          </div>
+        `;
+        
+        populateYearDropdown();
+        updateStatusBadge("debug-info", "idle", "Ready. Please select a Year.");
+      } else if (section === 'staircase') {
+        renderStaircaseUI();
+      } else if (section === 'toc') {
+        renderTocUI();
+      }
+    }
+
+    async function onReportYearSelected() {
+      const year = document.getElementById("sel-year").value;
+      const monthSel = document.getElementById("sel-month");
+      const listArea = document.getElementById("records-list");
+      const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
+
+      if (!year) {
+        monthSel.disabled = true;
+        monthSel.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>`;
+        updateStatusBadge("debug-info", "idle", "Ready. Please select a Year.");
+        return;
+      }
+
+      monthSel.disabled = true;
+      monthSel.innerHTML = `<option value="" class="bg-slate-900">Loading Month Tabs...</option>`;
+      updateStatusBadge("debug-info", "loading", "Fetching available month tabs from spreadsheet...");
+
+      try {
+        const res = await fetch(`${API_URL}?action=getSheetTabs&spreadsheetId=${ssId}`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.tabs && data.tabs.length > 0) {
+          monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months (${data.tabs.length} Months) --</option>`;
+          data.tabs.forEach(t => {
+            monthSel.innerHTML += `<option value="${t}" class="bg-slate-900">${t}</option>`;
+          });
+          monthSel.disabled = false;
+          updateStatusBadge("debug-info", "idle", "Please select a Month or view All Months.");
+          fetchDirectDriveReportRecords();
+        } else {
+          monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
+          monthSel.disabled = false;
+          fetchDirectDriveReportRecords();
+        }
+      } catch (e) {
+        monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
+        monthSel.disabled = false;
+        fetchDirectDriveReportRecords();
+      }
+    }
+
+    async function fetchDirectDriveReportRecords() {
+      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : new Date().getFullYear();
+      const month = document.getElementById("sel-month") ? document.getElementById("sel-month").value : "ALL";
+      const listArea = document.getElementById("records-list");
+      const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
+
+      if (!year) {
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>`;
+        return;
+      }
+
+      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-xs text-slate-300 font-medium">Fetching records (${month})...</p></div>`;
+      updateStatusBadge("debug-info", "loading", `Loading records for ${month}...`);
+
+      try {
+        const res = await fetch(`${API_URL}?action=getReportRecords&spreadsheetId=${ssId}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.records && data.records.length > 0) {
+          currentRawData = data.records;
+
+          currentRawData.sort((a, b) => {
+            let epA = Number(a.epoch) || 0;
+            let epB = Number(b.epoch) || 0;
+            if (epB !== epA) return epB - epA;
+            return (Number(b.rowNumber) || 0) - (Number(a.rowNumber) || 0);
+          });
+
+          updateStatusBadge("debug-info", "success", `Loaded ${currentRawData.length} records in descending order (Newest first)!`);
+          executeSearch();
+        } else {
+          currentRawData = [];
+          listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">No records found for ${month} (${year}).</p>`;
+          updateStatusBadge("debug-info", "idle", "No records found.");
+        }
+      } catch (err) {
+        listArea.innerHTML = `<p class="text-center text-red-400 py-16 font-medium text-xs">Failed to read records from Google Drive.</p>`;
+        updateStatusBadge("debug-info", "error", "Connection error.");
+      }
+    }
+
+    // =========================================================================
+    // TOC & STAIRCASE
+    // =========================================================================
+    function renderTocUI() {
+      const area = document.getElementById("content-area");
+      area.innerHTML = `
+        <div class="flex flex-col h-full min-h-0">
+          <div class="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-xl mb-3 flex-shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+              <h2 class="text-sm md:text-base font-bold text-white tracking-wide whitespace-nowrap">📷 TOC Camera Photo Navigator</h2>
+
+              <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
+                <div class="flex items-center space-x-1 flex-shrink-0">
+                  <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+                  <select id="sel-toc-year" onchange="onDriveTocYearSelected()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none">
+                    <option value="" class="bg-slate-900">Scanning Years...</option>
+                  </select>
+                </div>
+
+                <div class="flex items-center space-x-1 flex-shrink-0">
+                  <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">2. Month:</label>
+                  <select id="sel-toc-month" onchange="onDriveTocMonthSelected()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none" disabled>
+                    <option value="" class="bg-slate-900">-- Select Month --</option>
+                  </select>
+                </div>
+
+                <div class="flex items-center space-x-1 flex-shrink-0">
+                  <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">3. Date:</label>
+                  <select id="sel-toc-date" onchange="loadDriveTocPhotos()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none min-w-[110px]" disabled>
+                    <option value="" class="bg-slate-900">-- Select Date --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div id="toc-status-bar" class="mt-1 text-center"></div>
+          </div>
+
+          <div id="photo-grid" class="flex-1 overflow-y-auto pr-1 min-h-0 text-center text-slate-400 py-16 font-medium text-xs">
+            Select Year, Month, and Date above to view photos.
+          </div>
+        </div>
+      `;
+
+      loadDriveFolders(DEFAULT_FOLDERS.TOC, "sel-toc-year", "Select Year", "toc-status-bar");
+    }
+
+    async function loadDriveFolders(parentFolderId, targetSelectId, placeholderText, statusBoxId) {
+      const select = document.getElementById(targetSelectId);
+      if (!select) return;
+      if (statusBoxId) updateStatusBadge(statusBoxId, "loading", `Scanning Drive for ${placeholderText}...`);
+
+      try {
+        const res = await fetch(`${API_URL}?action=getSubfolders&folderId=${parentFolderId}`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.folders && data.folders.length > 0) {
+          select.innerHTML = `<option value="" class="bg-slate-900">-- ${placeholderText} --</option>`;
+          data.folders.forEach(f => {
+            select.innerHTML += `<option value="${f.id}" class="bg-slate-900">${f.name}</option>`;
+          });
+          select.disabled = false;
+          if (statusBoxId) updateStatusBadge(statusBoxId, "idle", `Loaded ${data.folders.length} options.`);
+        } else {
+          select.innerHTML = `<option value="" class="bg-slate-900">No folders found</option>`;
+          if (statusBoxId) updateStatusBadge(statusBoxId, "idle", "No folders found.");
+        }
+      } catch (err) {
+        select.innerHTML = `<option value="" class="bg-slate-900">Error loading Drive</option>`;
+        if (statusBoxId) updateStatusBadge(statusBoxId, "error", "Failed to connect to Drive API.");
+      }
+    }
+
+    function onDriveTocYearSelected() {
+      const yearFolderId = document.getElementById("sel-toc-year").value;
+      const monthSelect = document.getElementById("sel-toc-month");
+      const dateSelect = document.getElementById("sel-toc-date");
+
+      dateSelect.disabled = true;
+      dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
+
+      if (!yearFolderId) {
+        monthSelect.disabled = true;
+        monthSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
+        return;
+      }
+
+      loadDriveFolders(yearFolderId, "sel-toc-month", "Select Month", "toc-status-bar");
+    }
+
+    function onDriveTocMonthSelected() {
+      const monthFolderId = document.getElementById("sel-toc-month").value;
+      const dateSelect = document.getElementById("sel-toc-date");
+
+      if (!monthFolderId) {
+        dateSelect.disabled = true;
+        dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
+        return;
+      }
+
+      loadDriveFolders(monthFolderId, "sel-toc-date", "Select Date", "toc-status-bar");
+    }
+
+    async function loadDriveTocPhotos() {
+      const dateFolderId = document.getElementById("sel-toc-date").value;
+      const grid = document.getElementById("photo-grid");
+
+      if (!dateFolderId) {
+        grid.innerHTML = `<p class="text-slate-400 py-16 font-medium text-xs">Please select a Date above.</p>`;
+        return;
+      }
+
+      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-xs text-slate-300 font-medium">Fetching photos from Google Drive...</p></div>`;
+      updateStatusBadge("toc-status-bar", "loading", "Fetching photos from Google Drive...");
+
+      try {
+        const res = await fetch(`${API_URL}?action=getAllPhotosInFolder&folderId=${dateFolderId}`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.photos && data.photos.length > 0) {
+          updateStatusBadge("toc-status-bar", "success", `Loaded ${data.photos.length} photos!`);
+          renderPhotoGrid(data.photos, grid);
+        } else {
+          updateStatusBadge("toc-status-bar", "idle", "Folder is empty.");
+          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium text-xs">No photos found in this folder.</p>`;
+        }
+      } catch (err) {
+        updateStatusBadge("toc-status-bar", "error", "Error loading photos from Google Drive.");
+        grid.innerHTML = `<p class="text-red-400 py-16 font-medium text-xs">Error loading photos.</p>`;
+      }
+    }
+
+    function renderStaircaseUI() {
+      const area = document.getElementById("content-area");
+      area.innerHTML = `
+        <div class="flex flex-col h-full min-h-0">
+          <div class="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-xl mb-3 flex-shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+              <h2 class="text-sm md:text-base font-bold text-white tracking-wide whitespace-nowrap">🪜 L2 Staircase Photos</h2>
+
+              <div class="flex items-center space-x-1 flex-shrink-0">
+                <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+                <select id="sel-staircase-year" onchange="loadDriveStaircasePhotos()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none">
+                  <option value="" class="bg-slate-900">Scanning Years...</option>
+                </select>
+              </div>
+            </div>
+            <div id="staircase-status-bar" class="mt-1 text-center"></div>
+          </div>
+
+          <div id="staircase-photos-grid" class="flex-1 overflow-y-auto pr-1 min-h-0 text-center text-slate-400 py-16 font-medium text-xs">
+            Select a Year above to load photos.
+          </div>
+        </div>
+      `;
+
+      loadDriveFolders(DEFAULT_FOLDERS.STAIRCASE, "sel-staircase-year", "Select Year", "staircase-status-bar");
+    }
+
+    async function loadDriveStaircasePhotos() {
+      const yearFolderId = document.getElementById("sel-staircase-year").value;
+      const grid = document.getElementById("staircase-photos-grid");
+
+      if (!yearFolderId) {
+        grid.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">Select a Year above to load photos.</p>`;
+        return;
+      }
+
+      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-xs text-slate-300 font-medium">Fetching Staircase photos...</p></div>`;
+      updateStatusBadge("staircase-status-bar", "loading", "Fetching Staircase photos from Google Drive...");
+
+      try {
+        const res = await fetch(`${API_URL}?action=getAllPhotosInFolder&folderId=${yearFolderId}`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.photos && data.photos.length > 0) {
+          updateStatusBadge("staircase-status-bar", "success", `Loaded ${data.photos.length} photos!`);
+          renderPhotoGrid(data.photos, grid);
+        } else {
+          updateStatusBadge("staircase-status-bar", "idle", "Folder is empty.");
+          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium text-xs">No photos found for this year.</p>`;
+        }
+      } catch (err) {
+        updateStatusBadge("staircase-status-bar", "error", "Error loading photos from Drive.");
+        grid.innerHTML = `<p class="text-red-400 py-16 font-medium text-xs">Error reading Drive photos.</p>`;
+      }
+    }
+
+    // =========================================================================
+    // SEARCH & RENDERING
+    // =========================================================================
+    function executeSearch() {
+      const query = (document.getElementById("search-input") ? document.getElementById("search-input").value : "").toLowerCase().trim();
+      currentFilteredData = currentRawData;
+
+      if (query) {
+        currentFilteredData = currentRawData.filter(r => {
+          return Object.values(r).some(val => val && val.toString().toLowerCase().includes(query));
+        });
+      }
+
+      if (currentSection === 'parking') renderParkingCards(currentFilteredData);
+      else if (currentSection === 'breakdown') renderBreakdownCards(currentFilteredData);
+    }
+
+    function loadMoreRecords() {
+      currentDisplayLimit += 30;
+      executeSearch();
+    }
+
+    // PARKING VIOLATIONS CARDS
+    function renderParkingCards(records) {
+      const listArea = document.getElementById("records-list");
+      if (!records || records.length === 0) {
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">No parking violation records found.</p>`;
+        return;
+      }
+
+      let displayRecords = records.slice(0, currentDisplayLimit);
+      let isPaginated = records.length > currentDisplayLimit;
+
+      let html = `<div class="text-[11px] text-slate-400 mb-2 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
+      html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+
+      displayRecords.forEach(r => {
+        const cleanDate = (r['Date'] || r['Date/Time'] || 'N/A').toString().trim();
+        const cleanTime = (r['Time'] || '').toString().trim();
+        const officer = r['Officer Name'] || r['Officer'] || '-';
+        const plate = r['License Plate'] || r['Plate'] || 'N/A';
+        const level = r['Level'] || '-';
+        const tabMonth = r['_tabMonth'] || '';
+
+        const plateImg = convertDriveUrl(r['Plate Photo Link'] || r['Plate Photo']);
+        const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo']);
+        const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo']);
+
+        html += `
+          <div class="bg-slate-900/70 border border-slate-700/80 rounded-xl p-3.5 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-1.5">
+                <span class="font-bold text-blue-400 text-base tracking-wide">${plate}</span>
+                <span class="text-[10px] bg-slate-800 text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-700">${tabMonth}</span>
+              </div>
+              <p class="text-xs text-slate-300 mb-0.5"><strong>Officer:</strong> ${officer}</p>
+              <p class="text-xs text-slate-300 mb-0.5"><strong>Date/Time:</strong> ${cleanDate} ${cleanTime}</p>
+              <p class="text-xs text-slate-300 mb-2"><strong>Level:</strong> ${level}</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/80 mt-1">
+              ${renderPhotoThumbnail(plateImg, 'Plate')}
+              ${renderPhotoThumbnail(noticeImg, 'Notice')}
+              ${renderPhotoThumbnail(vehicleImg, 'Vehicle')}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+
+      if (isPaginated) {
+        html += `
+          <div class="text-center my-4">
+            <button onclick="loadMoreRecords()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-5 py-2 rounded-xl shadow-sm text-xs transition">
+              👇 Load More Records (${records.length - currentDisplayLimit} remaining)
+            </button>
+          </div>
+        `;
+      }
+      listArea.innerHTML = html;
+    }
+
+    // BREAKDOWN LOGS CARDS
+    function renderBreakdownCards(records) {
+      const listArea = document.getElementById("records-list");
+      if (!records || records.length === 0) {
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">No breakdown logs found.</p>`;
+        return;
+      }
+
+      let displayRecords = records.slice(0, currentDisplayLimit);
+      let isPaginated = records.length > currentDisplayLimit;
+
+      let html = `<div class="text-[11px] text-slate-400 mb-2 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
+      html += `<div class="space-y-2.5">`;
+
+      displayRecords.forEach(r => {
+        const status = r['Status'] || 'Pending';
+        const isResolved = status.toLowerCase().includes('resolved');
+        const badgeClass = isResolved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30';
+        
+        const photoImg = convertDriveUrl(r['Photo Link'] || r['Photo'] || r['Photo URL'] || r['Image']);
+        const dateTime = r['Date/Time'] || r['Date'] || 'N/A';
+        const asset = r['Asset Unit'] || r['Asset'] || 'Asset';
+        const brand = r['Asset Brand/Type'] || r['Brand/Type'] || '-';
+        const issue = r['Issue / Fault'] || r['Issue'] || r['Fault'] || '-';
+        const action = r['Action Taken / Result'] || r['Action Taken'] || r['Result'] || '-';
+
+        html += `
+          <div class="bg-slate-900/70 border border-slate-700/80 rounded-xl p-3.5 shadow-xl backdrop-blur-md text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-red-400/50 transition">
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="font-bold text-white text-sm md:text-base tracking-wide">${asset}</span>
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border ${badgeClass}">${status}</span>
+                <span class="text-[10px] bg-slate-800 text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
+                <span class="text-[11px] text-slate-400 font-medium">📅 ${dateTime}</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5"><strong>Brand/Type:</strong> ${brand}</p>
+              <p class="text-xs text-red-400 mt-0.5"><strong>Issue/Fault:</strong> ${issue}</p>
+              <p class="text-xs text-slate-300 mt-0.5"><strong>Action Taken:</strong> ${action}</p>
+            </div>
+            <div class="w-full md:w-32 flex-shrink-0">
+              ${renderPhotoThumbnail(photoImg, 'Photo')}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+
+      if (isPaginated) {
+        html += `
+          <div class="text-center my-4">
+            <button onclick="loadMoreRecords()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-5 py-2 rounded-xl shadow-sm text-xs transition">
+              👇 Load More Records (${records.length - currentDisplayLimit} remaining)
+            </button>
+          </div>
+        `;
+      }
+      listArea.innerHTML = html;
+    }
+
+    function renderPhotoGrid(photos, grid) {
+      let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">`;
+      photos.forEach(p => {
+        let name = p.fileName || p.name || 'Photo';
+        html += `
+          <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-xl p-2 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
+            <img src="${p.imgUrl}" class="w-full h-32 md:h-36 object-cover rounded-lg mb-1.5 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
+            <p class="text-[11px] text-slate-300 truncate text-center font-medium">${name}</p>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      grid.innerHTML = html;
+    }
+
+    function printReportTextOnly() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { alert("No records to print."); return; }
+      const area = document.getElementById("printable-area");
+      const reportTitle = currentSection === 'parking' ? 'Parking Violations Text Report' : 'Breakdown Logs Text Report';
+      
+      let html = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">WA FCC Master Portal - ${reportTitle}</h2>
+          <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Generated: ${new Date().toLocaleString()} | Records: ${currentFilteredData.length}</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f2f2f2; text-align: left;">
+                <th style="border: 1px solid #ddd; padding: 8px;">#</th>
+                ${currentSection === 'parking' ? `
+                  <th style="border: 1px solid #ddd; padding: 8px;">Date/Time</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">License Plate</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Officer</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Level</th>
+                ` : `
+                  <th style="border: 1px solid #ddd; padding: 8px;">Date/Time</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Asset Unit</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Issue / Fault</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Action / Result</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
+                `}
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      currentFilteredData.forEach((r, idx) => {
+        if (currentSection === 'parking') {
+          let cleanDate = (r.Date || '').toString().trim();
+          let cleanTime = (r.Time || '').toString().trim();
+          html += `
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate} ${cleanTime}</td>
+              <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['License Plate'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Officer Name'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Level'] || '-'}</td>
+            </tr>
+          `;
+        } else {
+          let dateTime = (r['Date/Time'] || r['Date'] || '').toString().trim();
+          html += `
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${dateTime}</td>
+              <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['Asset Unit'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Issue / Fault'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Action Taken / Result'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Status'] || '-'}</td>
+            </tr>
+          `;
+        }
+      });
+
+      html += `</tbody></table></div>`;
+      area.innerHTML = html;
+      area.classList.remove("hidden");
+      window.print();
+      area.classList.add("hidden");
+    }
+
+    function emailReportTextOnly() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { alert("No records to email."); return; }
+      const subject = encodeURIComponent(`WA FCC Master Portal Report Summary - ${currentSection.toUpperCase()}`);
+      let bodyText = `WA FCC Master Portal Report Summary List (%0D%0ATotal Records: ${currentFilteredData.length})%0D%0A%0D%0A`;
+
+      currentFilteredData.forEach((r, idx) => {
+        if (currentSection === 'parking') {
+          let cleanDate = (r.Date || '').toString().trim();
+          let cleanTime = (r.Time || '').toString().trim();
+          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date/Time: ${cleanDate} ${cleanTime}%0D%0A`;
+        } else {
+          let dateTime = (r['Date/Time'] || r['Date'] || '').toString().trim();
+          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date/Time: ${dateTime}%0D%0A`;
+        }
+      });
+
+      window.location.href = `mailto:?subject=${subject}&body=${bodyText}`;
+    }
+
+    function convertDriveUrl(url) {
+      if (!url || url === '-' || url.toString().trim() === '') return '';
+      let s = url.toString().trim();
+      let match = s.match(/(?:\/d\/|id=)([\w-]{25,})/i) || s.match(/([\w-]{28,})/i);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+      if (s.startsWith('http')) return s;
+      return '';
+    }
+
+    function renderPhotoThumbnail(imgUrl, label) {
+      if (!imgUrl) return `<div class="bg-slate-950/80 rounded-lg p-2 text-center text-[10px] text-slate-500 border border-slate-800">No ${label}</div>`;
+      return `
+        <div onclick="openPhotoModal('${imgUrl}', '${label}')" class="block group relative overflow-hidden rounded-lg bg-slate-950 border border-slate-700/80 cursor-zoom-in">
+          <img src="${imgUrl}" class="w-full h-14 md:h-16 object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+          <span class="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[9px] text-center py-0.5 font-medium">${label}</span>
+        </div>
+      `;
+    }
+
+    function openPhotoModal(imgUrl, title) {
+      document.getElementById("modal-img").src = imgUrl;
+      document.getElementById("modal-caption").innerText = title || "Photo Preview";
+      document.getElementById("photo-modal").classList.remove("hidden");
+    }
+
+    function closePhotoModal() {
+      document.getElementById("photo-modal").classList.add("hidden");
+    }
+
+    function updateStatusBadge(targetId, state, message) {
+      const debugBox = document.getElementById(targetId);
+      if (!debugBox) return;
+      if (state === "loading") {
+        debugBox.innerHTML = `<span class="text-xs text-blue-400 font-semibold animate-pulse">⚙️ ${message}</span>`;
+      } else if (state === "success") {
+        debugBox.innerHTML = `<span class="text-xs text-emerald-400 font-semibold">✅ ${message}</span>`;
+      } else {
+        debugBox.innerHTML = `<span class="text-xs text-slate-400 font-semibold">${message}</span>`;
+      }
+    }
+
+    // EXPOSE TO GLOBAL SCOPE
+    window.loginUser = loginUser;
+    window.logout = logout;
+    window.showSection = showSection;
+    window.onReportYearSelected = onReportYearSelected;
+    window.fetchDirectDriveReportRecords = fetchDirectDriveReportRecords;
+    window.onDriveTocYearSelected = onDriveTocYearSelected;
+    window.onDriveTocMonthSelected = onDriveTocMonthSelected;
+    window.loadDriveTocPhotos = loadDriveTocPhotos;
+    window.loadDriveStaircasePhotos = loadDriveStaircasePhotos;
+    window.executeSearch = executeSearch;
+    window.loadMoreRecords = loadMoreRecords;
+    window.printReportTextOnly = printReportTextOnly;
+    window.emailReportTextOnly = emailReportTextOnly;
+    window.openPhotoModal = openPhotoModal;
+    window.closePhotoModal = closePhotoModal;
+    window.closeInactivityModal = closeInactivityModal;
+    window.closeTempExpiryModal = closeTempExpiryModal;
+    window.openChangePasswordModal = openChangePasswordModal;
+    window.openUsersManagementModal = openUsersManagementModal;
+    window.openLinkStatusModal = openLinkStatusModal;
+    window.closeAdminModal = closeAdminModal;
+    window.submitChangePassword = submitChangePassword;
+    window.addNewUser = addNewUser;
+    window.removeUser = removeUser;
+    window.unlockUserForToday = unlockUserForToday;
+    window.runLinkDiagnostics = runLinkDiagnostics;
+  </script>
+</body>
+</html>
