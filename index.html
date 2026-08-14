@@ -125,34 +125,14 @@
     </div>
   </div>
 
-  <!-- FIREBASE & APP SCRIPT MODULE -->
+  <!-- MAIN SCRIPT MODULE -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getFirestore, collection, query, where, getDocs, limit, onSnapshot 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDnZv3wMkQb3BuOGy3l7d5Iy9fw4EtKKVA",
-      authDomain: "wa-fcc-portal.firebaseapp.com",
-      databaseURL: "https://wa-fcc-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "wa-fcc-portal",
-      storageBucket: "wa-fcc-portal.firebasestorage.app",
-      messagingSenderId: "609256707693",
-      appId: "1:609256707693:web:01aba2ff9f7d34d3bd5164"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    window.db = db;
-    window.fs = { collection, query, where, getDocs, limit, onSnapshot };
-
     const API_URL = "https://script.google.com/macros/s/AKfycbyf102SShb6EozCi63GrJXlsh7WVgyDHsFU_DeC8LHNYOwFb5DZtjRcaY1iWZPMTHqw/exec"; 
 
     const DEFAULT_FOLDERS = {
       TOC: "1vOHVu0nBmMFyFxU_JrfUhrow9EvEjkDU",
-      STAIRCASE: "1o6tzEfpDsJGXjs7MabioL8DcaWNlBq_T"
+      STAIRCASE: "1o6tzEfpDsJGXjs7MabioL8DcaWNlBq_T",
+      PARKING_REPORTS: "1bMhOSGlZNM979lXcY3AC9PUC4OzOwx9O"
     };
 
     const SPREADSHEET_IDS = {
@@ -176,7 +156,6 @@
     let currentFilteredData = [];
     let currentSection = "";
     let currentDisplayLimit = 30;
-    let activeRealtimeUnsubscribe = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       loadPortalUsers();
@@ -199,7 +178,6 @@
     }, 1000);
 
     function triggerAutoLogout() {
-      if (activeRealtimeUnsubscribe) { activeRealtimeUnsubscribe(); activeRealtimeUnsubscribe = null; }
       sessionStorage.removeItem("fcc_session_v8");
       loggedInUser = null;
       document.getElementById("dashboard-screen").classList.add("hidden");
@@ -290,47 +268,48 @@
     }
 
     function logout() {
-      if (activeRealtimeUnsubscribe) { activeRealtimeUnsubscribe(); activeRealtimeUnsubscribe = null; }
       loggedInUser = null;
       sessionStorage.removeItem("fcc_session_v8");
       document.getElementById("dashboard-screen").classList.add("hidden");
       document.getElementById("login-screen").classList.remove("hidden");
     }
 
-    // SECTION NAVIGATION
+    // =========================================================================
+    // SECTION NAVIGATION & PARKING VIOLATIONS (DIRECT DRIVE/SHEET)
+    // =========================================================================
     function showSection(section) {
       currentSection = section;
       currentDisplayLimit = 30;
       saveSessionState();
       const area = document.getElementById("content-area");
 
-      if (activeRealtimeUnsubscribe) { activeRealtimeUnsubscribe(); activeRealtimeUnsubscribe = null; }
-
       if (section === 'parking' || section === 'breakdown') {
         const title = section === 'parking' ? '🚗 Parking Violations Report' : '⚠️ Breakdown Logs Report';
-        const colName = section === 'parking' ? 'parking_violations' : 'breakdown_logs';
         const ssId = section === 'parking' ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
 
         area.innerHTML = `
           <div class="flex flex-col h-full">
+            <!-- FIXED CONTROLS HEADER -->
             <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
 
                 <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
+                  <!-- 1. YEAR -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
-                    <select id="sel-year" onchange="onReportYearChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                    <select id="sel-year" onchange="onReportDropdownChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
                       <option value="2026" class="bg-slate-900">2026</option>
                       <option value="2025" class="bg-slate-900">2025</option>
                       <option value="2024" class="bg-slate-900">2024</option>
                     </select>
                   </div>
 
+                  <!-- 2. MONTH (WITH ALL MONTHS OPTION) -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
-                    <select id="sel-month" onchange="fetchRecordsRealtime()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
-                      <option value="ALL" class="bg-slate-900">Auto-Detecting Tabs...</option>
+                    <select id="sel-month" onchange="onReportDropdownChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                      <option value="ALL" class="bg-slate-900">-- All Months --</option>
                     </select>
                   </div>
 
@@ -351,13 +330,14 @@
               <div id="debug-info" class="mt-2 text-center"></div>
             </div>
 
+            <!-- SCROLLABLE CARDS GRID (1st row left -> right, 2nd row left -> right) -->
             <div id="records-list" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px]">
-              <p class="text-center text-slate-400 py-16 font-medium">Select a Month Tab above to load live records.</p>
+              <div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Scanning Google Drive records...</p></div>
             </div>
           </div>
         `;
         
-        populateDynamicSheetTabs(ssId, "sel-month");
+        loadDynamicReportMonths(ssId);
       } else if (section === 'staircase') {
         renderStaircaseUI();
       } else if (section === 'toc') {
@@ -365,80 +345,56 @@
       }
     }
 
-    async function populateDynamicSheetTabs(spreadsheetId, targetSelectId) {
-      const select = document.getElementById(targetSelectId);
-      if (!select) return;
-
+    async function loadDynamicReportMonths(spreadsheetId) {
+      const monthSel = document.getElementById("sel-month");
       try {
         const res = await fetch(`${API_URL}?action=getSheetTabs&spreadsheetId=${spreadsheetId}`);
         const data = await res.json();
 
         if (data.status === "success" && data.tabs && data.tabs.length > 0) {
-          select.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months (${data.tabs.length} Tabs) --</option>`;
+          monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months (${data.tabs.length} Months) --</option>`;
           data.tabs.forEach(t => {
-            select.innerHTML += `<option value="${t}" class="bg-slate-900">${t}</option>`;
+            monthSel.innerHTML += `<option value="${t}" class="bg-slate-900">${t}</option>`;
           });
-          select.disabled = false;
-          fetchRecordsRealtime();
-        } else {
-          select.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
-          select.disabled = false;
-          fetchRecordsRealtime();
         }
-      } catch (err) {
-        select.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
-        select.disabled = false;
-        fetchRecordsRealtime();
-      }
+      } catch (e) {}
+
+      fetchDirectDriveReportRecords();
     }
 
-    function onReportYearChange() {
-      fetchRecordsRealtime();
+    function onReportDropdownChange() {
+      fetchDirectDriveReportRecords();
     }
 
-    function fetchRecordsRealtime() {
-      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : "2026";
+    async function fetchDirectDriveReportRecords() {
       const month = document.getElementById("sel-month") ? document.getElementById("sel-month").value : "ALL";
       const listArea = document.getElementById("records-list");
+      const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
 
-      if (activeRealtimeUnsubscribe) {
-        activeRealtimeUnsubscribe();
-        activeRealtimeUnsubscribe = null;
-      }
-
-      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Connecting to live Firestore database...</p></div>`;
-      updateStatusBadge("debug-info", "loading", `Connecting to Real-Time Cloud Firestore...`);
-
-      const collectionName = (currentSection === 'parking') ? 'parking_violations' : 'breakdown_logs';
+      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching records directly from Google Drive...</p></div>`;
+      updateStatusBadge("debug-info", "loading", "Fetching live spreadsheet records from Google Drive...");
 
       try {
-        const { collection, query, where, onSnapshot, limit } = window.fs;
-        const colRef = collection(window.db, collectionName);
+        const res = await fetch(`${API_URL}?action=getReportRecords&spreadsheetId=${ssId}&month=${encodeURIComponent(month)}`);
+        const data = await res.json();
 
-        let q;
-        if (month !== "ALL") {
-          q = query(colRef, where("_year", "==", year), where("_tabMonth", "==", month));
-        } else {
-          q = query(colRef, where("_year", "==", year), limit(300));
-        }
-
-        activeRealtimeUnsubscribe = onSnapshot(q, (querySnapshot) => {
-          currentRawData = [];
-          querySnapshot.forEach(doc => currentRawData.push(doc.data()));
-          currentRawData = sortRecordsDescending(currentRawData);
-
-          updateStatusBadge("debug-info", "success", `Live Stream Connected! ${currentRawData.length} records active.`);
+        if (data.status === "success" && data.records && data.records.length > 0) {
+          currentRawData = data.records;
+          updateStatusBadge("debug-info", "success", `Loaded ${currentRawData.length} records (Newest first)!`);
           executeSearch();
-        }, (err) => {
-          updateStatusBadge("debug-info", "error", `Failed to connect real-time stream.`);
-        });
+        } else {
+          currentRawData = [];
+          listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">No records found for ${month}.</p>`;
+          updateStatusBadge("debug-info", "idle", "No records found.");
+        }
       } catch (err) {
-        updateStatusBadge("debug-info", "error", `Failed to load records.`);
+        listArea.innerHTML = `<p class="text-center text-red-400 py-16 font-medium">Failed to read records from Google Drive.</p>`;
+        updateStatusBadge("debug-info", "error", "Connection error.");
       }
     }
 
     // =========================================================================
-    // DIRECT GOOGLE DRIVE TOC CAMERA (Root -> YYYY -> MM-MMM -> DD)
+    // DIRECT DRIVE TOC CAMERA (Root -> YYYY -> MM-MMM -> DD)
     // =========================================================================
     function renderTocUI() {
       const area = document.getElementById("content-area");
@@ -449,7 +405,6 @@
               <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">📷 TOC Camera Photo Navigator</h2>
 
               <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
-                <!-- 1. YEAR -->
                 <div class="flex items-center space-x-1 flex-shrink-0">
                   <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
                   <select id="sel-toc-year" onchange="onDriveTocYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
@@ -457,7 +412,6 @@
                   </select>
                 </div>
 
-                <!-- 2. MONTH -->
                 <div class="flex items-center space-x-1 flex-shrink-0">
                   <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month:</label>
                   <select id="sel-toc-month" onchange="onDriveTocMonthSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
@@ -465,7 +419,6 @@
                   </select>
                 </div>
 
-                <!-- 3. DATE -->
                 <div class="flex items-center space-x-1 flex-shrink-0">
                   <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">3. Date:</label>
                   <select id="sel-toc-date" onchange="loadDriveTocPhotos()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none min-w-[120px]" disabled>
@@ -572,7 +525,7 @@
     }
 
     // =========================================================================
-    // DIRECT GOOGLE DRIVE L2 STAIRCASE
+    // DIRECT DRIVE L2 STAIRCASE
     // =========================================================================
     function renderStaircaseUI() {
       const area = document.getElementById("content-area");
@@ -630,22 +583,9 @@
       }
     }
 
-    // RENDERING & HELPERS
-    function renderPhotoGrid(photos, grid) {
-      let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">`;
-      photos.forEach(p => {
-        let name = p.fileName || p.name || 'Photo';
-        html += `
-          <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-2.5 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
-            <img src="${p.imgUrl}" class="w-full h-40 object-cover rounded-xl mb-2 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
-            <p class="text-[11px] text-slate-300 truncate text-center font-medium">${name}</p>
-          </div>
-        `;
-      });
-      html += `</div>`;
-      grid.innerHTML = html;
-    }
-
+    // =========================================================================
+    // RENDERING, SEARCH & PAGINATION
+    // =========================================================================
     function executeSearch() {
       const query = (document.getElementById("search-input") ? document.getElementById("search-input").value : "").toLowerCase().trim();
       currentFilteredData = currentRawData;
@@ -665,42 +605,7 @@
       executeSearch();
     }
 
-    function parseAndFormatRecordDate(record) {
-      if (record.epoch && !isNaN(record.epoch) && record.Date && record.Date.includes('/')) {
-        return { displayDate: record.Date, epoch: parseInt(record.epoch, 10) };
-      }
-
-      let rawDate = record['Date'] || record['Timestamp'] || record['createdAt'] || '';
-      let rawYear = record._year || new Date().getFullYear().toString();
-      let day = '01';
-      let month = '01';
-      let year = rawYear;
-
-      if (rawDate) {
-        let s = rawDate.toString().trim();
-        let mSlash = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
-        if (mSlash) {
-          day = String(mSlash[1]).padStart(2, '0');
-          month = String(mSlash[2]).padStart(2, '0');
-          year = mSlash[3];
-        }
-      }
-
-      let displayDate = `${day}/${month}/${year}`;
-      let isoDateStr = `${year}-${month}-${day}T00:00:00Z`;
-      let epoch = new Date(isoDateStr).getTime() || 0;
-      return { displayDate, epoch };
-    }
-
-    function sortRecordsDescending(records) {
-      return records.sort((a, b) => {
-        let dateA = parseAndFormatRecordDate(a).epoch;
-        let dateB = parseAndFormatRecordDate(b).epoch;
-        if (dateB !== dateA) return dateB - dateA;
-        return (parseInt(b.rowNumber || 0, 10)) - (parseInt(a.rowNumber || 0, 10));
-      });
-    }
-
+    // RENDER PARKING CARDS (1st row left -> right, 2nd row left -> right)
     function renderParkingCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -718,17 +623,18 @@
         const plateImg = convertDriveUrl(r['Plate Photo Link'] || r['Plate Photo']);
         const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo']);
         const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo']);
-        const formattedDate = parseAndFormatRecordDate(r).displayDate;
 
         html += `
-          <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition">
-            <div class="flex justify-between items-start mb-2">
-              <span class="font-bold text-blue-400 text-lg tracking-wide">${r['License Plate'] || 'N/A'}</span>
-              <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
+          <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-2">
+                <span class="font-bold text-blue-400 text-lg tracking-wide">${r['License Plate'] || 'N/A'}</span>
+                <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
+              </div>
+              <p class="text-xs text-slate-300 mb-1"><strong>Officer:</strong> ${r['Officer Name'] || '-'}</p>
+              <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${r.Date} ${r['Time'] || ''}</p>
+              <p class="text-xs text-slate-300 mb-3"><strong>Level:</strong> ${r['Level'] || '-'}</p>
             </div>
-            <p class="text-xs text-slate-300 mb-1"><strong>Officer:</strong> ${r['Officer Name'] || '-'}</p>
-            <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${formattedDate} ${r['Time'] || ''}</p>
-            <p class="text-xs text-slate-300 mb-3"><strong>Level:</strong> ${r['Level'] || '-'}</p>
 
             <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/80 mt-2">
               ${renderPhotoThumbnail(plateImg, 'Plate')}
@@ -752,6 +658,7 @@
       listArea.innerHTML = html;
     }
 
+    // RENDER BREAKDOWN CARDS
     function renderBreakdownCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -769,7 +676,6 @@
         const isResolved = (r['Status'] || '').toLowerCase().includes('resolved');
         const badgeClass = isResolved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30';
         const photoImg = convertDriveUrl(r['Photo Link'] || r['Photo']);
-        const formattedDate = parseAndFormatRecordDate(r).displayDate;
 
         html += `
           <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-red-400/50 transition">
@@ -777,7 +683,7 @@
               <div class="flex flex-wrap items-center gap-2 mb-1.5">
                 <span class="font-bold text-white text-base tracking-wide">${r['Asset Unit'] || 'Asset'}</span>
                 <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeClass}">${r['Status'] || 'Pending'}</span>
-                <span class="text-xs text-slate-400 font-medium">📅 ${formattedDate || r._tabMonth}</span>
+                <span class="text-xs text-slate-400 font-medium">📅 ${r.Date}</span>
               </div>
               <p class="text-xs text-slate-300 mt-1"><strong>Brand/Type:</strong> ${r['Asset Brand/Type'] || '-'}</p>
               <p class="text-xs text-red-400 mt-0.5"><strong>Issue/Fault:</strong> ${r['Issue / Fault'] || '-'}</p>
@@ -801,6 +707,21 @@
         `;
       }
       listArea.innerHTML = html;
+    }
+
+    function renderPhotoGrid(photos, grid) {
+      let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">`;
+      photos.forEach(p => {
+        let name = p.fileName || p.name || 'Photo';
+        html += `
+          <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-2.5 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
+            <img src="${p.imgUrl}" class="w-full h-40 object-cover rounded-xl mb-2 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
+            <p class="text-[11px] text-slate-300 truncate text-center font-medium">${name}</p>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      grid.innerHTML = html;
     }
 
     function printReportTextOnly() {
@@ -834,17 +755,16 @@
       `;
 
       currentFilteredData.forEach((r, idx) => {
-        const formattedDate = parseAndFormatRecordDate(r).displayDate;
         html += `
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
             ${currentSection === 'parking' ? `
-              <td style="border: 1px solid #ddd; padding: 8px;">${formattedDate} ${r['Time'] || ''}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r.Date} ${r['Time'] || ''}</td>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['License Plate'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Officer Name'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Level'] || '-'}</td>
             ` : `
-              <td style="border: 1px solid #ddd; padding: 8px;">${formattedDate}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r.Date}</td>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['Asset Unit'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Issue / Fault'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Action Taken / Result'] || '-'}</td>
@@ -867,11 +787,10 @@
       let bodyText = `WA FCC Master Portal Report Summary List (%0D%0ATotal Records: ${currentFilteredData.length})%0D%0A%0D%0A`;
 
       currentFilteredData.forEach((r, idx) => {
-        const formattedDate = parseAndFormatRecordDate(r).displayDate;
         if (currentSection === 'parking') {
-          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date: ${formattedDate}%0D%0A`;
+          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date: ${r.Date}%0D%0A`;
         } else {
-          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date: ${formattedDate}%0D%0A`;
+          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date: ${r.Date}%0D%0A`;
         }
       });
 
@@ -925,8 +844,7 @@
     window.loginUser = loginUser;
     window.logout = logout;
     window.showSection = showSection;
-    window.onReportYearChange = onReportYearChange;
-    window.fetchRecordsRealtime = fetchRecordsRealtime;
+    window.onReportDropdownChange = onReportDropdownChange;
     window.onDriveTocYearSelected = onDriveTocYearSelected;
     window.onDriveTocMonthSelected = onDriveTocMonthSelected;
     window.loadDriveTocPhotos = loadDriveTocPhotos;
