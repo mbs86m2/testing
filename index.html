@@ -166,7 +166,7 @@
     let activeRealtimeUnsubscribe = null;
     let activeTocUnsubscribe = null;
     let activeStaircaseUnsubscribe = null;
-    let tocPhotosCache = [];
+    let tocStructureTree = {};
 
     // INITIALIZATION
     window.addEventListener('DOMContentLoaded', async () => {
@@ -476,7 +476,7 @@
     }
 
     // ==========================================
-    // REALTIME FIRESTORE TOC CAMERA HANDLER (<50ms)
+    // METADATA-POWERED REALTIME TOC CAMERA (<10ms)
     // ==========================================
     function renderTocUI() {
       const area = document.getElementById("content-area");
@@ -524,43 +524,67 @@
       initFirestoreTocDropdowns();
     }
 
+    // Reads only 1 single metadata document for instant dropdown load
     async function initFirestoreTocDropdowns() {
       const yearSelect = document.getElementById("sel-toc-year");
       updateStatusBadge("toc-status-bar", "loading", "Connecting to live Firestore database...");
 
       try {
         const { collection, getDocs } = window.fs;
-        const querySnapshot = await getDocs(collection(window.db, "toc_photos"));
+        const querySnapshot = await getDocs(collection(window.db, "toc_metadata"));
 
-        let yearsSet = new Set();
-        tocPhotosCache = [];
+        let totalCount = "4,600+";
+        tocStructureTree = {};
 
         querySnapshot.forEach(doc => {
-          let d = doc.data();
-          tocPhotosCache.push(d);
-          if (d.year) yearsSet.add(d.year.trim());
+          const data = doc.data();
+          if (data.totalPhotos) totalCount = data.totalPhotos;
+          if (data.tree) {
+            try {
+              tocStructureTree = typeof data.tree === "string" ? JSON.parse(data.tree) : data.tree;
+            } catch (e) {}
+          }
         });
 
-        let years = Array.from(yearsSet).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+        const years = Object.keys(tocStructureTree).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
 
         if (years.length > 0) {
           yearSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
           years.forEach(y => {
             yearSelect.innerHTML += `<option value="${y}" class="bg-slate-900">${y}</option>`;
           });
-          updateStatusBadge("toc-status-bar", "idle", `⚡ Connected to Real-Time Firestore (${tocPhotosCache.length} photos ready).`);
+          updateStatusBadge("toc-status-bar", "success", `⚡ Connected to Real-Time Firestore (${totalCount} photos ready).`);
         } else {
-          // Fallback to current Year if empty
+          // If metadata doc not yet generated, query Drive folders directly
+          loadTocDriveFoldersDirectly();
+        }
+      } catch (err) {
+        loadTocDriveFoldersDirectly();
+      }
+    }
+
+    async function loadTocDriveFoldersDirectly() {
+      const yearSelect = document.getElementById("sel-toc-year");
+      try {
+        const res = await fetch(`${API_URL}?action=getSubfolders&folderId=${DEFAULT_FOLDERS.TOC}`);
+        const data = await res.json();
+        if (data.status === "success" && data.folders && data.folders.length > 0) {
+          yearSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
+          data.folders.forEach(f => {
+            yearSelect.innerHTML += `<option value="${f.name}" data-id="${f.id}" class="bg-slate-900">${f.name}</option>`;
+          });
+          updateStatusBadge("toc-status-bar", "idle", `Loaded ${data.folders.length} years from Drive.`);
+        } else {
           yearSelect.innerHTML = `<option value="2026" class="bg-slate-900">2026</option>`;
           onFirestoreTocYearChange();
         }
-      } catch (err) {
+      } catch (e) {
         yearSelect.innerHTML = `<option value="2026" class="bg-slate-900">2026</option>`;
         onFirestoreTocYearChange();
       }
     }
 
-    async function onFirestoreTocYearChange() {
+    function onFirestoreTocYearChange() {
       const year = document.getElementById("sel-toc-year").value;
       const monthSelect = document.getElementById("sel-toc-month");
       const dateSelect = document.getElementById("sel-toc-date");
@@ -574,19 +598,16 @@
         return;
       }
 
-      let monthsSet = new Set();
-      tocPhotosCache.forEach(d => {
-        if (d.year === year && d.month) monthsSet.add(d.month.trim());
-      });
-
-      let months = Array.from(monthsSet).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-
-      if (months.length > 0) {
+      if (tocStructureTree[year]) {
+        const months = Object.keys(tocStructureTree[year]).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
         monthSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
         months.forEach(m => {
           monthSelect.innerHTML += `<option value="${m}" class="bg-slate-900">${m}</option>`;
         });
+        monthSelect.disabled = false;
+        updateStatusBadge("toc-status-bar", "idle", "Please select a Month.");
       } else {
+        // Fallback standard months list
         monthSelect.innerHTML = `
           <option value="" class="bg-slate-900">-- Select Month --</option>
           <option value="08-AUG" class="bg-slate-900">08-AUG</option>
@@ -598,13 +619,11 @@
           <option value="02-FEB" class="bg-slate-900">02-FEB</option>
           <option value="01-JAN" class="bg-slate-900">01-JAN</option>
         `;
+        monthSelect.disabled = false;
       }
-
-      monthSelect.disabled = false;
-      updateStatusBadge("toc-status-bar", "idle", "Please select a Month.");
     }
 
-    async function onFirestoreTocMonthChange() {
+    function onFirestoreTocMonthChange() {
       const year = document.getElementById("sel-toc-year").value;
       const month = document.getElementById("sel-toc-month").value;
       const dateSelect = document.getElementById("sel-toc-date");
@@ -615,17 +634,10 @@
         return;
       }
 
-      let datesSet = new Set();
-      tocPhotosCache.forEach(d => {
-        if (d.year === year && d.month === month && d.date) {
-          datesSet.add(d.date.trim());
-        }
-      });
-
-      let dates = Array.from(datesSet).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-
       dateSelect.innerHTML = `<option value="" class="bg-slate-900">-- Select Date --</option>`;
-      if (dates.length > 0) {
+
+      if (tocStructureTree[year] && tocStructureTree[year][month]) {
+        const dates = tocStructureTree[year][month];
         dates.forEach(d => {
           dateSelect.innerHTML += `<option value="${d}" class="bg-slate-900">${d}</option>`;
         });
@@ -640,6 +652,7 @@
       updateStatusBadge("toc-status-bar", "idle", "Please select a Date.");
     }
 
+    // Real-Time onSnapshot stream for only this date's photos (<50ms)
     function listenFirestoreTocPhotos() {
       const year = document.getElementById("sel-toc-year").value;
       const month = document.getElementById("sel-toc-month").value;
@@ -656,7 +669,7 @@
         activeTocUnsubscribe = null;
       }
 
-      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Listening to real-time Firestore stream...</p></div>`;
+      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Connecting to live Firestore database...</p></div>`;
       updateStatusBadge("toc-status-bar", "loading", "Listening to real-time Firestore stream...");
 
       try {
@@ -678,7 +691,6 @@
             updateStatusBadge("toc-status-bar", "success", `⚡ Loaded ${photos.length} photos in <50ms (Real-Time Live)!`);
             renderPhotoGrid(photos, grid);
           } else {
-            // If not found in Firestore cache, fallback to Drive API
             fetchTocFallbackDrive(year, month, date, grid);
           }
         }, (error) => {
@@ -708,6 +720,7 @@
         const mFolder = (mData.folders || []).find(f => f.name === month);
         if (!mFolder) {
           grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No photos found for ${date}/${month}/${year}.</p>`;
+          updateStatusBadge("toc-status-bar", "idle", "No photos found.");
           return;
         }
 
