@@ -156,10 +156,13 @@
     let currentSection = "";
     let currentDisplayLimit = 30;
 
-    window.addEventListener('DOMContentLoaded', () => {
+    // IMMEDIATE INITIALIZATION FOR MODULE SCRIPTS
+    initPortal();
+
+    function initPortal() {
       loadPortalUsers();
       restoreSessionIfValid();
-    });
+    }
 
     function updateActivityTimestamp() {
       lastActivityTime = Date.now();
@@ -777,4 +780,149 @@
         html += `
           <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-2.5 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
             <img src="${p.imgUrl}" class="w-full h-40 object-cover rounded-xl mb-2 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
-            <p class=
+            <p class="text-[11px] text-slate-300 truncate text-center font-medium">${name}</p>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      grid.innerHTML = html;
+    }
+
+    function printReportTextOnly() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { alert("No records to print."); return; }
+      const area = document.getElementById("printable-area");
+      const reportTitle = currentSection === 'parking' ? 'Parking Violations Text Report' : 'Breakdown Logs Text Report';
+      
+      let html = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">WA FCC Master Portal - ${reportTitle}</h2>
+          <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Generated: ${new Date().toLocaleString()} | Records: ${currentFilteredData.length}</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f2f2f2; text-align: left;">
+                <th style="border: 1px solid #ddd; padding: 8px;">#</th>
+                ${currentSection === 'parking' ? `
+                  <th style="border: 1px solid #ddd; padding: 8px;">Date/Time</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">License Plate</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Officer</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Level</th>
+                ` : `
+                  <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Asset Unit</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Issue / Fault</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Action / Result</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
+                `}
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      currentFilteredData.forEach((r, idx) => {
+        let cleanDate = (r.Date || '').toString().split(' ')[0];
+        html += `
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
+            ${currentSection === 'parking' ? `
+              <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate} ${r['Time'] || ''}</td>
+              <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['License Plate'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Officer Name'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Level'] || '-'}</td>
+            ` : `
+              <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate}</td>
+              <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['Asset Unit'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Issue / Fault'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Action Taken / Result'] || '-'}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${r['Status'] || '-'}</td>
+            `}
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table></div>`;
+      area.innerHTML = html;
+      area.classList.remove("hidden");
+      window.print();
+      area.classList.add("hidden");
+    }
+
+    function emailReportTextOnly() {
+      if (!currentFilteredData || currentFilteredData.length === 0) { alert("No records to email."); return; }
+      const subject = encodeURIComponent(`WA FCC Master Portal Report Summary - ${currentSection.toUpperCase()}`);
+      let bodyText = `WA FCC Master Portal Report Summary List (%0D%0ATotal Records: ${currentFilteredData.length})%0D%0A%0D%0A`;
+
+      currentFilteredData.forEach((r, idx) => {
+        let cleanDate = (r.Date || '').toString().split(' ')[0];
+        if (currentSection === 'parking') {
+          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date: ${cleanDate}%0D%0A`;
+        } else {
+          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date: ${cleanDate}%0D%0A`;
+        }
+      });
+
+      window.location.href = `mailto:?subject=${subject}&body=${bodyText}`;
+    }
+
+    function convertDriveUrl(url) {
+      if (!url || url === '-' || url.toString().trim() === '') return '';
+      let s = url.toString().trim();
+      let match = s.match(/(?:\/d\/|id=|=HYPERLINK\(")(a-zA-Z0-9_-]{25,})/i) || s.match(/([a-zA-Z0-9_-]{25,})/);
+      if (match && match[1] && !match[1].startsWith('http')) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+      if (s.startsWith('http')) return s;
+      return '';
+    }
+
+    function renderPhotoThumbnail(imgUrl, label) {
+      if (!imgUrl) return `<div class="bg-slate-950/80 rounded-lg p-2 text-center text-[10px] text-slate-500 border border-slate-800">No ${label}</div>`;
+      return `
+        <div onclick="openPhotoModal('${imgUrl}', '${label}')" class="block group relative overflow-hidden rounded-lg bg-slate-950 border border-slate-700/80 cursor-zoom-in">
+          <img src="${imgUrl}" class="w-full h-16 object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+          <span class="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[9px] text-center py-0.5 font-medium">${label}</span>
+        </div>
+      `;
+    }
+
+    function openPhotoModal(imgUrl, title) {
+      document.getElementById("modal-img").src = imgUrl;
+      document.getElementById("modal-caption").innerText = title || "Photo Preview";
+      document.getElementById("photo-modal").classList.remove("hidden");
+    }
+
+    function closePhotoModal() {
+      document.getElementById("photo-modal").classList.add("hidden");
+    }
+
+    function updateStatusBadge(targetId, state, message) {
+      const debugBox = document.getElementById(targetId);
+      if (!debugBox) return;
+      if (state === "loading") {
+        debugBox.innerHTML = `<span class="text-xs text-blue-400 font-semibold animate-pulse">⚙️ ${message}</span>`;
+      } else if (state === "success") {
+        debugBox.innerHTML = `<span class="text-xs text-emerald-400 font-semibold">✅ ${message}</span>`;
+      } else {
+        debugBox.innerHTML = `<span class="text-xs text-slate-400 font-semibold">${message}</span>`;
+      }
+    }
+
+    // EXPOSE TO GLOBAL WINDOW
+    window.loginUser = loginUser;
+    window.logout = logout;
+    window.showSection = showSection;
+    window.onReportYearSelected = onReportYearSelected;
+    window.fetchDirectDriveReportRecords = fetchDirectDriveReportRecords;
+    window.onDriveTocYearSelected = onDriveTocYearSelected;
+    window.onDriveTocMonthSelected = onDriveTocMonthSelected;
+    window.loadDriveTocPhotos = loadDriveTocPhotos;
+    window.loadDriveStaircasePhotos = loadDriveStaircasePhotos;
+    window.executeSearch = executeSearch;
+    window.loadMoreRecords = loadMoreRecords;
+    window.printReportTextOnly = printReportTextOnly;
+    window.emailReportTextOnly = emailReportTextOnly;
+    window.openPhotoModal = openPhotoModal;
+    window.closePhotoModal = closePhotoModal;
+    window.closeInactivityModal = closeInactivityModal;
+  </script>
+</body>
+</html>
