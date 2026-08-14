@@ -274,6 +274,38 @@
     }
 
     // =========================================================================
+    // DYNAMIC YEAR POPULATION FROM GOOGLE DRIVE
+    // =========================================================================
+    async function populateYearDropdown() {
+      const yearSel = document.getElementById("sel-year");
+      if (!yearSel) return;
+
+      yearSel.innerHTML = `<option value="" class="bg-slate-900">Scanning Years...</option>`;
+
+      try {
+        const res = await fetch(`${API_URL}?action=getAvailableYears`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.years && data.years.length > 0) {
+          yearSel.innerHTML = `<option value="" class="bg-slate-900">-- Select Year --</option>`;
+          data.years.forEach(y => {
+            yearSel.innerHTML += `<option value="${y}" class="bg-slate-900">${y}</option>`;
+          });
+        } else {
+          yearSel.innerHTML = `
+            <option value="" class="bg-slate-900">-- Select Year --</option>
+            <option value="${new Date().getFullYear()}" class="bg-slate-900">${new Date().getFullYear()}</option>
+          `;
+        }
+      } catch (err) {
+        yearSel.innerHTML = `
+          <option value="" class="bg-slate-900">-- Select Year --</option>
+          <option value="2026" class="bg-slate-900">2026</option>
+        `;
+      }
+    }
+
+    // =========================================================================
     // SECTION NAVIGATION & PARKING VIOLATIONS
     // =========================================================================
     function showSection(section) {
@@ -294,14 +326,11 @@
                 <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
 
                 <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
-                  <!-- 1. YEAR (Starts with -- Select Year --) -->
+                  <!-- 1. DYNAMIC YEAR (Populates only existing years from Drive) -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
                     <select id="sel-year" onchange="onReportYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
-                      <option value="" class="bg-slate-900">-- Select Year --</option>
-                      <option value="2026" class="bg-slate-900">2026</option>
-                      <option value="2025" class="bg-slate-900">2025</option>
-                      <option value="2024" class="bg-slate-900">2024</option>
+                      <option value="" class="bg-slate-900">Loading Years...</option>
                     </select>
                   </div>
 
@@ -337,6 +366,7 @@
           </div>
         `;
         
+        populateYearDropdown();
         updateStatusBadge("debug-info", "idle", "Ready. Please select a Year.");
       } else if (section === 'staircase') {
         renderStaircaseUI();
@@ -424,7 +454,7 @@
     }
 
     // =========================================================================
-    // DIRECT DRIVE TOC CAMERA (UNTOUCHED)
+    // DIRECT DRIVE TOC CAMERA
     // =========================================================================
     function renderTocUI() {
       const area = document.getElementById("content-area");
@@ -555,7 +585,7 @@
     }
 
     // =========================================================================
-    // DIRECT DRIVE L2 STAIRCASE (UNTOUCHED)
+    // DIRECT DRIVE L2 STAIRCASE
     // =========================================================================
     function renderStaircaseUI() {
       const area = document.getElementById("content-area");
@@ -614,7 +644,7 @@
     }
 
     // =========================================================================
-    // RENDERING & PARKING CARDS (1st row left -> right, 2nd row left -> right)
+    // RENDERING & PARKING CARDS
     // =========================================================================
     function executeSearch() {
       const query = (document.getElementById("search-input") ? document.getElementById("search-input").value : "").toLowerCase().trim();
@@ -653,6 +683,8 @@
         const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo']);
         const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo']);
 
+        let cleanDate = (r.Date || 'N/A').toString().split(' ')[0];
+
         html += `
           <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
             <div>
@@ -661,7 +693,7 @@
                 <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
               </div>
               <p class="text-xs text-slate-300 mb-1"><strong>Officer:</strong> ${r['Officer Name'] || '-'}</p>
-              <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${r.Date} ${r['Time'] || ''}</p>
+              <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${cleanDate} ${r['Time'] || ''}</p>
               <p class="text-xs text-slate-300 mb-3"><strong>Level:</strong> ${r['Level'] || '-'}</p>
             </div>
 
@@ -704,6 +736,7 @@
         const isResolved = (r['Status'] || '').toLowerCase().includes('resolved');
         const badgeClass = isResolved ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30';
         const photoImg = convertDriveUrl(r['Photo Link'] || r['Photo']);
+        let cleanDate = (r.Date || 'N/A').toString().split(' ')[0];
 
         html += `
           <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-red-400/50 transition">
@@ -711,7 +744,7 @@
               <div class="flex flex-wrap items-center gap-2 mb-1.5">
                 <span class="font-bold text-white text-base tracking-wide">${r['Asset Unit'] || 'Asset'}</span>
                 <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeClass}">${r['Status'] || 'Pending'}</span>
-                <span class="text-xs text-slate-400 font-medium">📅 ${r.Date}</span>
+                <span class="text-xs text-slate-400 font-medium">📅 ${cleanDate}</span>
               </div>
               <p class="text-xs text-slate-300 mt-1"><strong>Brand/Type:</strong> ${r['Asset Brand/Type'] || '-'}</p>
               <p class="text-xs text-red-400 mt-0.5"><strong>Issue/Fault:</strong> ${r['Issue / Fault'] || '-'}</p>
@@ -744,147 +777,4 @@
         html += `
           <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-2.5 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
             <img src="${p.imgUrl}" class="w-full h-40 object-cover rounded-xl mb-2 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
-            <p class="text-[11px] text-slate-300 truncate text-center font-medium">${name}</p>
-          </div>
-        `;
-      });
-      html += `</div>`;
-      grid.innerHTML = html;
-    }
-
-    function printReportTextOnly() {
-      if (!currentFilteredData || currentFilteredData.length === 0) { alert("No records to print."); return; }
-      const area = document.getElementById("printable-area");
-      const reportTitle = currentSection === 'parking' ? 'Parking Violations Text Report' : 'Breakdown Logs Text Report';
-      
-      let html = `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">WA FCC Master Portal - ${reportTitle}</h2>
-          <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Generated: ${new Date().toLocaleString()} | Records: ${currentFilteredData.length}</p>
-          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-            <thead>
-              <tr style="background-color: #f2f2f2; text-align: left;">
-                <th style="border: 1px solid #ddd; padding: 8px;">#</th>
-                ${currentSection === 'parking' ? `
-                  <th style="border: 1px solid #ddd; padding: 8px;">Date/Time</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">License Plate</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">Officer</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">Level</th>
-                ` : `
-                  <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">Asset Unit</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">Issue / Fault</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">Action / Result</th>
-                  <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
-                `}
-              </tr>
-            </thead>
-            <tbody>
-      `;
-
-      currentFilteredData.forEach((r, idx) => {
-        html += `
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
-            ${currentSection === 'parking' ? `
-              <td style="border: 1px solid #ddd; padding: 8px;">${r.Date} ${r['Time'] || ''}</td>
-              <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['License Plate'] || '-'}</td>
-              <td style="border: 1px solid #ddd; padding: 8px;">${r['Officer Name'] || '-'}</td>
-              <td style="border: 1px solid #ddd; padding: 8px;">${r['Level'] || '-'}</td>
-            ` : `
-              <td style="border: 1px solid #ddd; padding: 8px;">${r.Date}</td>
-              <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['Asset Unit'] || '-'}</td>
-              <td style="border: 1px solid #ddd; padding: 8px;">${r['Issue / Fault'] || '-'}</td>
-              <td style="border: 1px solid #ddd; padding: 8px;">${r['Action Taken / Result'] || '-'}</td>
-              <td style="border: 1px solid #ddd; padding: 8px;">${r['Status'] || '-'}</td>
-            `}
-          </tr>
-        `;
-      });
-
-      html += `</tbody></table></div>`;
-      area.innerHTML = html;
-      area.classList.remove("hidden");
-      window.print();
-      area.classList.add("hidden");
-    }
-
-    function emailReportTextOnly() {
-      if (!currentFilteredData || currentFilteredData.length === 0) { alert("No records to email."); return; }
-      const subject = encodeURIComponent(`WA FCC Master Portal Report Summary - ${currentSection.toUpperCase()}`);
-      let bodyText = `WA FCC Master Portal Report Summary List (%0D%0ATotal Records: ${currentFilteredData.length})%0D%0A%0D%0A`;
-
-      currentFilteredData.forEach((r, idx) => {
-        if (currentSection === 'parking') {
-          bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date: ${r.Date}%0D%0A`;
-        } else {
-          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date: ${r.Date}%0D%0A`;
-        }
-      });
-
-      window.location.href = `mailto:?subject=${subject}&body=${bodyText}`;
-    }
-
-    function convertDriveUrl(url) {
-      if (!url || url === '-' || url.toString().trim() === '') return '';
-      let s = url.toString().trim();
-      let match = s.match(/(?:\/d\/|id=|=HYPERLINK\(")(a-zA-Z0-9_-]{25,})/i) || s.match(/([a-zA-Z0-9_-]{25,})/);
-      if (match && match[1] && !match[1].startsWith('http')) {
-        return `https://lh3.googleusercontent.com/d/${match[1]}`;
-      }
-      if (s.startsWith('http')) return s;
-      return '';
-    }
-
-    function renderPhotoThumbnail(imgUrl, label) {
-      if (!imgUrl) return `<div class="bg-slate-950/80 rounded-lg p-2 text-center text-[10px] text-slate-500 border border-slate-800">No ${label}</div>`;
-      return `
-        <div onclick="openPhotoModal('${imgUrl}', '${label}')" class="block group relative overflow-hidden rounded-lg bg-slate-950 border border-slate-700/80 cursor-zoom-in">
-          <img src="${imgUrl}" class="w-full h-16 object-cover group-hover:scale-105 transition duration-300" loading="lazy">
-          <span class="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[9px] text-center py-0.5 font-medium">${label}</span>
-        </div>
-      `;
-    }
-
-    function openPhotoModal(imgUrl, title) {
-      document.getElementById("modal-img").src = imgUrl;
-      document.getElementById("modal-caption").innerText = title || "Photo Preview";
-      document.getElementById("photo-modal").classList.remove("hidden");
-    }
-
-    function closePhotoModal() {
-      document.getElementById("photo-modal").classList.add("hidden");
-    }
-
-    function updateStatusBadge(targetId, state, message) {
-      const debugBox = document.getElementById(targetId);
-      if (!debugBox) return;
-      if (state === "loading") {
-        debugBox.innerHTML = `<span class="text-xs text-blue-400 font-semibold animate-pulse">⚙️ ${message}</span>`;
-      } else if (state === "success") {
-        debugBox.innerHTML = `<span class="text-xs text-emerald-400 font-semibold">✅ ${message}</span>`;
-      } else {
-        debugBox.innerHTML = `<span class="text-xs text-slate-400 font-semibold">${message}</span>`;
-      }
-    }
-
-    // EXPOSE TO GLOBAL WINDOW
-    window.loginUser = loginUser;
-    window.logout = logout;
-    window.showSection = showSection;
-    window.onReportYearSelected = onReportYearSelected;
-    window.fetchDirectDriveReportRecords = fetchDirectDriveReportRecords;
-    window.onDriveTocYearSelected = onDriveTocYearSelected;
-    window.onDriveTocMonthSelected = onDriveTocMonthSelected;
-    window.loadDriveTocPhotos = loadDriveTocPhotos;
-    window.loadDriveStaircasePhotos = loadDriveStaircasePhotos;
-    window.executeSearch = executeSearch;
-    window.loadMoreRecords = loadMoreRecords;
-    window.printReportTextOnly = printReportTextOnly;
-    window.emailReportTextOnly = emailReportTextOnly;
-    window.openPhotoModal = openPhotoModal;
-    window.closePhotoModal = closePhotoModal;
-    window.closeInactivityModal = closeInactivityModal;
-  </script>
-</body>
-</html>
+            <p class=
