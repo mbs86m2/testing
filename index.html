@@ -439,7 +439,7 @@
         if (data.status === "success" && data.records && data.records.length > 0) {
           currentRawData = data.records;
 
-          // Client-side safeguard to ensure absolute newest-first order
+          // Client-side safeguard to ensure absolute newest-first descending order
           currentRawData.sort((a, b) => {
             let epA = Number(a.epoch) || 0;
             let epB = Number(b.epoch) || 0;
@@ -669,7 +669,7 @@
       executeSearch();
     }
 
-    // PARKING VIOLATIONS CARDS
+    // PARKING VIOLATIONS CARDS (WAFP MATCHED)
     function renderParkingCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -684,17 +684,17 @@
       html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
 
       displayRecords.forEach(r => {
-        // Read Column A (Date) & Column B (Time) & Column C (Officer Name)
-        let cleanDate = (r['Date'] || r['Date/Time'] || 'N/A').toString().split(' ')[0].trim();
-        let cleanTime = (r['Time'] || '').toString().trim();
-        let officer = r['Officer Name'] || r['Officer'] || '-';
-        let plate = r['License Plate'] || r['Plate'] || 'N/A';
-        let level = r['Level'] || '-';
-        let tabMonth = r['_tabMonth'] || '';
+        // Read Column A (Date), Column B (Time), Column C (Officer Name)
+        const cleanDate = (r['Date'] || r['Date/Time'] || 'N/A').toString().trim();
+        const cleanTime = (r['Time'] || '').toString().trim();
+        const officer = r['Officer Name'] || r['Officer'] || '-';
+        const plate = r['License Plate'] || r['Plate'] || 'N/A';
+        const level = r['Level'] || '-';
+        const tabMonth = r['_tabMonth'] || '';
 
-        const plateImg = convertDriveUrl(r['Plate Photo Link'] || r['Plate Photo'] || r['Plate Image'] || r['Plate']);
-        const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo'] || r['Notice Image'] || r['Notice']);
-        const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo'] || r['Vehicle Image'] || r['Vehicle']);
+        const plateImg = convertDriveUrl(r['Plate Photo Link'] || r['Plate Photo']);
+        const noticeImg = convertDriveUrl(r['Notice Photo Link'] || r['Notice Photo']);
+        const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo']);
 
         html += `
           <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
@@ -828,8 +828,8 @@
       `;
 
       currentFilteredData.forEach((r, idx) => {
-        let cleanDate = (r.Date || '').toString().split(' ')[0];
-        let cleanTime = (r.Time || '').toString();
+        let cleanDate = (r.Date || '').toString().trim();
+        let cleanTime = (r.Time || '').toString().trim();
         html += `
           <tr>
             <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
@@ -862,8 +862,8 @@
       let bodyText = `WA FCC Master Portal Report Summary List (%0D%0ATotal Records: ${currentFilteredData.length})%0D%0A%0D%0A`;
 
       currentFilteredData.forEach((r, idx) => {
-        let cleanDate = (r.Date || '').toString().split(' ')[0];
-        let cleanTime = (r.Time || '').toString();
+        let cleanDate = (r.Date || '').toString().trim();
+        let cleanTime = (r.Time || '').toString().trim();
         if (currentSection === 'parking') {
           bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date/Time: ${cleanDate} ${cleanTime}%0D%0A`;
         } else {
@@ -874,7 +874,6 @@
       window.location.href = `mailto:?subject=${subject}&body=${bodyText}`;
     }
 
-    // ROBUST DRIVE URL CONVERTER
     function convertDriveUrl(url) {
       if (!url || url === '-' || url.toString().trim() === '') return '';
       let s = url.toString().trim();
