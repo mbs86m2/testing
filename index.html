@@ -140,7 +140,6 @@
       BREAKDOWN: "1rbjfI3G4DsnAojN7O0w04xRNE6efFPs11ESDDAE76oY"
     };
 
-    // PORTAL USERS (Default password is 123)
     const PORTAL_USERS = [
       { name: "FCC Supervisor", role: "Admin", password: "123" },
       { name: "Duty Controller", role: "Controller", password: "123" },
@@ -275,17 +274,17 @@
     }
 
     // =========================================================================
-    // SECTION NAVIGATION & PARKING VIOLATIONS (DIRECT DRIVE/SHEET)
+    // SECTION NAVIGATION & PARKING VIOLATIONS
     // =========================================================================
     function showSection(section) {
       currentSection = section;
       currentDisplayLimit = 30;
+      currentRawData = [];
       saveSessionState();
       const area = document.getElementById("content-area");
 
       if (section === 'parking' || section === 'breakdown') {
         const title = section === 'parking' ? '🚗 Parking Violations Report' : '⚠️ Breakdown Logs Report';
-        const ssId = section === 'parking' ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
 
         area.innerHTML = `
           <div class="flex flex-col h-full">
@@ -295,21 +294,22 @@
                 <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
 
                 <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
-                  <!-- 1. YEAR -->
+                  <!-- 1. YEAR (Starts with -- Select Year --) -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
-                    <select id="sel-year" onchange="onReportDropdownChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                    <select id="sel-year" onchange="onReportYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                      <option value="" class="bg-slate-900">-- Select Year --</option>
                       <option value="2026" class="bg-slate-900">2026</option>
                       <option value="2025" class="bg-slate-900">2025</option>
                       <option value="2024" class="bg-slate-900">2024</option>
                     </select>
                   </div>
 
-                  <!-- 2. MONTH (WITH ALL MONTHS OPTION) -->
+                  <!-- 2. MONTH (Disabled until Year is chosen) -->
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
-                    <select id="sel-month" onchange="onReportDropdownChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
-                      <option value="ALL" class="bg-slate-900">-- All Months --</option>
+                    <select id="sel-month" onchange="fetchDirectDriveReportRecords()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
+                      <option value="" class="bg-slate-900">-- Select Month --</option>
                     </select>
                   </div>
 
@@ -330,14 +330,14 @@
               <div id="debug-info" class="mt-2 text-center"></div>
             </div>
 
-            <!-- SCROLLABLE CARDS GRID (1st row left -> right, 2nd row left -> right) -->
+            <!-- SCROLLABLE CARDS VIEWPORT -->
             <div id="records-list" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px]">
-              <div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Scanning Google Drive records...</p></div>
+              <p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>
             </div>
           </div>
         `;
         
-        loadDynamicReportMonths(ssId);
+        updateStatusBadge("debug-info", "idle", "Ready. Please select a Year.");
       } else if (section === 'staircase') {
         renderStaircaseUI();
       } else if (section === 'toc') {
@@ -345,34 +345,64 @@
       }
     }
 
-    async function loadDynamicReportMonths(spreadsheetId) {
+    // When Year is selected, populate Month tabs descending
+    async function onReportYearSelected() {
+      const year = document.getElementById("sel-year").value;
       const monthSel = document.getElementById("sel-month");
+      const listArea = document.getElementById("records-list");
+      const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
+
+      if (!year) {
+        monthSel.disabled = true;
+        monthSel.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>`;
+        updateStatusBadge("debug-info", "idle", "Ready. Please select a Year.");
+        return;
+      }
+
+      monthSel.disabled = true;
+      monthSel.innerHTML = `<option value="" class="bg-slate-900">Loading Month Tabs...</option>`;
+      updateStatusBadge("debug-info", "loading", "Fetching available month tabs from spreadsheet...");
+
       try {
-        const res = await fetch(`${API_URL}?action=getSheetTabs&spreadsheetId=${spreadsheetId}`);
+        const res = await fetch(`${API_URL}?action=getSheetTabs&spreadsheetId=${ssId}`);
         const data = await res.json();
 
         if (data.status === "success" && data.tabs && data.tabs.length > 0) {
+          // Descending Month List
           monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months (${data.tabs.length} Months) --</option>`;
           data.tabs.forEach(t => {
             monthSel.innerHTML += `<option value="${t}" class="bg-slate-900">${t}</option>`;
           });
+          monthSel.disabled = false;
+          updateStatusBadge("debug-info", "idle", "Please select a Month or view All Months.");
+          fetchDirectDriveReportRecords();
+        } else {
+          monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
+          monthSel.disabled = false;
+          fetchDirectDriveReportRecords();
         }
-      } catch (e) {}
-
-      fetchDirectDriveReportRecords();
+      } catch (e) {
+        monthSel.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
+        monthSel.disabled = false;
+        fetchDirectDriveReportRecords();
+      }
     }
 
-    function onReportDropdownChange() {
-      fetchDirectDriveReportRecords();
-    }
-
+    // Fetches live records from Google Sheet & sorts descending
     async function fetchDirectDriveReportRecords() {
+      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : "";
       const month = document.getElementById("sel-month") ? document.getElementById("sel-month").value : "ALL";
       const listArea = document.getElementById("records-list");
       const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
 
-      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching records directly from Google Drive...</p></div>`;
-      updateStatusBadge("debug-info", "loading", "Fetching live spreadsheet records from Google Drive...");
+      if (!year) {
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>`;
+        return;
+      }
+
+      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching records directly from Google Drive (${month})...</p></div>`;
+      updateStatusBadge("debug-info", "loading", `Loading records for ${month}...`);
 
       try {
         const res = await fetch(`${API_URL}?action=getReportRecords&spreadsheetId=${ssId}&month=${encodeURIComponent(month)}`);
@@ -380,11 +410,11 @@
 
         if (data.status === "success" && data.records && data.records.length > 0) {
           currentRawData = data.records;
-          updateStatusBadge("debug-info", "success", `Loaded ${currentRawData.length} records (Newest first)!`);
+          updateStatusBadge("debug-info", "success", `Loaded ${currentRawData.length} records in descending order (Newest first)!`);
           executeSearch();
         } else {
           currentRawData = [];
-          listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">No records found for ${month}.</p>`;
+          listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">No records found for ${month} (${year}).</p>`;
           updateStatusBadge("debug-info", "idle", "No records found.");
         }
       } catch (err) {
@@ -394,7 +424,7 @@
     }
 
     // =========================================================================
-    // DIRECT DRIVE TOC CAMERA (Root -> YYYY -> MM-MMM -> DD)
+    // DIRECT DRIVE TOC CAMERA (UNTOUCHED)
     // =========================================================================
     function renderTocUI() {
       const area = document.getElementById("content-area");
@@ -525,7 +555,7 @@
     }
 
     // =========================================================================
-    // DIRECT DRIVE L2 STAIRCASE
+    // DIRECT DRIVE L2 STAIRCASE (UNTOUCHED)
     // =========================================================================
     function renderStaircaseUI() {
       const area = document.getElementById("content-area");
@@ -584,7 +614,7 @@
     }
 
     // =========================================================================
-    // RENDERING, SEARCH & PAGINATION
+    // RENDERING & PARKING CARDS (1st row left -> right, 2nd row left -> right)
     // =========================================================================
     function executeSearch() {
       const query = (document.getElementById("search-input") ? document.getElementById("search-input").value : "").toLowerCase().trim();
@@ -605,7 +635,6 @@
       executeSearch();
     }
 
-    // RENDER PARKING CARDS (1st row left -> right, 2nd row left -> right)
     function renderParkingCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -616,7 +645,7 @@
       let displayRecords = records.slice(0, currentDisplayLimit);
       let isPaginated = records.length > currentDisplayLimit;
 
-      let html = `<div class="text-xs text-slate-400 mb-3 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Latest first)</div>`;
+      let html = `<div class="text-xs text-slate-400 mb-3 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
       html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
 
       displayRecords.forEach(r => {
@@ -658,7 +687,6 @@
       listArea.innerHTML = html;
     }
 
-    // RENDER BREAKDOWN CARDS
     function renderBreakdownCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -669,7 +697,7 @@
       let displayRecords = records.slice(0, currentDisplayLimit);
       let isPaginated = records.length > currentDisplayLimit;
 
-      let html = `<div class="text-xs text-slate-400 mb-3 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Latest first)</div>`;
+      let html = `<div class="text-xs text-slate-400 mb-3 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
       html += `<div class="space-y-3">`;
 
       displayRecords.forEach(r => {
@@ -844,7 +872,8 @@
     window.loginUser = loginUser;
     window.logout = logout;
     window.showSection = showSection;
-    window.onReportDropdownChange = onReportDropdownChange;
+    window.onReportYearSelected = onReportYearSelected;
+    window.fetchDirectDriveReportRecords = fetchDirectDriveReportRecords;
     window.onDriveTocYearSelected = onDriveTocYearSelected;
     window.onDriveTocMonthSelected = onDriveTocMonthSelected;
     window.loadDriveTocPhotos = loadDriveTocPhotos;
