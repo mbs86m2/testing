@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WA FCC Master Portal</title>
+  
+  <!-- BROWSER TAB FAVICON -->
+  <link rel="icon" type="image/jpeg" href="photos/wafcc.jpg">
+  <link rel="shortcut icon" type="image/jpeg" href="photos/wafcc.jpg">
+  <link rel="apple-touch-icon" href="photos/wafcc.jpg">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -11,12 +17,28 @@
       background-color: #0f172a !important;
       color: #ffffff !important;
     }
+    /* Sleek custom scrollbars for inner record boxes */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.5);
+    }
   </style>
 </head>
-<body class="login-bg min-h-screen text-white antialiased">
+<body class="login-bg h-screen w-screen text-white antialiased overflow-hidden">
 
   <!-- LOGIN SCREEN -->
-  <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4">
+  <div id="login-screen" class="flex flex-col items-center justify-center h-full w-full p-4 overflow-y-auto">
     <div class="bg-slate-900/60 backdrop-blur-md p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-white/20 text-white">
       <img src="photos/wafcc.jpg" alt="WA FCC Logo" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl object-cover border border-white/20">
       
@@ -45,59 +67,61 @@
     </div>
   </div>
 
-  <!-- MAIN DASHBOARD -->
-  <div id="dashboard-screen" class="hidden min-h-screen flex flex-col">
-    <header class="bg-slate-900/80 backdrop-blur-xl border-b border-white/10 text-white shadow-xl no-print sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+  <!-- MAIN DASHBOARD (VIEWPORT-LOCKED, NO WHOLE-PAGE SCROLL) -->
+  <div id="dashboard-screen" class="hidden h-screen w-screen flex flex-col overflow-hidden">
+    <header class="bg-slate-900/80 backdrop-blur-xl border-b border-white/10 text-white shadow-xl no-print flex-shrink-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-          <img src="photos/wafcc.jpg" alt="WA FCC Logo" class="w-10 h-10 rounded-xl shadow-md object-cover border border-white/20">
+          <img src="photos/wafcc.jpg" alt="WA FCC Logo" class="w-9 h-9 rounded-xl shadow-md object-cover border border-white/20">
           <div>
-            <h1 class="text-lg font-bold tracking-wide">WA FCC Master Portal Report</h1>
-            <p class="text-xs text-slate-400" id="user-badge"></p>
+            <h1 class="text-base md:text-lg font-bold tracking-wide leading-tight">WA FCC Master Portal Report</h1>
+            <p class="text-[11px] text-slate-400 leading-tight" id="user-badge"></p>
           </div>
         </div>
 
         <div class="flex items-center space-x-3">
-          <button onclick="logout()" class="text-xs bg-red-900/60 hover:bg-red-800 border border-red-500/30 px-3.5 py-2 rounded-xl text-red-200 font-semibold transition">
+          <button onclick="logout()" class="text-xs bg-red-900/60 hover:bg-red-800 border border-red-500/30 px-3.5 py-1.5 rounded-xl text-red-200 font-semibold transition">
             Sign Out
           </button>
         </div>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full flex flex-col">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 no-print">
-        <button onclick="showSection('toc')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-5 rounded-2xl shadow-xl transition border border-white/15 hover:border-blue-400/50 flex flex-col items-center text-center">
-          <div class="w-32 h-32 md:w-36 md:h-36 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+    <main class="max-w-7xl mx-auto px-4 py-3 flex-1 w-full flex flex-col min-h-0 overflow-hidden">
+      <!-- 4 TOP NAV BUTTONS (COMPACT TO MAXIMIZE CONTENT VIEWPORT) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 no-print flex-shrink-0">
+        <button onclick="showSection('toc')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-2.5 rounded-xl shadow-xl transition border border-white/15 hover:border-blue-400/50 flex flex-col items-center text-center">
+          <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-1 group-hover:scale-105 transition duration-300">
             <img src="photos/toc-camera.png" alt="TOC Camera" class="w-full h-full object-contain icon-white-outline">
           </div>
-          <span class="font-bold text-slate-100 text-sm md:text-base tracking-wide">TOC Camera</span>
+          <span class="font-bold text-slate-100 text-xs md:text-sm tracking-wide">TOC Camera</span>
         </button>
 
-        <button onclick="showSection('parking')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-5 rounded-2xl shadow-xl transition border border-white/15 hover:border-amber-400/50 flex flex-col items-center text-center">
-          <div class="w-32 h-32 md:w-36 md:h-36 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+        <button onclick="showSection('parking')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-2.5 rounded-xl shadow-xl transition border border-white/15 hover:border-amber-400/50 flex flex-col items-center text-center">
+          <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-1 group-hover:scale-105 transition duration-300">
             <img src="photos/parking-violation.png" alt="Parking Violations" class="w-full h-full object-contain icon-white-outline">
           </div>
-          <span class="font-bold text-slate-100 text-sm md:text-base tracking-wide">Parking Violations</span>
+          <span class="font-bold text-slate-100 text-xs md:text-sm tracking-wide">Parking Violations</span>
         </button>
 
-        <button onclick="showSection('breakdown')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-5 rounded-2xl shadow-xl transition border border-white/15 hover:border-red-400/50 flex flex-col items-center text-center">
-          <div class="w-32 h-32 md:w-36 md:h-36 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+        <button onclick="showSection('breakdown')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-2.5 rounded-xl shadow-xl transition border border-white/15 hover:border-red-400/50 flex flex-col items-center text-center">
+          <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-1 group-hover:scale-105 transition duration-300">
             <img src="photos/breakdown.png" alt="Breakdown Logs" class="w-full h-full object-contain icon-white-outline">
           </div>
-          <span class="font-bold text-slate-100 text-sm md:text-base tracking-wide">Breakdown Logs</span>
+          <span class="font-bold text-slate-100 text-xs md:text-sm tracking-wide">Breakdown Logs</span>
         </button>
 
-        <button onclick="showSection('staircase')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-5 rounded-2xl shadow-xl transition border border-white/15 hover:border-emerald-400/50 flex flex-col items-center text-center">
-          <div class="w-32 h-32 md:w-36 md:h-36 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+        <button onclick="showSection('staircase')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-2.5 rounded-xl shadow-xl transition border border-white/15 hover:border-emerald-400/50 flex flex-col items-center text-center">
+          <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-1 group-hover:scale-105 transition duration-300">
             <img src="photos/l2-staircase.png" alt="L2 Staircase" class="w-full h-full object-contain icon-white-outline">
           </div>
-          <span class="font-bold text-slate-100 text-sm md:text-base tracking-wide">L2 Staircase</span>
+          <span class="font-bold text-slate-100 text-xs md:text-sm tracking-wide">L2 Staircase</span>
         </button>
       </div>
 
-      <div id="content-area" class="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/15 p-6 flex-1 flex flex-col min-h-[500px]">
-        <p class="text-center text-slate-400 my-auto font-medium">Select a section above to view records or photos.</p>
+      <!-- MAIN CONTENT BOX (FITS ABOVE WINDOWS TASKBAR, INTERNALLY SCROLLABLE) -->
+      <div id="content-area" class="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/15 p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+        <p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>
       </div>
     </main>
   </div>
@@ -181,6 +205,23 @@
     function triggerAutoLogout() {
       sessionStorage.removeItem("fcc_session_v8");
       loggedInUser = null;
+      currentSection = "";
+      currentRawData = [];
+      currentFilteredData = [];
+
+      // 1. Blank the password box, keep name as is
+      const passInput = document.getElementById("user-password");
+      if (passInput) passInput.value = "";
+
+      // 2. Reset content area to default empty placeholder
+      const area = document.getElementById("content-area");
+      if (area) {
+        area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+      }
+
+      const statusBox = document.getElementById("auth-status");
+      if (statusBox) statusBox.className = "hidden";
+
       document.getElementById("dashboard-screen").classList.add("hidden");
       document.getElementById("login-screen").classList.remove("hidden");
       document.getElementById("inactivity-modal").classList.remove("hidden");
@@ -188,6 +229,8 @@
 
     function closeInactivityModal() {
       document.getElementById("inactivity-modal").classList.add("hidden");
+      const passInput = document.getElementById("user-password");
+      if (passInput) passInput.focus();
     }
 
     function saveSessionState() {
@@ -197,7 +240,6 @@
       }
       sessionStorage.setItem("fcc_session_v8", JSON.stringify({
         user: loggedInUser,
-        section: currentSection,
         lastActivity: lastActivityTime
       }));
     }
@@ -216,7 +258,10 @@
           document.getElementById("dashboard-screen").classList.remove("hidden");
           document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
 
-          if (session.section) showSection(session.section);
+          const area = document.getElementById("content-area");
+          if (area) {
+            area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+          }
           return true;
         }
       } catch(e) {}
@@ -236,7 +281,8 @@
 
     function loginUser() {
       const name = document.getElementById("user-name-select").value;
-      const pass = document.getElementById("user-password").value;
+      const passInput = document.getElementById("user-password");
+      const pass = passInput ? passInput.value : "";
       const statusBox = document.getElementById("auth-status");
 
       if (!name || !pass) { 
@@ -252,7 +298,12 @@
       if (foundUser && foundUser.password === pass) {
         loggedInUser = { name: foundUser.name, role: foundUser.role || "Viewer" };
         lastActivityTime = Date.now();
+        currentSection = "";
+        currentRawData = [];
+        currentFilteredData = [];
         saveSessionState();
+
+        if (passInput) passInput.value = "";
 
         statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block font-semibold";
         statusBox.innerText = "✓ Access Granted";
@@ -261,6 +312,11 @@
           document.getElementById("login-screen").classList.add("hidden");
           document.getElementById("dashboard-screen").classList.remove("hidden");
           document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
+          
+          const area = document.getElementById("content-area");
+          if (area) {
+            area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+          }
         }, 150);
       } else {
         statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold";
@@ -270,7 +326,22 @@
 
     function logout() {
       loggedInUser = null;
+      currentSection = "";
+      currentRawData = [];
+      currentFilteredData = [];
       sessionStorage.removeItem("fcc_session_v8");
+
+      const passInput = document.getElementById("user-password");
+      if (passInput) passInput.value = "";
+
+      const area = document.getElementById("content-area");
+      if (area) {
+        area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
+      }
+
+      const statusBox = document.getElementById("auth-status");
+      if (statusBox) statusBox.className = "hidden";
+
       document.getElementById("dashboard-screen").classList.add("hidden");
       document.getElementById("login-screen").classList.remove("hidden");
     }
@@ -316,52 +387,52 @@
       currentSection = section;
       currentDisplayLimit = 30;
       currentRawData = [];
-      saveSessionState();
       const area = document.getElementById("content-area");
 
       if (section === 'parking' || section === 'breakdown') {
         const title = section === 'parking' ? '🚗 Parking Violations Report' : '⚠️ Breakdown Logs Report';
 
         area.innerHTML = `
-          <div class="flex flex-col h-full">
-            <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
+          <div class="flex flex-col h-full min-h-0">
+            <div class="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-xl mb-3 flex-shrink-0">
+              <div class="flex flex-wrap items-center justify-between gap-2.5">
+                <h2 class="text-sm md:text-base font-bold text-white tracking-wide whitespace-nowrap">${title}</h2>
 
                 <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
                   <div class="flex items-center space-x-1 flex-shrink-0">
-                    <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
-                    <select id="sel-year" onchange="onReportYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                    <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+                    <select id="sel-year" onchange="onReportYearSelected()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none">
                       <option value="" class="bg-slate-900">Loading Years...</option>
                     </select>
                   </div>
 
                   <div class="flex items-center space-x-1 flex-shrink-0">
-                    <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
-                    <select id="sel-month" onchange="fetchDirectDriveReportRecords()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
+                    <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
+                    <select id="sel-month" onchange="fetchDirectDriveReportRecords()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none" disabled>
                       <option value="" class="bg-slate-900">-- Select Month --</option>
                     </select>
                   </div>
 
                   <div class="relative flex items-center flex-shrink-0">
-                    <input id="search-input" type="text" placeholder="Type to search..." oninput="executeSearch()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs w-40 sm:w-56 bg-slate-800 text-white placeholder-slate-400 outline-none">
+                    <input id="search-input" type="text" placeholder="Search..." oninput="executeSearch()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs w-32 sm:w-48 bg-slate-800 text-white placeholder-slate-400 outline-none">
                   </div>
 
-                  <div class="h-5 w-px bg-slate-700 flex-shrink-0"></div>
+                  <div class="h-4 w-px bg-slate-700 flex-shrink-0"></div>
 
-                  <button onclick="printReportTextOnly()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm flex items-center space-x-1 whitespace-nowrap transition">
+                  <button onclick="printReportTextOnly()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm flex items-center space-x-1 whitespace-nowrap transition">
                     <span>🖨️ Print</span>
                   </button>
-                  <button onclick="emailReportTextOnly()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm flex items-center space-x-1 whitespace-nowrap transition">
+                  <button onclick="emailReportTextOnly()" class="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/30 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm flex items-center space-x-1 whitespace-nowrap transition">
                     <span>✉️ Email</span>
                   </button>
                 </div>
               </div>
-              <div id="debug-info" class="mt-2 text-center"></div>
+              <div id="debug-info" class="mt-1 text-center"></div>
             </div>
 
-            <div id="records-list" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px]">
-              <p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>
+            <!-- VIEWPORT-CONSTRAINED SCROLLABLE CONTAINER -->
+            <div id="records-list" class="flex-1 overflow-y-auto pr-1 min-h-0">
+              <p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>
             </div>
           </div>
         `;
@@ -384,7 +455,7 @@
       if (!year) {
         monthSel.disabled = true;
         monthSel.innerHTML = `<option value="" class="bg-slate-900">-- Select Month --</option>`;
-        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>`;
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>`;
         updateStatusBadge("debug-info", "idle", "Ready. Please select a Year.");
         return;
       }
@@ -424,11 +495,11 @@
       const ssId = (currentSection === 'parking') ? SPREADSHEET_IDS.PARKING : SPREADSHEET_IDS.BREAKDOWN;
 
       if (!year) {
-        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Please select a Year above to load records.</p>`;
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>`;
         return;
       }
 
-      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching records (${month})...</p></div>`;
+      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-xs text-slate-300 font-medium">Fetching records (${month})...</p></div>`;
       updateStatusBadge("debug-info", "loading", `Loading records for ${month}...`);
 
       try {
@@ -438,7 +509,6 @@
         if (data.status === "success" && data.records && data.records.length > 0) {
           currentRawData = data.records;
 
-          // Client-side safeguard to ensure absolute newest-first descending order
           currentRawData.sort((a, b) => {
             let epA = Number(a.epoch) || 0;
             let epB = Number(b.epoch) || 0;
@@ -450,11 +520,11 @@
           executeSearch();
         } else {
           currentRawData = [];
-          listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">No records found for ${month} (${year}).</p>`;
+          listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">No records found for ${month} (${year}).</p>`;
           updateStatusBadge("debug-info", "idle", "No records found.");
         }
       } catch (err) {
-        listArea.innerHTML = `<p class="text-center text-red-400 py-16 font-medium">Failed to read records from Google Drive.</p>`;
+        listArea.innerHTML = `<p class="text-center text-red-400 py-16 font-medium text-xs">Failed to read records from Google Drive.</p>`;
         updateStatusBadge("debug-info", "error", "Connection error.");
       }
     }
@@ -465,38 +535,39 @@
     function renderTocUI() {
       const area = document.getElementById("content-area");
       area.innerHTML = `
-        <div class="flex flex-col h-full">
-          <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">📷 TOC Camera Photo Navigator</h2>
+        <div class="flex flex-col h-full min-h-0">
+          <div class="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-xl mb-3 flex-shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+              <h2 class="text-sm md:text-base font-bold text-white tracking-wide whitespace-nowrap">📷 TOC Camera Photo Navigator</h2>
 
               <div class="flex flex-nowrap items-center gap-2 overflow-x-auto">
                 <div class="flex items-center space-x-1 flex-shrink-0">
-                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
-                  <select id="sel-toc-year" onchange="onDriveTocYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                  <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+                  <select id="sel-toc-year" onchange="onDriveTocYearSelected()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none">
                     <option value="" class="bg-slate-900">Scanning Years...</option>
                   </select>
                 </div>
 
                 <div class="flex items-center space-x-1 flex-shrink-0">
-                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month:</label>
-                  <select id="sel-toc-month" onchange="onDriveTocMonthSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
+                  <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">2. Month:</label>
+                  <select id="sel-toc-month" onchange="onDriveTocMonthSelected()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none" disabled>
                     <option value="" class="bg-slate-900">-- Select Month --</option>
                   </select>
                 </div>
 
                 <div class="flex items-center space-x-1 flex-shrink-0">
-                  <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">3. Date:</label>
-                  <select id="sel-toc-date" onchange="loadDriveTocPhotos()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none min-w-[120px]" disabled>
+                  <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">3. Date:</label>
+                  <select id="sel-toc-date" onchange="loadDriveTocPhotos()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none min-w-[110px]" disabled>
                     <option value="" class="bg-slate-900">-- Select Date --</option>
                   </select>
                 </div>
               </div>
             </div>
-            <div id="toc-status-bar" class="mt-2 text-center"></div>
+            <div id="toc-status-bar" class="mt-1 text-center"></div>
           </div>
 
-          <div id="photo-grid" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px] text-center text-slate-400 py-16 font-medium">
+          <!-- VIEWPORT-CONSTRAINED PHOTO CONTAINER -->
+          <div id="photo-grid" class="flex-1 overflow-y-auto pr-1 min-h-0 text-center text-slate-400 py-16 font-medium text-xs">
             Select Year, Month, and Date above to view photos.
           </div>
         </div>
@@ -508,7 +579,7 @@
     async function loadDriveFolders(parentFolderId, targetSelectId, placeholderText, statusBoxId) {
       const select = document.getElementById(targetSelectId);
       if (!select) return;
-      if (statusBoxId) updateStatusBadge(statusBoxId, "loading", `Scanning Google Drive for ${placeholderText}...`);
+      if (statusBoxId) updateStatusBadge(statusBoxId, "loading", `Scanning Drive for ${placeholderText}...`);
 
       try {
         const res = await fetch(`${API_URL}?action=getSubfolders&folderId=${parentFolderId}`);
@@ -520,7 +591,7 @@
             select.innerHTML += `<option value="${f.id}" class="bg-slate-900">${f.name}</option>`;
           });
           select.disabled = false;
-          if (statusBoxId) updateStatusBadge(statusBoxId, "idle", `Loaded ${data.folders.length} options from Drive.`);
+          if (statusBoxId) updateStatusBadge(statusBoxId, "idle", `Loaded ${data.folders.length} options.`);
         } else {
           select.innerHTML = `<option value="" class="bg-slate-900">No folders found</option>`;
           if (statusBoxId) updateStatusBadge(statusBoxId, "idle", "No folders found.");
@@ -566,11 +637,11 @@
       const grid = document.getElementById("photo-grid");
 
       if (!dateFolderId) {
-        grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">Please select a Date above.</p>`;
+        grid.innerHTML = `<p class="text-slate-400 py-16 font-medium text-xs">Please select a Date above.</p>`;
         return;
       }
 
-      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching photos from Google Drive...</p></div>`;
+      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-xs text-slate-300 font-medium">Fetching photos from Google Drive...</p></div>`;
       updateStatusBadge("toc-status-bar", "loading", "Fetching photos from Google Drive...");
 
       try {
@@ -582,33 +653,34 @@
           renderPhotoGrid(data.photos, grid);
         } else {
           updateStatusBadge("toc-status-bar", "idle", "Folder is empty.");
-          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No photos found in this folder.</p>`;
+          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium text-xs">No photos found in this folder.</p>`;
         }
       } catch (err) {
         updateStatusBadge("toc-status-bar", "error", "Error loading photos from Google Drive.");
-        grid.innerHTML = `<p class="text-red-400 py-16 font-medium">Error loading photos.</p>`;
+        grid.innerHTML = `<p class="text-red-400 py-16 font-medium text-xs">Error loading photos.</p>`;
       }
     }
 
     function renderStaircaseUI() {
       const area = document.getElementById("content-area");
       area.innerHTML = `
-        <div class="flex flex-col h-full">
-          <div class="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-xl p-3.5 rounded-2xl border border-white/15 shadow-2xl mb-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="text-base font-bold text-white tracking-wide whitespace-nowrap">🪜 L2 Staircase Photos</h2>
+        <div class="flex flex-col h-full min-h-0">
+          <div class="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-xl mb-3 flex-shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+              <h2 class="text-sm md:text-base font-bold text-white tracking-wide whitespace-nowrap">🪜 L2 Staircase Photos</h2>
 
               <div class="flex items-center space-x-1 flex-shrink-0">
-                <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
-                <select id="sel-staircase-year" onchange="loadDriveStaircasePhotos()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
+                <label class="text-[11px] font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
+                <select id="sel-staircase-year" onchange="loadDriveStaircasePhotos()" class="px-2.5 py-1 border border-slate-600 rounded-lg text-xs bg-slate-800 text-white font-medium outline-none">
                   <option value="" class="bg-slate-900">Scanning Years...</option>
                 </select>
               </div>
             </div>
-            <div id="staircase-status-bar" class="mt-2 text-center"></div>
+            <div id="staircase-status-bar" class="mt-1 text-center"></div>
           </div>
 
-          <div id="staircase-photos-grid" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px] text-center text-slate-400 py-16 font-medium">
+          <!-- VIEWPORT-CONSTRAINED PHOTO CONTAINER -->
+          <div id="staircase-photos-grid" class="flex-1 overflow-y-auto pr-1 min-h-0 text-center text-slate-400 py-16 font-medium text-xs">
             Select a Year above to load photos.
           </div>
         </div>
@@ -622,11 +694,11 @@
       const grid = document.getElementById("staircase-photos-grid");
 
       if (!yearFolderId) {
-        grid.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Select a Year above to load photos.</p>`;
+        grid.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">Select a Year above to load photos.</p>`;
         return;
       }
 
-      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching photos from Google Drive...</p></div>`;
+      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-xs text-slate-300 font-medium">Fetching Staircase photos...</p></div>`;
       updateStatusBadge("staircase-status-bar", "loading", "Fetching Staircase photos from Google Drive...");
 
       try {
@@ -638,11 +710,11 @@
           renderPhotoGrid(data.photos, grid);
         } else {
           updateStatusBadge("staircase-status-bar", "idle", "Folder is empty.");
-          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No photos found for this year.</p>`;
+          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium text-xs">No photos found for this year.</p>`;
         }
       } catch (err) {
         updateStatusBadge("staircase-status-bar", "error", "Error loading photos from Drive.");
-        grid.innerHTML = `<p class="text-red-400 py-16 font-medium">Error reading Drive photos.</p>`;
+        grid.innerHTML = `<p class="text-red-400 py-16 font-medium text-xs">Error reading Drive photos.</p>`;
       }
     }
 
@@ -672,18 +744,17 @@
     function renderParkingCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
-        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">No parking violation records found.</p>`;
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">No parking violation records found.</p>`;
         return;
       }
 
       let displayRecords = records.slice(0, currentDisplayLimit);
       let isPaginated = records.length > currentDisplayLimit;
 
-      let html = `<div class="text-xs text-slate-400 mb-3 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
-      html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+      let html = `<div class="text-[11px] text-slate-400 mb-2 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
+      html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
 
       displayRecords.forEach(r => {
-        // Read Column A (Date), Column B (Time), Column C (Officer Name)
         const cleanDate = (r['Date'] || r['Date/Time'] || 'N/A').toString().trim();
         const cleanTime = (r['Time'] || '').toString().trim();
         const officer = r['Officer Name'] || r['Officer'] || '-';
@@ -696,18 +767,18 @@
         const vehicleImg = convertDriveUrl(r['Vehicle Photo Link'] || r['Vehicle Photo']);
 
         html += `
-          <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
+          <div class="bg-slate-900/70 border border-slate-700/80 rounded-xl p-3.5 shadow-xl backdrop-blur-md text-white hover:border-blue-400/50 transition flex flex-col justify-between">
             <div>
-              <div class="flex justify-between items-start mb-2">
-                <span class="font-bold text-blue-400 text-lg tracking-wide">${plate}</span>
-                <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-700">${tabMonth}</span>
+              <div class="flex justify-between items-start mb-1.5">
+                <span class="font-bold text-blue-400 text-base tracking-wide">${plate}</span>
+                <span class="text-[10px] bg-slate-800 text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-700">${tabMonth}</span>
               </div>
-              <p class="text-xs text-slate-300 mb-1"><strong>Officer:</strong> ${officer}</p>
-              <p class="text-xs text-slate-300 mb-1"><strong>Date/Time:</strong> ${cleanDate} ${cleanTime}</p>
-              <p class="text-xs text-slate-300 mb-3"><strong>Level:</strong> ${level}</p>
+              <p class="text-xs text-slate-300 mb-0.5"><strong>Officer:</strong> ${officer}</p>
+              <p class="text-xs text-slate-300 mb-0.5"><strong>Date/Time:</strong> ${cleanDate} ${cleanTime}</p>
+              <p class="text-xs text-slate-300 mb-2"><strong>Level:</strong> ${level}</p>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/80 mt-2">
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/80 mt-1">
               ${renderPhotoThumbnail(plateImg, 'Plate')}
               ${renderPhotoThumbnail(noticeImg, 'Notice')}
               ${renderPhotoThumbnail(vehicleImg, 'Vehicle')}
@@ -719,8 +790,8 @@
 
       if (isPaginated) {
         html += `
-          <div class="text-center mt-6">
-            <button onclick="loadMoreRecords()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-6 py-2.5 rounded-xl shadow-sm text-xs transition">
+          <div class="text-center my-4">
+            <button onclick="loadMoreRecords()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-5 py-2 rounded-xl shadow-sm text-xs transition">
               👇 Load More Records (${records.length - currentDisplayLimit} remaining)
             </button>
           </div>
@@ -733,15 +804,15 @@
     function renderBreakdownCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
-        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">No breakdown logs found.</p>`;
+        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium text-xs">No breakdown logs found.</p>`;
         return;
       }
 
       let displayRecords = records.slice(0, currentDisplayLimit);
       let isPaginated = records.length > currentDisplayLimit;
 
-      let html = `<div class="text-xs text-slate-400 mb-3 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
-      html += `<div class="space-y-3">`;
+      let html = `<div class="text-[11px] text-slate-400 mb-2 font-semibold tracking-wide">Showing ${displayRecords.length} of ${records.length} records (Newest first)</div>`;
+      html += `<div class="space-y-2.5">`;
 
       displayRecords.forEach(r => {
         const status = r['Status'] || 'Pending';
@@ -756,15 +827,15 @@
         const action = r['Action Taken / Result'] || r['Action Taken'] || r['Result'] || '-';
 
         html += `
-          <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4 shadow-xl backdrop-blur-md text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-red-400/50 transition">
+          <div class="bg-slate-900/70 border border-slate-700/80 rounded-xl p-3.5 shadow-xl backdrop-blur-md text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-red-400/50 transition">
             <div class="flex-1">
-              <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                <span class="font-bold text-white text-base tracking-wide">${asset}</span>
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeClass}">${status}</span>
-                <span class="text-xs bg-slate-800 text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
-                <span class="text-xs text-slate-400 font-medium">📅 ${dateTime}</span>
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="font-bold text-white text-sm md:text-base tracking-wide">${asset}</span>
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border ${badgeClass}">${status}</span>
+                <span class="text-[10px] bg-slate-800 text-slate-300 font-semibold px-2 py-0.5 rounded-full border border-slate-700">${r._tabMonth || ''}</span>
+                <span class="text-[11px] text-slate-400 font-medium">📅 ${dateTime}</span>
               </div>
-              <p class="text-xs text-slate-300 mt-1"><strong>Brand/Type:</strong> ${brand}</p>
+              <p class="text-xs text-slate-300 mt-0.5"><strong>Brand/Type:</strong> ${brand}</p>
               <p class="text-xs text-red-400 mt-0.5"><strong>Issue/Fault:</strong> ${issue}</p>
               <p class="text-xs text-slate-300 mt-0.5"><strong>Action Taken:</strong> ${action}</p>
             </div>
@@ -778,8 +849,8 @@
 
       if (isPaginated) {
         html += `
-          <div class="text-center mt-6">
-            <button onclick="loadMoreRecords()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-6 py-2.5 rounded-xl shadow-sm text-xs transition">
+          <div class="text-center my-4">
+            <button onclick="loadMoreRecords()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-5 py-2 rounded-xl shadow-sm text-xs transition">
               👇 Load More Records (${records.length - currentDisplayLimit} remaining)
             </button>
           </div>
@@ -787,13 +858,14 @@
       }
       listArea.innerHTML = html;
     }
+
     function renderPhotoGrid(photos, grid) {
-      let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">`;
+      let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">`;
       photos.forEach(p => {
         let name = p.fileName || p.name || 'Photo';
         html += `
-          <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-2.5 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
-            <img src="${p.imgUrl}" class="w-full h-40 object-cover rounded-xl mb-2 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
+          <div onclick="openPhotoModal('${p.imgUrl}', '${name}')" class="bg-slate-900/70 border border-slate-700/80 rounded-xl p-2 group shadow-xl hover:border-blue-400/50 transition cursor-zoom-in">
+            <img src="${p.imgUrl}" class="w-full h-32 md:h-36 object-cover rounded-lg mb-1.5 shadow-md group-hover:scale-[1.02] transition duration-300" loading="lazy">
             <p class="text-[11px] text-slate-300 truncate text-center font-medium">${name}</p>
           </div>
         `;
@@ -821,7 +893,7 @@
                   <th style="border: 1px solid #ddd; padding: 8px;">Officer</th>
                   <th style="border: 1px solid #ddd; padding: 8px;">Level</th>
                 ` : `
-                  <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Date/Time</th>
                   <th style="border: 1px solid #ddd; padding: 8px;">Asset Unit</th>
                   <th style="border: 1px solid #ddd; padding: 8px;">Issue / Fault</th>
                   <th style="border: 1px solid #ddd; padding: 8px;">Action / Result</th>
@@ -833,25 +905,31 @@
       `;
 
       currentFilteredData.forEach((r, idx) => {
-        let cleanDate = (r.Date || '').toString().trim();
-        let cleanTime = (r.Time || '').toString().trim();
-        html += `
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
-            ${currentSection === 'parking' ? `
+        if (currentSection === 'parking') {
+          let cleanDate = (r.Date || '').toString().trim();
+          let cleanTime = (r.Time || '').toString().trim();
+          html += `
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate} ${cleanTime}</td>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['License Plate'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Officer Name'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Level'] || '-'}</td>
-            ` : `
-              <td style="border: 1px solid #ddd; padding: 8px;">${cleanDate}</td>
+            </tr>
+          `;
+        } else {
+          let dateTime = (r['Date/Time'] || r['Date'] || '').toString().trim();
+          html += `
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
+              <td style="border: 1px solid #ddd; padding: 8px;">${dateTime}</td>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${r['Asset Unit'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Issue / Fault'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Action Taken / Result'] || '-'}</td>
               <td style="border: 1px solid #ddd; padding: 8px;">${r['Status'] || '-'}</td>
-            `}
-          </tr>
-        `;
+            </tr>
+          `;
+        }
       });
 
       html += `</tbody></table></div>`;
@@ -867,12 +945,13 @@
       let bodyText = `WA FCC Master Portal Report Summary List (%0D%0ATotal Records: ${currentFilteredData.length})%0D%0A%0D%0A`;
 
       currentFilteredData.forEach((r, idx) => {
-        let cleanDate = (r.Date || '').toString().trim();
-        let cleanTime = (r.Time || '').toString().trim();
         if (currentSection === 'parking') {
+          let cleanDate = (r.Date || '').toString().trim();
+          let cleanTime = (r.Time || '').toString().trim();
           bodyText += `${idx + 1}. Plate: ${r['License Plate']} | Officer: ${r['Officer Name']} | Level: ${r['Level']} | Date/Time: ${cleanDate} ${cleanTime}%0D%0A`;
         } else {
-          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date: ${cleanDate}%0D%0A`;
+          let dateTime = (r['Date/Time'] || r['Date'] || '').toString().trim();
+          bodyText += `${idx + 1}. Asset: ${r['Asset Unit']} | Fault: ${r['Issue / Fault']} | Status: ${r['Status']} | Date/Time: ${dateTime}%0D%0A`;
         }
       });
 
@@ -894,7 +973,7 @@
       if (!imgUrl) return `<div class="bg-slate-950/80 rounded-lg p-2 text-center text-[10px] text-slate-500 border border-slate-800">No ${label}</div>`;
       return `
         <div onclick="openPhotoModal('${imgUrl}', '${label}')" class="block group relative overflow-hidden rounded-lg bg-slate-950 border border-slate-700/80 cursor-zoom-in">
-          <img src="${imgUrl}" class="w-full h-16 object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+          <img src="${imgUrl}" class="w-full h-14 md:h-16 object-cover group-hover:scale-105 transition duration-300" loading="lazy">
           <span class="absolute bottom-0 inset-x-0 bg-black/75 text-white text-[9px] text-center py-0.5 font-medium">${label}</span>
         </div>
       `;
