@@ -17,22 +17,10 @@
       background-color: #0f172a !important;
       color: #ffffff !important;
     }
-    /* Sleek custom scrollbars for inner record boxes */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-      border-radius: 8px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.3);
-      border-radius: 8px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(148, 163, 184, 0.5);
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
   </style>
 </head>
 <body class="login-bg h-screen w-screen text-white antialiased overflow-hidden">
@@ -67,7 +55,7 @@
     </div>
   </div>
 
-  <!-- MAIN DASHBOARD (VIEWPORT-LOCKED, NO WHOLE-PAGE SCROLL) -->
+  <!-- MAIN DASHBOARD -->
   <div id="dashboard-screen" class="hidden h-screen w-screen flex flex-col overflow-hidden">
     <header class="bg-slate-900/80 backdrop-blur-xl border-b border-white/10 text-white shadow-xl no-print flex-shrink-0 z-40">
       <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
@@ -79,7 +67,32 @@
           </div>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2">
+          <!-- ADMIN SETTINGS DROPDOWN (ONLY VISIBLE TO ADMIN) -->
+          <div id="admin-settings-container" class="relative group hidden">
+            <button class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3.5 py-1.5 rounded-xl text-slate-200 font-semibold transition flex items-center space-x-1.5 shadow-sm">
+              <span>⚙️ Settings</span>
+              <span class="text-[10px]">▼</span>
+            </button>
+            <div class="absolute right-0 top-full pt-1.5 w-52 hidden group-hover:block z-50">
+              <div class="bg-slate-900/95 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl overflow-hidden text-xs py-1">
+                <button onclick="openChangePasswordModal()" class="w-full text-left px-4 py-2.5 hover:bg-blue-600/30 flex items-center space-x-2 text-slate-200 transition">
+                  <span>🔑</span>
+                  <span>Change Password</span>
+                </button>
+                <button onclick="openUsersManagementModal()" class="w-full text-left px-4 py-2.5 hover:bg-blue-600/30 flex items-center space-x-2 text-slate-200 transition">
+                  <span>👥</span>
+                  <span>Add / Remove Users</span>
+                </button>
+                <div class="h-px bg-white/10 my-1"></div>
+                <button onclick="openLinkStatusModal()" class="w-full text-left px-4 py-2.5 hover:bg-emerald-600/30 flex items-center space-x-2 text-emerald-300 font-semibold transition">
+                  <span>🔗</span>
+                  <span>Check Link Status</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button onclick="logout()" class="text-xs bg-red-900/60 hover:bg-red-800 border border-red-500/30 px-3.5 py-1.5 rounded-xl text-red-200 font-semibold transition">
             Sign Out
           </button>
@@ -88,7 +101,7 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-3 flex-1 w-full flex flex-col min-h-0 overflow-hidden">
-      <!-- 4 TOP NAV BUTTONS (COMPACT TO MAXIMIZE CONTENT VIEWPORT) -->
+      <!-- 4 TOP BUTTONS -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 no-print flex-shrink-0">
         <button onclick="showSection('toc')" class="group bg-slate-900/60 hover:bg-slate-800/80 backdrop-blur-xl p-2.5 rounded-xl shadow-xl transition border border-white/15 hover:border-blue-400/50 flex flex-col items-center text-center">
           <div class="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mb-1 group-hover:scale-105 transition duration-300">
@@ -119,7 +132,7 @@
         </button>
       </div>
 
-      <!-- MAIN CONTENT BOX (FITS ABOVE WINDOWS TASKBAR, INTERNALLY SCROLLABLE) -->
+      <!-- MAIN CONTENT BOX -->
       <div id="content-area" class="bg-slate-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/15 p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
         <p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>
       </div>
@@ -149,6 +162,119 @@
     </div>
   </div>
 
+  <!-- ADMIN 1: CHANGE PASSWORD MODAL -->
+  <div id="change-password-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-6 max-w-md w-full border border-white/20 text-white shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold flex items-center space-x-2">
+          <span>🔑</span>
+          <span>Change Password</span>
+        </h3>
+        <button onclick="closeAdminModal('change-password-modal')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+
+      <div class="space-y-3 text-left text-xs">
+        <div>
+          <label class="font-semibold text-slate-300 block mb-1">Current User</label>
+          <input id="cp-current-user" type="text" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-400 outline-none" disabled>
+        </div>
+        <div>
+          <label class="font-semibold text-slate-300 block mb-1">Current Password</label>
+          <input id="cp-old-pass" type="password" placeholder="Enter current password" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="font-semibold text-slate-300 block mb-1">New Password</label>
+          <input id="cp-new-pass" type="password" placeholder="Enter new password" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="font-semibold text-slate-300 block mb-1">Confirm New Password</label>
+          <input id="cp-confirm-pass" type="password" placeholder="Re-enter new password" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-600 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div id="cp-status" class="hidden mt-3 p-2.5 rounded-lg text-xs font-semibold text-center"></div>
+
+      <div class="flex space-x-2 mt-5">
+        <button onclick="closeAdminModal('change-password-modal')" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl font-semibold text-xs transition">Cancel</button>
+        <button onclick="submitChangePassword()" class="w-1/2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-semibold text-xs transition">Save Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN 2: ADD/REMOVE USERS MODAL -->
+  <div id="users-management-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-6 max-w-xl w-full border border-white/20 text-white shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold flex items-center space-x-2">
+          <span>👥</span>
+          <span>User Management</span>
+        </h3>
+        <button onclick="closeAdminModal('users-management-modal')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+
+      <!-- ADD NEW USER FORM -->
+      <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 mb-4">
+        <h4 class="text-xs font-bold text-blue-400 mb-2">Add New User</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+          <input id="new-user-name" type="text" placeholder="Full Name / Designation" class="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none">
+          <select id="new-user-role" class="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none">
+            <option value="Admin">Admin</option>
+            <option value="Viewer" selected>Viewer</option>
+          </select>
+          <input id="new-user-pass" type="password" placeholder="Password (Default 123)" class="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none">
+        </div>
+        <button onclick="addNewUser()" class="mt-2.5 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-1.5 rounded-lg text-xs transition shadow">
+          + Add User
+        </button>
+      </div>
+
+      <!-- EXISTING USERS TABLE -->
+      <div class="flex-1 overflow-y-auto min-h-0 border border-slate-700/80 rounded-xl">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-800 text-slate-300 sticky top-0">
+            <tr>
+              <th class="p-2.5">Name</th>
+              <th class="p-2.5">Role</th>
+              <th class="p-2.5 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body" class="divide-y divide-slate-800">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN 3: CHECK LINK STATUS POPUP MODAL -->
+  <div id="link-status-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900/95 backdrop-blur-xl rounded-2xl p-6 max-w-2xl w-full border border-white/20 text-white shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold flex items-center space-x-2 text-emerald-400">
+          <span>🔗</span>
+          <span>Google Drive & Spreadsheet Link Diagnostics</span>
+        </h3>
+        <button onclick="closeAdminModal('link-status-modal')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-300 mb-3">Pinging all connected Google Drive folder IDs, Google Spreadsheet IDs, and Apps Script endpoints to verify accessibility.</p>
+
+      <div id="diagnostic-results" class="flex-1 overflow-y-auto min-h-[220px] space-y-2 border border-slate-700/80 rounded-xl p-3 bg-slate-950/60">
+        <div class="text-center py-10">
+          <div class="animate-spin inline-block w-7 h-7 border-3 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+          <p class="text-xs text-slate-400 font-medium">Running link diagnostic test...</p>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-800">
+        <span class="text-[11px] text-slate-400" id="diagnostic-summary">Testing 6 targets...</span>
+        <button onclick="runLinkDiagnostics()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow">
+          <span>🔄 Re-check Status</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN SCRIPT MODULE -->
   <script type="module">
     const API_URL = "https://script.google.com/macros/s/AKfycbyf102SShb6EozCi63GrJXlsh7WVgyDHsFU_DeC8LHNYOwFb5DZtjRcaY1iWZPMTHqw/exec"; 
@@ -164,13 +290,15 @@
       BREAKDOWN: "1rbjfI3G4DsnAojN7O0w04xRNE6efFPs11ESDDAE76oY"
     };
 
-    const PORTAL_USERS = [
+    const DEFAULT_USERS = [
       { name: "FCC Supervisor", role: "Admin", password: "123" },
-      { name: "Duty Controller", role: "Controller", password: "123" },
-      { name: "Security Officer", role: "Officer", password: "123" },
-      { name: "Operations Staff", role: "Staff", password: "123" },
-      { name: "Management", role: "Management", password: "123" }
+      { name: "Duty Controller", role: "Viewer", password: "123" },
+      { name: "Security Officer", role: "Viewer", password: "123" },
+      { name: "Operations Staff", role: "Viewer", password: "123" },
+      { name: "Management", role: "Viewer", password: "123" }
     ];
+
+    let PORTAL_USERS = loadStoredUsers();
 
     const INACTIVITY_LIMIT_MS = 2 * 60 * 1000;
     let lastActivityTime = Date.now();
@@ -185,6 +313,18 @@
     function initPortal() {
       loadPortalUsers();
       restoreSessionIfValid();
+    }
+
+    function loadStoredUsers() {
+      try {
+        const stored = localStorage.getItem("fcc_portal_users_v2");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+      return [...DEFAULT_USERS];
+    }
+
+    function saveStoredUsers() {
+      localStorage.setItem("fcc_portal_users_v2", JSON.stringify(PORTAL_USERS));
     }
 
     function updateActivityTimestamp() {
@@ -209,11 +349,9 @@
       currentRawData = [];
       currentFilteredData = [];
 
-      // 1. Blank the password box, keep name as is
       const passInput = document.getElementById("user-password");
       if (passInput) passInput.value = "";
 
-      // 2. Reset content area to default empty placeholder
       const area = document.getElementById("content-area");
       if (area) {
         area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
@@ -222,6 +360,7 @@
       const statusBox = document.getElementById("auth-status");
       if (statusBox) statusBox.className = "hidden";
 
+      document.getElementById("admin-settings-container").classList.add("hidden");
       document.getElementById("dashboard-screen").classList.add("hidden");
       document.getElementById("login-screen").classList.remove("hidden");
       document.getElementById("inactivity-modal").classList.remove("hidden");
@@ -258,6 +397,10 @@
           document.getElementById("dashboard-screen").classList.remove("hidden");
           document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
 
+          if (loggedInUser.role === 'Admin') {
+            document.getElementById("admin-settings-container").classList.remove("hidden");
+          }
+
           const area = document.getElementById("content-area");
           if (area) {
             area.innerHTML = `<p class="text-center text-slate-400 my-auto font-medium text-sm">Select a section above to view records or photos.</p>`;
@@ -273,10 +416,12 @@
       const select = document.getElementById("user-name-select");
       if (!select) return;
 
+      const currentVal = select.value;
       select.innerHTML = `<option value="" class="bg-slate-900 text-white">-- Select Your Name --</option>`;
       PORTAL_USERS.forEach(u => {
         select.innerHTML += `<option value="${u.name}" class="bg-slate-900 text-white">${u.name}</option>`;
       });
+      if (currentVal) select.value = currentVal;
     }
 
     function loginUser() {
@@ -312,6 +457,13 @@
           document.getElementById("login-screen").classList.add("hidden");
           document.getElementById("dashboard-screen").classList.remove("hidden");
           document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
+
+          // Show Admin Settings button if role is Admin
+          if (loggedInUser.role === 'Admin') {
+            document.getElementById("admin-settings-container").classList.remove("hidden");
+          } else {
+            document.getElementById("admin-settings-container").classList.add("hidden");
+          }
           
           const area = document.getElementById("content-area");
           if (area) {
@@ -342,8 +494,195 @@
       const statusBox = document.getElementById("auth-status");
       if (statusBox) statusBox.className = "hidden";
 
+      document.getElementById("admin-settings-container").classList.add("hidden");
       document.getElementById("dashboard-screen").classList.add("hidden");
       document.getElementById("login-screen").classList.remove("hidden");
+    }
+
+    // =========================================================================
+    // ADMIN SETTINGS: MODALS & FUNCTIONS
+    // =========================================================================
+
+    function closeAdminModal(modalId) {
+      document.getElementById(modalId).classList.add("hidden");
+    }
+
+    // 1. CHANGE PASSWORD
+    function openChangePasswordModal() {
+      if (!loggedInUser) return;
+      document.getElementById("cp-current-user").value = `${loggedInUser.name} (${loggedInUser.role})`;
+      document.getElementById("cp-old-pass").value = "";
+      document.getElementById("cp-new-pass").value = "";
+      document.getElementById("cp-confirm-pass").value = "";
+      document.getElementById("cp-status").className = "hidden";
+      document.getElementById("change-password-modal").classList.remove("hidden");
+    }
+
+    function submitChangePassword() {
+      const oldPass = document.getElementById("cp-old-pass").value;
+      const newPass = document.getElementById("cp-new-pass").value;
+      const confPass = document.getElementById("cp-confirm-pass").value;
+      const statusBox = document.getElementById("cp-status");
+
+      if (!oldPass || !newPass || !confPass) {
+        statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-red-500/20 text-red-300 border border-red-500/30 block";
+        statusBox.innerText = "Please fill in all password fields.";
+        return;
+      }
+
+      const userIndex = PORTAL_USERS.findIndex(u => u.name === loggedInUser.name);
+      if (userIndex === -1 || PORTAL_USERS[userIndex].password !== oldPass) {
+        statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-red-500/20 text-red-300 border border-red-500/30 block";
+        statusBox.innerText = "Current password is incorrect.";
+        return;
+      }
+
+      if (newPass !== confPass) {
+        statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-red-500/20 text-red-300 border border-red-500/30 block";
+        statusBox.innerText = "New passwords do not match.";
+        return;
+      }
+
+      PORTAL_USERS[userIndex].password = newPass;
+      saveStoredUsers();
+
+      statusBox.className = "mt-3 p-2.5 rounded-lg text-xs font-semibold text-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block";
+      statusBox.innerText = "✓ Password updated successfully!";
+
+      setTimeout(() => {
+        closeAdminModal("change-password-modal");
+      }, 1200);
+    }
+
+    // 2. USER MANAGEMENT
+    function openUsersManagementModal() {
+      renderUsersTable();
+      document.getElementById("new-user-name").value = "";
+      document.getElementById("new-user-pass").value = "";
+      document.getElementById("users-management-modal").classList.remove("hidden");
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById("users-table-body");
+      if (!tbody) return;
+
+      tbody.innerHTML = "";
+      PORTAL_USERS.forEach((u, idx) => {
+        const isAdmin = u.role === "Admin";
+        const isSelf = loggedInUser && loggedInUser.name === u.name;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-800/50 transition">
+            <td class="p-2.5 font-semibold text-white">${u.name}</td>
+            <td class="p-2.5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isAdmin ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">
+                ${u.role || 'Viewer'}
+              </span>
+            </td>
+            <td class="p-2.5 text-right">
+              ${isSelf ? '<span class="text-slate-500 text-[10px] italic">Active (You)</span>' : `
+                <button onclick="removeUser(${idx})" class="text-red-400 hover:text-red-300 text-[11px] font-semibold hover:underline">
+                  Delete
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function addNewUser() {
+      const name = document.getElementById("new-user-name").value.trim();
+      const role = document.getElementById("new-user-role").value;
+      const pass = document.getElementById("new-user-pass").value.trim() || "123";
+
+      if (!name) {
+        alert("Please enter a user name.");
+        return;
+      }
+
+      if (PORTAL_USERS.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+        alert("A user with this name already exists.");
+        return;
+      }
+
+      PORTAL_USERS.push({ name: name, role: role, password: pass });
+      saveStoredUsers();
+      loadPortalUsers();
+      renderUsersTable();
+
+      document.getElementById("new-user-name").value = "";
+      document.getElementById("new-user-pass").value = "";
+    }
+
+    function removeUser(idx) {
+      if (!confirm(`Are you sure you want to remove ${PORTAL_USERS[idx].name}?`)) return;
+      PORTAL_USERS.splice(idx, 1);
+      saveStoredUsers();
+      loadPortalUsers();
+      renderUsersTable();
+    }
+
+    // 3. LINK DIAGNOSTICS & HEALTH STATUS CHECK
+    function openLinkStatusModal() {
+      document.getElementById("link-status-modal").classList.remove("hidden");
+      runLinkDiagnostics();
+    }
+
+    async function runLinkDiagnostics() {
+      const box = document.getElementById("diagnostic-results");
+      const sum = document.getElementById("diagnostic-summary");
+
+      box.innerHTML = `
+        <div class="text-center py-10">
+          <div class="animate-spin inline-block w-7 h-7 border-3 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+          <p class="text-xs text-slate-400 font-medium">Testing Google Drive folders & spreadsheet connections...</p>
+        </div>
+      `;
+      sum.innerText = "Running diagnostics...";
+
+      try {
+        const res = await fetch(`${API_URL}?action=checkHealthStatus`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.diagnostic) {
+          let html = "";
+          let okCount = 0;
+
+          data.diagnostic.forEach(item => {
+            const isOk = item.status === "ok";
+            if (isOk) okCount++;
+
+            html += `
+              <div class="p-2.5 rounded-lg border ${isOk ? 'bg-slate-900/80 border-emerald-500/30' : 'bg-red-950/40 border-red-500/40'} flex items-start justify-between gap-3 text-xs">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-base">${isOk ? '✅' : '❌'}</span>
+                    <span class="font-bold ${isOk ? 'text-white' : 'text-red-300'}">${item.target}</span>
+                    <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">${item.type}</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-1 pl-6 font-mono break-all">ID: ${item.id}</p>
+                  <p class="text-[11px] ${isOk ? 'text-emerald-400' : 'text-red-400'} pl-6 mt-0.5 font-medium">${item.message}</p>
+                </div>
+                <div class="flex-shrink-0 pt-0.5">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${isOk ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}">
+                    ${isOk ? '✓ ONLINE' : '✗ FAILED'}
+                  </span>
+                </div>
+              </div>
+            `;
+          });
+
+          box.innerHTML = html;
+          sum.innerText = `Result: ${okCount} / ${data.diagnostic.length} links verified active.`;
+        } else {
+          box.innerHTML = `<p class="text-center text-red-400 py-6 text-xs">Failed to run diagnostic test from backend.</p>`;
+          sum.innerText = "Error encountered.";
+        }
+      } catch (err) {
+        box.innerHTML = `<p class="text-center text-red-400 py-6 text-xs">Could not reach Apps Script URL. Connection failed.</p>`;
+        sum.innerText = "Connection Failed.";
+      }
     }
 
     // =========================================================================
@@ -430,7 +769,6 @@
               <div id="debug-info" class="mt-1 text-center"></div>
             </div>
 
-            <!-- VIEWPORT-CONSTRAINED SCROLLABLE CONTAINER -->
             <div id="records-list" class="flex-1 overflow-y-auto pr-1 min-h-0">
               <p class="text-center text-slate-400 py-16 font-medium text-xs">Please select a Year above to load records.</p>
             </div>
@@ -566,7 +904,6 @@
             <div id="toc-status-bar" class="mt-1 text-center"></div>
           </div>
 
-          <!-- VIEWPORT-CONSTRAINED PHOTO CONTAINER -->
           <div id="photo-grid" class="flex-1 overflow-y-auto pr-1 min-h-0 text-center text-slate-400 py-16 font-medium text-xs">
             Select Year, Month, and Date above to view photos.
           </div>
@@ -679,7 +1016,6 @@
             <div id="staircase-status-bar" class="mt-1 text-center"></div>
           </div>
 
-          <!-- VIEWPORT-CONSTRAINED PHOTO CONTAINER -->
           <div id="staircase-photos-grid" class="flex-1 overflow-y-auto pr-1 min-h-0 text-center text-slate-400 py-16 font-medium text-xs">
             Select a Year above to load photos.
           </div>
@@ -740,7 +1076,7 @@
       executeSearch();
     }
 
-    // PARKING VIOLATIONS CARDS (WAFP MATCHED)
+    // PARKING VIOLATIONS CARDS
     function renderParkingCards(records) {
       const listArea = document.getElementById("records-list");
       if (!records || records.length === 0) {
@@ -1018,6 +1354,14 @@
     window.openPhotoModal = openPhotoModal;
     window.closePhotoModal = closePhotoModal;
     window.closeInactivityModal = closeInactivityModal;
+    window.openChangePasswordModal = openChangePasswordModal;
+    window.openUsersManagementModal = openUsersManagementModal;
+    window.openLinkStatusModal = openLinkStatusModal;
+    window.closeAdminModal = closeAdminModal;
+    window.submitChangePassword = submitChangePassword;
+    window.addNewUser = addNewUser;
+    window.removeUser = removeUser;
+    window.runLinkDiagnostics = runLinkDiagnostics;
   </script>
 </body>
 </html>
