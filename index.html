@@ -9,13 +9,9 @@
 </head>
 <body class="login-bg min-h-screen text-white antialiased">
 
-  <!-- BRANDED DIMMED LOGIN SCREEN -->
+  <!-- LOGIN SCREEN -->
   <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4">
-    
-    <!-- HIGH-TRANSPARENCY FROSTED GLASS LOGIN CARD (30% OPACITY) -->
-    <div class="bg-slate-900/30 backdrop-blur-sm p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-white/25 text-white shadow-black/50">
-      
-      <!-- WA FCC LOGO WITH CURVED CORNERS -->
+    <div class="bg-slate-900/40 backdrop-blur-md p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-white/20 text-white">
       <img src="photos/wafcc.jpg" alt="WA FCC Logo" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl object-cover border border-white/20">
       
       <h1 class="text-2xl font-bold text-white mb-1 drop-shadow-md">Master Portal</h1>
@@ -23,15 +19,15 @@
 
       <div class="space-y-4 text-left">
         <div>
-          <label class="text-xs font-semibold text-slate-200 mb-1 block drop-shadow-sm">Select Your Name</label>
-          <select id="user-name-select" class="w-full px-4 py-3 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-slate-900/60 backdrop-blur-md text-white font-medium">
-            <option value="">Loading names from Firestore...</option>
+          <label class="text-xs font-semibold text-slate-200 mb-1 block">Select Your Name</label>
+          <select id="user-name-select" class="w-full px-4 py-3 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-slate-900/80 text-white font-medium">
+            <option value="">Loading users...</option>
           </select>
         </div>
 
         <div>
-          <label class="text-xs font-semibold text-slate-200 mb-1 block drop-shadow-sm">Password</label>
-          <input id="user-password" type="password" placeholder="Key in your password" onkeyup="if(event.key==='Enter') loginUser()" class="w-full px-4 py-3 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-slate-900/60 backdrop-blur-md text-white font-medium placeholder-slate-300">
+          <label class="text-xs font-semibold text-slate-200 mb-1 block">Password</label>
+          <input id="user-password" type="password" placeholder="Key in your password" onkeyup="if(event.key==='Enter') loginUser()" class="w-full px-4 py-3 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-slate-900/80 text-white font-medium placeholder-slate-400">
         </div>
 
         <button onclick="loginUser()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition shadow-lg flex items-center justify-center space-x-2">
@@ -102,7 +98,7 @@
 
   <div id="printable-area" class="hidden p-6 bg-white text-gray-900"></div>
 
-  <!-- PHOTO LIGHTBOX MODAL -->
+  <!-- LIGHTBOX MODAL -->
   <div id="photo-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 cursor-pointer" onclick="closePhotoModal(event)">
     <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
       <button onclick="closePhotoModal()" class="absolute -top-10 right-0 text-white hover:text-gray-300 font-bold text-2xl bg-slate-800/80 hover:bg-slate-700 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition z-10">✕</button>
@@ -111,12 +107,12 @@
     </div>
   </div>
 
-  <!-- INACTIVITY AUTO-LOGOUT POPUP MODAL -->
+  <!-- INACTIVITY MODAL -->
   <div id="inactivity-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-white/20 text-white">
       <div class="w-12 h-12 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">🔒</div>
       <h3 class="text-lg font-bold text-white mb-1">Session Timed Out</h3>
-      <p class="text-xs text-slate-300 mb-5">You were automatically logged out due to 2 minute of inactivity for security.</p>
+      <p class="text-xs text-slate-300 mb-5">You were automatically logged out due to inactivity for security.</p>
       <button onclick="closeInactivityModal()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-md">
         Sign In Again
       </button>
@@ -147,15 +143,9 @@
     window.db = db;
     window.fs = { collection, query, where, getDocs, limit, onSnapshot };
 
-    // Google Apps Script API URL
     const API_URL = "https://script.google.com/macros/s/AKfycbyf102SShb6EozCi63GrJXlsh7WVgyDHsFU_DeC8LHNYOwFb5DZtjRcaY1iWZPMTHqw/exec"; 
 
-    // Google Drive Folder IDs & Spreadsheet IDs
     const DEFAULT_FOLDERS = {
-      PARKING_REPORTS: "1bMhOSGlZNM979lXcY3AC9PUC4OzOwx9O",
-      PARKING_PHOTOS: "12HLGBUQ4JAe3DB2LRdKsGKJhu7zMUpuc",
-      BREAKDOWN_REPORTS: "1l1XWU8lGzWudQsq1cG4gZcZcjrTWZQNh",
-      BREAKDOWN_PHOTOS: "1zlDZMiLJYLa35PL659i8m-GblS59X82P",
       TOC: "1vOHVu0nBmMFyFxU_JrfUhrow9EvEjkDU",
       STAIRCASE: "1o6tzEfpDsJGXjs7MabioL8DcaWNlBq_T"
     };
@@ -168,16 +158,13 @@
     const INACTIVITY_LIMIT_MS = 2 * 60 * 1000;
     let lastActivityTime = Date.now();
     let loggedInUser = null;
+    let localUsersCache = [];
     let currentRawData = [];
     let currentFilteredData = [];
     let currentSection = "";
     let currentDisplayLimit = 30;
     let activeRealtimeUnsubscribe = null;
-
-    const MONTH_MAP = {
-      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
-      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
-    };
+    let activeTocUnsubscribe = null;
 
     // INITIALIZATION
     window.addEventListener('DOMContentLoaded', async () => {
@@ -194,7 +181,7 @@
       window.addEventListener(evt, updateActivityTimestamp, { passive: true });
     });
 
-    setInterval(function() {
+    setInterval(() => {
       if (loggedInUser && (Date.now() - lastActivityTime >= INACTIVITY_LIMIT_MS)) {
         triggerAutoLogout();
       }
@@ -202,6 +189,7 @@
 
     function triggerAutoLogout() {
       if (activeRealtimeUnsubscribe) { activeRealtimeUnsubscribe(); activeRealtimeUnsubscribe = null; }
+      if (activeTocUnsubscribe) { activeTocUnsubscribe(); activeTocUnsubscribe = null; }
       sessionStorage.removeItem("fcc_session_v8");
       loggedInUser = null;
       document.getElementById("dashboard-screen").classList.add("hidden");
@@ -218,12 +206,11 @@
         sessionStorage.removeItem("fcc_session_v8");
         return;
       }
-      const session = {
+      sessionStorage.setItem("fcc_session_v8", JSON.stringify({
         user: loggedInUser,
         section: currentSection,
         lastActivity: lastActivityTime
-      };
-      sessionStorage.setItem("fcc_session_v8", JSON.stringify(session));
+      }));
     }
 
     function restoreSessionIfValid() {
@@ -240,36 +227,53 @@
           document.getElementById("dashboard-screen").classList.remove("hidden");
           document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
 
-          if (session.section) {
-            showSection(session.section);
-          }
+          if (session.section) showSection(session.section);
           return true;
         }
       } catch(e) {}
-
       sessionStorage.removeItem("fcc_session_v8");
       return false;
     }
 
-    // AUTHENTICATION
+    // USER AUTH WITH GOOGLE SHEET FALLBACK
     async function fetchUsersFromFirestore() {
       const select = document.getElementById("user-name-select");
       if (!select) return;
 
+      select.innerHTML = `<option value="" class="bg-slate-900 text-white">Loading users...</option>`;
+
+      // 1. Try Firestore
       try {
         const { collection, getDocs } = window.fs;
         const querySnapshot = await getDocs(collection(window.db, "approved_users"));
 
         if (!querySnapshot.empty) {
+          localUsersCache = [];
           select.innerHTML = `<option value="" class="bg-slate-900 text-white">-- Select Your Name --</option>`;
           querySnapshot.forEach(doc => {
             const data = doc.data();
+            localUsersCache.push(data);
             select.innerHTML += `<option value="${data.name}" class="bg-slate-900 text-white">${data.name}</option>`;
+          });
+          return;
+        }
+      } catch (err) {}
+
+      // 2. Fallback to Google Sheet API
+      try {
+        const res = await fetch(`${API_URL}?action=getUsers`);
+        const data = await res.json();
+
+        if (data.status === "success" && data.users && data.users.length > 0) {
+          localUsersCache = data.users;
+          select.innerHTML = `<option value="" class="bg-slate-900 text-white">-- Select Your Name --</option>`;
+          data.users.forEach(u => {
+            select.innerHTML += `<option value="${u.name}" class="bg-slate-900 text-white">${u.name}</option>`;
           });
         } else {
           select.innerHTML = `<option value="" class="bg-slate-900 text-white">No users found</option>`;
         }
-      } catch (err) {
+      } catch (e) {
         select.innerHTML = `<option value="" class="bg-slate-900 text-white">Error loading users</option>`;
       }
     }
@@ -284,45 +288,41 @@
       statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-blue-500/20 text-blue-300 border border-blue-500/30 block font-semibold";
       statusBox.innerText = "Verifying credentials...";
 
-      try {
-        const { collection, query, where, getDocs } = window.fs;
-        const q = query(collection(window.db, "approved_users"), where("name", "==", name));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold";
-          statusBox.innerText = "User account not found.";
+      const cachedUser = localUsersCache.find(u => u.name === name);
+      if (cachedUser) {
+        if (cachedUser.password === pass) {
+          grantAccess(cachedUser);
           return;
-        }
-
-        let userData = null;
-        querySnapshot.forEach(doc => userData = doc.data());
-
-        if (userData && userData.password === pass) {
-          loggedInUser = { name: userData.name, role: userData.role || "Viewer" };
-          lastActivityTime = Date.now();
-          saveSessionState();
-
-          statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block font-semibold";
-          statusBox.innerText = "✓ Access Granted";
-
-          setTimeout(() => {
-            document.getElementById("login-screen").classList.add("hidden");
-            document.getElementById("dashboard-screen").classList.remove("hidden");
-            document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
-          }, 200);
         } else {
           statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold";
           statusBox.innerText = "Incorrect Password.";
+          return;
         }
-      } catch (err) {
-        statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold";
-        statusBox.innerText = "Authentication error.";
       }
+
+      statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-red-500/20 text-red-300 border border-red-500/30 block font-semibold";
+      statusBox.innerText = "User account not found.";
+    }
+
+    function grantAccess(userData) {
+      const statusBox = document.getElementById("auth-status");
+      loggedInUser = { name: userData.name, role: userData.role || "Viewer" };
+      lastActivityTime = Date.now();
+      saveSessionState();
+
+      statusBox.className = "mt-4 p-3 rounded-lg text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block font-semibold";
+      statusBox.innerText = "✓ Access Granted";
+
+      setTimeout(() => {
+        document.getElementById("login-screen").classList.add("hidden");
+        document.getElementById("dashboard-screen").classList.remove("hidden");
+        document.getElementById("user-badge").innerText = `${loggedInUser.name} | ${loggedInUser.role}`;
+      }, 200);
     }
 
     function logout() {
       if (activeRealtimeUnsubscribe) { activeRealtimeUnsubscribe(); activeRealtimeUnsubscribe = null; }
+      if (activeTocUnsubscribe) { activeTocUnsubscribe(); activeTocUnsubscribe = null; }
       loggedInUser = null;
       sessionStorage.removeItem("fcc_session_v8");
       document.getElementById("dashboard-screen").classList.add("hidden");
@@ -336,10 +336,8 @@
       saveSessionState();
       const area = document.getElementById("content-area");
 
-      if (activeRealtimeUnsubscribe) {
-        activeRealtimeUnsubscribe();
-        activeRealtimeUnsubscribe = null;
-      }
+      if (activeRealtimeUnsubscribe) { activeRealtimeUnsubscribe(); activeRealtimeUnsubscribe = null; }
+      if (activeTocUnsubscribe) { activeTocUnsubscribe(); activeTocUnsubscribe = null; }
 
       if (section === 'parking' || section === 'breakdown') {
         const title = section === 'parking' ? '🚗 Parking Violations Report' : '⚠️ Breakdown Logs Report';
@@ -356,14 +354,16 @@
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
                     <select id="sel-year" onchange="onReportYearChange()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
-                      <option value="" class="bg-slate-900">Detecting...</option>
+                      <option value="2026" class="bg-slate-900">2026</option>
+                      <option value="2025" class="bg-slate-900">2025</option>
+                      <option value="2024" class="bg-slate-900">2024</option>
                     </select>
                   </div>
 
                   <div class="flex items-center space-x-1 flex-shrink-0">
                     <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">2. Month Tab:</label>
                     <select id="sel-month" onchange="fetchRecordsRealtime()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none" disabled>
-                      <option value="ALL" class="bg-slate-900">Loading Tabs...</option>
+                      <option value="ALL" class="bg-slate-900">Auto-Detecting Tabs...</option>
                     </select>
                   </div>
 
@@ -385,12 +385,11 @@
             </div>
 
             <div id="records-list" class="flex-1 overflow-y-auto max-h-[calc(100vh-320px)] pr-1 min-h-[300px]">
-              <p class="text-center text-slate-400 py-16 font-medium">Select a Year above to load records.</p>
+              <p class="text-center text-slate-400 py-16 font-medium">Select a Month Tab above to load live records.</p>
             </div>
           </div>
         `;
         
-        populateDynamicYearsFromData(colName, "sel-year");
         populateDynamicSheetTabs(ssId, "sel-month");
       } else if (section === 'staircase') {
         renderStaircaseUI();
@@ -399,7 +398,6 @@
       }
     }
 
-    // AUTO-DETECT SHEET TABS FOR PARKING & BREAKDOWN
     async function populateDynamicSheetTabs(spreadsheetId, targetSelectId) {
       const select = document.getElementById(targetSelectId);
       if (!select) return;
@@ -414,42 +412,34 @@
             select.innerHTML += `<option value="${t}" class="bg-slate-900">${t}</option>`;
           });
           select.disabled = false;
+          fetchRecordsRealtime();
         } else {
           select.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
+          select.disabled = false;
+          fetchRecordsRealtime();
         }
       } catch (err) {
         select.innerHTML = `<option value="ALL" class="bg-slate-900">-- All Months --</option>`;
+        select.disabled = false;
+        fetchRecordsRealtime();
       }
     }
 
     function onReportYearChange() {
-      const year = document.getElementById("sel-year").value;
-      const monthSel = document.getElementById("sel-month");
-      if (!year) {
-        monthSel.disabled = true;
-        document.getElementById("records-list").innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Select a Year above to load records.</p>`;
-        return;
-      }
-      monthSel.disabled = false;
       fetchRecordsRealtime();
     }
 
     function fetchRecordsRealtime() {
-      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : "";
+      const year = document.getElementById("sel-year") ? document.getElementById("sel-year").value : "2026";
       const month = document.getElementById("sel-month") ? document.getElementById("sel-month").value : "ALL";
       const listArea = document.getElementById("records-list");
-
-      if (!year) {
-        listArea.innerHTML = `<p class="text-center text-slate-400 py-16 font-medium">Select a Year above to load records.</p>`;
-        return;
-      }
 
       if (activeRealtimeUnsubscribe) {
         activeRealtimeUnsubscribe();
         activeRealtimeUnsubscribe = null;
       }
 
-      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Connecting to real-time Firestore stream...</p></div>`;
+      listArea.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Connecting to live Firestore database...</p></div>`;
       updateStatusBadge("debug-info", "loading", `Connecting to Real-Time Cloud Firestore...`);
 
       const collectionName = (currentSection === 'parking') ? 'parking_violations' : 'breakdown_logs';
@@ -493,7 +483,7 @@
                 <div class="flex items-center space-x-1 flex-shrink-0">
                   <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
                   <select id="sel-toc-year" onchange="onDynamicDriveYearSelected()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
-                    <option value="" class="bg-slate-900">Scanning Drive...</option>
+                    <option value="" class="bg-slate-900">Detecting Years...</option>
                   </select>
                 </div>
 
@@ -524,89 +514,31 @@
       loadDynamicDriveSubfolders(DEFAULT_FOLDERS.TOC, "sel-toc-year", "Select Year", "toc-status-bar");
     }
 
-    // DYNAMIC SUBFOLDER FETCHING FOR DRIVE
-let activeTocUnsubscribe = null;
+    async function loadDynamicDriveSubfolders(parentFolderId, targetSelectId, placeholderText, statusBoxId) {
+      const select = document.getElementById(targetSelectId);
+      if (!select) return;
+      if (statusBoxId) updateStatusBadge(statusBoxId, "loading", `Auto-detecting ${placeholderText} from Drive...`);
 
-async function loadDynamicDrivePhotos() {
-  const yearSelect = document.getElementById("sel-toc-year");
-  const monthSelect = document.getElementById("sel-toc-month");
-  const dateSelect = document.getElementById("sel-toc-date");
-  const grid = document.getElementById("photo-grid");
+      try {
+        const res = await fetch(`${API_URL}?action=getSubfolders&folderId=${parentFolderId}`);
+        const data = await res.json();
 
-  const yearName = yearSelect.options[yearSelect.selectedIndex]?.getAttribute("data-name") || yearSelect.options[yearSelect.selectedIndex]?.text;
-  const monthName = monthSelect.options[monthSelect.selectedIndex]?.getAttribute("data-name") || monthSelect.options[monthSelect.selectedIndex]?.text;
-  const dateName = dateSelect.options[dateSelect.selectedIndex]?.getAttribute("data-name") || dateSelect.options[dateSelect.selectedIndex]?.text;
-  const dateFolderId = dateSelect.value;
-
-  if (!dateFolderId || !yearName || !monthName || !dateName) {
-    grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">Please select a Date above.</p>`;
-    return;
-  }
-
-  // Unsubscribe from previous real-time listeners
-  if (activeTocUnsubscribe) {
-    activeTocUnsubscribe();
-    activeTocUnsubscribe = null;
-  }
-
-  grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Connecting to live Firestore database...</p></div>`;
-  updateStatusBadge("toc-status-bar", "loading", "Connecting to live Firestore stream...");
-
-  try {
-    const { collection, query, where, onSnapshot } = window.fs;
-    const colRef = collection(window.db, "toc_photos");
-
-    // Live Query on Firestore
-    const q = query(
-      colRef, 
-      where("year", "==", yearName.trim()), 
-      where("month", "==", monthName.trim()), 
-      where("date", "==", dateName.trim())
-    );
-
-    let hasReceivedFirestoreData = false;
-
-    activeTocUnsubscribe = onSnapshot(q, (querySnapshot) => {
-      const photos = [];
-      querySnapshot.forEach(doc => photos.push(doc.data()));
-
-      if (photos.length > 0) {
-        hasReceivedFirestoreData = true;
-        updateStatusBadge("toc-status-bar", "success", `⚡ Loaded ${photos.length} photos instantly from Real-Time Cloud Firestore!`);
-        renderPhotoGrid(photos, grid);
-      } else if (!hasReceivedFirestoreData) {
-        // Fallback to Drive if not yet indexed in Firestore
-        fetchTocDirectlyFromDriveAndSync(dateFolderId, yearName, monthName, dateName, grid);
+        if (data.status === "success" && data.folders && data.folders.length > 0) {
+          select.innerHTML = `<option value="" class="bg-slate-900">-- ${placeholderText} --</option>`;
+          data.folders.forEach(f => {
+            select.innerHTML += `<option value="${f.id}" data-name="${f.name}" class="bg-slate-900">${f.name}</option>`;
+          });
+          select.disabled = false;
+          if (statusBoxId) updateStatusBadge(statusBoxId, "idle", `Found ${data.folders.length} available folders.`);
+        } else {
+          select.innerHTML = `<option value="" class="bg-slate-900">No folders found</option>`;
+          if (statusBoxId) updateStatusBadge(statusBoxId, "idle", "No folders found.");
+        }
+      } catch (err) {
+        select.innerHTML = `<option value="" class="bg-slate-900">Error reading Drive</option>`;
+        if (statusBoxId) updateStatusBadge(statusBoxId, "error", "Failed to connect to Google Drive API.");
       }
-    }, (error) => {
-      fetchTocDirectlyFromDriveAndSync(dateFolderId, yearName, monthName, dateName, grid);
-    });
-
-  } catch (err) {
-    fetchTocDirectlyFromDriveAndSync(dateFolderId, yearName, monthName, dateName, grid);
-  }
-}
-
-// Drive fallback that renders immediately and background-indexes to Firestore
-async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, grid) {
-  updateStatusBadge("toc-status-bar", "loading", "Fetching directly from Google Drive...");
-
-  try {
-    const res = await fetch(`${API_URL}?action=getAllPhotosInFolder&folderId=${folderId}`);
-    const data = await res.json();
-
-    if (data.status === "success" && data.photos && data.photos.length > 0) {
-      updateStatusBadge("toc-status-bar", "success", `Loaded ${data.photos.length} photos from Drive.`);
-      renderPhotoGrid(data.photos, grid);
-    } else {
-      updateStatusBadge("toc-status-bar", "idle", "Folder is empty.");
-      grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No photos found for ${date}/${month}/${year}.</p>`;
     }
-  } catch (err) {
-    updateStatusBadge("toc-status-bar", "error", "Error loading photos from Google Drive.");
-    grid.innerHTML = `<p class="text-red-400 py-16 font-medium">Error loading photos.</p>`;
-  }
-}
 
     function onDynamicDriveYearSelected() {
       const yearFolderId = document.getElementById("sel-toc-year").value;
@@ -639,27 +571,75 @@ async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, gri
     }
 
     async function loadDynamicDrivePhotos() {
-      const dateFolderId = document.getElementById("sel-toc-date").value;
+      const yearSelect = document.getElementById("sel-toc-year");
+      const monthSelect = document.getElementById("sel-toc-month");
+      const dateSelect = document.getElementById("sel-toc-date");
       const grid = document.getElementById("photo-grid");
 
-      if (!dateFolderId) {
+      const yearName = yearSelect.options[yearSelect.selectedIndex]?.getAttribute("data-name") || yearSelect.options[yearSelect.selectedIndex]?.text;
+      const monthName = monthSelect.options[monthSelect.selectedIndex]?.getAttribute("data-name") || monthSelect.options[monthSelect.selectedIndex]?.text;
+      const dateName = dateSelect.options[dateSelect.selectedIndex]?.getAttribute("data-name") || dateSelect.options[dateSelect.selectedIndex]?.text;
+      const dateFolderId = dateSelect.value;
+
+      if (!dateFolderId || !yearName || !monthName || !dateName) {
         grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">Please select a Date above.</p>`;
         return;
       }
 
-      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Fetching photos from Google Drive...</p></div>`;
+      if (activeTocUnsubscribe) {
+        activeTocUnsubscribe();
+        activeTocUnsubscribe = null;
+      }
+
+      grid.innerHTML = `<div class="text-center py-16"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div><p class="text-sm text-slate-300 font-medium">Connecting to live Firestore database...</p></div>`;
+      updateStatusBadge("toc-status-bar", "loading", "Connecting to live Firestore stream...");
+
+      try {
+        const { collection, query, where, onSnapshot } = window.fs;
+        const colRef = collection(window.db, "toc_photos");
+
+        const q = query(
+          colRef, 
+          where("year", "==", yearName.trim()), 
+          where("month", "==", monthName.trim()), 
+          where("date", "==", dateName.trim())
+        );
+
+        let hasReceivedFirestoreData = false;
+
+        activeTocUnsubscribe = onSnapshot(q, (querySnapshot) => {
+          const photos = [];
+          querySnapshot.forEach(doc => photos.push(doc.data()));
+
+          if (photos.length > 0) {
+            hasReceivedFirestoreData = true;
+            updateStatusBadge("toc-status-bar", "success", `⚡ Loaded ${photos.length} photos instantly from Real-Time Firestore!`);
+            renderPhotoGrid(photos, grid);
+          } else if (!hasReceivedFirestoreData) {
+            fetchTocDirectlyFromDrive(dateFolderId, yearName, monthName, dateName, grid);
+          }
+        }, (error) => {
+          fetchTocDirectlyFromDrive(dateFolderId, yearName, monthName, dateName, grid);
+        });
+
+      } catch (err) {
+        fetchTocDirectlyFromDrive(dateFolderId, yearName, monthName, dateName, grid);
+      }
+    }
+
+    async function fetchTocDirectlyFromDrive(folderId, year, month, date, grid) {
       updateStatusBadge("toc-status-bar", "loading", "Fetching photos from Google Drive...");
 
       try {
-        const res = await fetch(`${API_URL}?action=getAllPhotosInFolder&folderId=${dateFolderId}`);
+        const res = await fetch(`${API_URL}?action=getAllPhotosInFolder&folderId=${folderId}`);
         const data = await res.json();
 
         if (data.status === "success" && data.photos && data.photos.length > 0) {
-          updateStatusBadge("toc-status-bar", "success", `Loaded ${data.photos.length} photos!`);
+          updateStatusBadge("toc-status-bar", "success", `Loaded ${data.photos.length} photos from Google Drive.`);
           renderPhotoGrid(data.photos, grid);
         } else {
           updateStatusBadge("toc-status-bar", "idle", "Folder is empty.");
-          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No photos found in this folder.</p>`;
+          grid.innerHTML = `<p class="text-slate-400 py-16 font-medium">No photos found for ${date}/${month}/${year}.</p>`;
         }
       } catch (err) {
         updateStatusBadge("toc-status-bar", "error", "Error loading photos from Google Drive.");
@@ -667,7 +647,7 @@ async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, gri
       }
     }
 
-    // DYNAMIC L2 STAIRCASE UI
+    // DYNAMIC STAIRCASE UI
     function renderStaircaseUI() {
       const area = document.getElementById("content-area");
       area.innerHTML = `
@@ -679,7 +659,7 @@ async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, gri
               <div class="flex items-center space-x-1 flex-shrink-0">
                 <label class="text-xs font-semibold text-slate-300 whitespace-nowrap">1. Year:</label>
                 <select id="sel-staircase-year" onchange="loadDynamicStaircasePhotos()" class="px-3 py-1.5 border border-slate-600 rounded-xl text-xs bg-slate-800 text-white font-medium outline-none">
-                  <option value="" class="bg-slate-900">Scanning Drive...</option>
+                  <option value="" class="bg-slate-900">Detecting Years...</option>
                 </select>
               </div>
             </div>
@@ -724,20 +704,6 @@ async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, gri
       }
     }
 
-    // YEAR DETECTION FOR FIRESTORE COLLECTIONS
-    async function populateDynamicYearsFromData(collectionName, targetSelectId) {
-      const select = document.getElementById(targetSelectId);
-      if (!select) return;
-
-      const currentYear = new Date().getFullYear().toString();
-      select.innerHTML = `
-        <option value="${currentYear}" class="bg-slate-900 text-white">${currentYear}</option>
-        <option value="2025" class="bg-slate-900 text-white">2025</option>
-        <option value="2024" class="bg-slate-900 text-white">2024</option>
-      `;
-      onReportYearChange();
-    }
-
     // RENDERING & HELPERS
     function renderPhotoGrid(photos, grid) {
       let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4">`;
@@ -779,9 +745,7 @@ async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, gri
       }
 
       let rawDate = record['Date'] || record['Timestamp'] || record['createdAt'] || '';
-      let tabMonth = record._tabMonth || '';
       let rawYear = record._year || new Date().getFullYear().toString();
-
       let day = '01';
       let month = '01';
       let year = rawYear;
@@ -1031,7 +995,7 @@ async function fetchTocDirectlyFromDriveAndSync(folderId, year, month, date, gri
       }
     }
 
-    // EXPOSE ALL NECESSARY HANDLERS TO GLOBAL WINDOW
+    // EXPOSE TO GLOBAL WINDOW
     window.loginUser = loginUser;
     window.logout = logout;
     window.showSection = showSection;
