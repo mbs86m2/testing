@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Admin Directory Management - Wisma Atria</title>
+
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#735B3F">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22120%22%20fill%3D%22%23735B3F%22%2F%3E%3Ctext%20x%3D%22256%22%20y%3D%22290%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%22200%22%20fill%3D%22%23E5DCB8%22%20text-anchor%3D%22middle%22%3EDIR%3C%2Ftext%3E%3C%2Fsvg%3E">
+
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Tesseract.js OCR Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-[#FAF8F5] text-[#2C241B] font-sans min-h-screen pb-12">
+
+  <!-- Top Header Bar -->
+  <div class="sticky top-0 z-30 bg-[#735B3F] text-white px-3.5 py-3 shadow-md border-b border-[#8C7253] flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-sliders text-[#E5DCB8] text-sm"></i>
+      <h1 class="font-bold text-xs sm:text-sm text-[#FAF7F2] tracking-wide">Admin Directory Management</h1>
+    </div>
+
+    <!-- Exit Admin / Return Button -->
+    <button onclick="exitAdminSession()" class="bg-[#5C4730] hover:bg-rose-800 text-[#E5DCB8] hover:text-white font-bold px-3 py-1.5 rounded-xl border border-[#8C7253] text-[11px] flex items-center gap-1.5 transition active:scale-95 shadow-sm">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <span>Exit Admin</span>
+    </button>
+  </div>
+
+  <!-- Admin Main Content -->
+  <div class="max-w-2xl mx-auto p-3 sm:p-4 space-y-3.5 text-xs">
+
+    <!-- Auth Status Pill -->
+    <div class="bg-[#F3EFE6] p-2.5 rounded-xl border border-[#E5DCB8] flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-user-shield text-emerald-600 text-xs"></i>
+        <span class="font-bold text-slate-800 text-[11px]">Logged in as: <span id="admin-user-display" class="text-amber-900 font-extrabold">ADMIN (M2 / KEEKC)</span></span>
+      </div>
+      <span class="bg-emerald-100 text-emerald-800 text-[9px] font-extrabold px-2 py-0.5 rounded">Live Firestore Sync</span>
+    </div>
+
+    <!-- Add New Record Section -->
+    <div class="bg-white p-3.5 rounded-xl border border-[#E5DCB8] shadow-sm space-y-2.5">
+      <h3 class="font-bold text-[#5C4730] text-xs flex items-center gap-1.5">
+        <i class="fa-solid fa-plus-circle text-[#8C7253]"></i> Add New Directory Record
+      </h3>
+
+      <div>
+        <label class="block font-semibold text-[10px] text-[#735B3F] mb-0.5">Store / Company Name</label>
+        <input type="text" id="add-name" placeholder="e.g. PRADA SINGAPORE" class="w-full p-2 bg-[#FAF8F5] border border-[#E5DCB8] rounded-lg text-xs font-bold" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-semibold text-[10px] text-[#735B3F] mb-0.5">Unit Number (Auto-Formatted)</label>
+          <input 
+            type="text" 
+            id="add-unit" 
+            placeholder="e.g. B102 -> #B1-02" 
+            oninput="formatUnitInput(this)"
+            class="w-full p-2 bg-[#FAF8F5] border border-[#E5DCB8] rounded-lg text-xs font-mono font-bold" 
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[10px] text-[#735B3F] mb-0.5">Status</label>
+          <select id="add-status" class="w-full p-2 bg-[#FAF8F5] border border-[#E5DCB8] rounded-lg text-xs font-semibold">
+            <option value="Active">Active</option>
+            <option value="Permanently Close">Permanently Close</option>
+            <option value="Under Renovation">Under Renovation</option>
+            <option value="Vacant">Vacant</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Interactive Operating Hours Entry Box (ADD) -->
+      <div class="border border-[#E5DCB8] rounded-xl p-2.5 bg-[#FAF8F5] space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-1">
+          <label class="font-bold text-[11px] text-[#5C4730]">Operating Schedule Entry</label>
+          <div class="flex gap-1 flex-wrap">
+            <button type="button" onclick="applyPreset('add', 'mall')" class="bg-[#8C7253] text-white px-2 py-0.5 rounded text-[9px] font-bold">Mall Default</button>
+            <button type="button" onclick="applyPreset('add', 'office')" class="bg-slate-700 text-white px-2 py-0.5 rounded text-[9px] font-bold">Office Default</button>
+            <button type="button" onclick="copyMonToWeekdays('add')" class="bg-amber-800 text-white px-2 py-0.5 rounded text-[9px] font-bold">Copy MON</button>
+          </div>
+        </div>
+
+        <!-- Day Rows Table Header -->
+        <div class="grid grid-cols-12 gap-1 items-center font-bold text-[9px] text-[#735B3F] border-b border-[#E5DCB8] pb-1">
+          <span class="col-span-2">Day</span>
+          <span class="col-span-4 text-center">Open Time</span>
+          <span class="col-span-1 text-center"></span>
+          <span class="col-span-4 text-center">Close Time</span>
+          <span class="col-span-1 text-center" title="Override Closed?">Off</span>
+        </div>
+
+        <!-- Day Rows -->
+        <div id="add-schedule-rows" class="space-y-1.5"></div>
+      </div>
+
+      <button 
+        onclick="addStoreToFirebase()" 
+        class="w-full bg-[#3D2F1F] text-[#E5DCB8] font-bold py-2 rounded-xl border border-[#8C7253] active:scale-95 transition text-xs"
+      >
+        Save Store to Firestore
+      </button>
+    </div>
+
+    <!-- OCR Directory Photo Scanner -->
+    <div class="bg-white p-3.5 rounded-xl border border-[#E5DCB8] shadow-sm">
+      <h3 class="font-bold text-[#5C4730] mb-0.5 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-camera text-[#8C7253]"></i> Photo OCR Directory Scanner
+      </h3>
+      <p class="text-[10px] text-[#A08967] mb-2">Upload directory board photo to auto-update stores without duplicates.</p>
+      
+      <input type="file" id="ocr-file-input" accept="image/*" class="hidden" onchange="processOcrPhoto(this)" />
+      
+      <button 
+        onclick="document.getElementById('ocr-file-input').click()" 
+        class="w-full bg-[#8C7253] hover:bg-[#735B3F] text-white font-bold py-2 rounded-xl flex items-center justify-center gap-2 transition text-xs"
+      >
+        <i class="fa-solid fa-upload"></i> Upload Directory Photo
+      </button>
+
+      <div id="ocr-status" class="hidden mt-2 p-2 bg-[#F8F6F2] rounded-lg text-[10px] font-semibold text-[#735B3F] flex items-center justify-between">
+        <span id="ocr-status-text">Processing image...</span>
+        <i class="fa-solid fa-spinner fa-spin text-blue-600"></i>
+      </div>
+    </div>
+
+    <!-- Manage / Edit / Delete Records Section -->
+    <div class="bg-white p-3.5 rounded-xl border border-[#E5DCB8] shadow-sm space-y-2">
+      <div class="flex justify-between items-center mb-0.5">
+        <h3 class="font-bold text-[#5C4730] text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-to-square text-[#8C7253]"></i> Edit &amp; Delete Directory Records
+        </h3>
+        <span class="text-[9px] text-emerald-700 font-semibold">Live 2-Way Sync</span>
+      </div>
+
+      <div class="relative mb-1">
+        <input 
+          type="text" 
+          id="admin-manage-search" 
+          placeholder="Search tenant to edit or delete..." 
+          class="w-full pl-2.5 pr-8 py-2 bg-[#FAF8F5] border border-[#E5DCB8] rounded-lg text-xs" 
+          oninput="handleAdminSearchInput(this)" 
+        />
+        <button 
+          id="admin-clear-search" 
+          onclick="clearAdminSearch()" 
+          class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#A08967] hover:text-[#3D2F1F] active:scale-95 transition"
+          title="Clear Search"
+        >
+          <i class="fa-solid fa-xmark text-xs font-bold"></i>
+        </button>
+      </div>
+
+      <div id="admin-manage-list" class="space-y-1.5 border border-[#E5DCB8] rounded-lg p-2 bg-[#FAF8F5] max-h-[360px] overflow-y-auto"></div>
+    </div>
+
+  </div>
+
+  <!-- EDIT STORE MODAL -->
+  <div id="edit-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-[#FAF8F5] w-full max-w-md rounded-2xl p-4 shadow-2xl border border-[#8C7253] space-y-3 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-[#E5DCB8] pb-2">
+        <h3 class="font-bold text-xs text-[#3D2F1F]">Edit Directory Record</h3>
+        <button onclick="closeEditModal()" class="text-[#8C7253] text-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <input type="hidden" id="edit-doc-id" />
+
+      <div>
+        <label class="block font-semibold text-[10px] text-[#735B3F] mb-1">Store / Company Name</label>
+        <input type="text" id="edit-name" class="w-full p-2 bg-white border border-[#E5DCB8] rounded-lg text-xs font-bold" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-semibold text-[10px] text-[#735B3F] mb-1">Unit Number (Auto-Formatted)</label>
+          <input 
+            type="text" 
+            id="edit-unit" 
+            oninput="formatUnitInput(this)"
+            class="w-full p-2 bg-white border border-[#E5DCB8] rounded-lg text-xs font-mono font-bold" 
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[10px] text-[#735B3F] mb-1">Status</label>
+          <select id="edit-status" class="w-full p-2 bg-white border border-[#E5DCB8] rounded-lg text-xs font-semibold">
+            <option value="Active">Active</option>
+            <option value="Permanently Close">Permanently Close</option>
+            <option value="Under Renovation">Under Renovation</option>
+            <option value="Vacant">Vacant</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Interactive Operating Hours Entry Box (EDIT) -->
+      <div class="border border-[#E5DCB8] rounded-xl p-2.5 bg-white space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-1">
+          <label class="font-bold text-[11px] text-[#5C4730]">Operating Schedule Entry</label>
+          <div class="flex gap-1 flex-wrap">
+            <button type="button" onclick="applyPreset('edit', 'mall')" class="bg-[#8C7253] text-white px-2 py-0.5 rounded text-[9px] font-bold">Mall Default</button>
+            <button type="button" onclick="applyPreset('edit', 'office')" class="bg-slate-700 text-white px-2 py-0.5 rounded text-[9px] font-bold">Office Default</button>
+            <button type="button" onclick="copyMonToWeekdays('edit')" class="bg-amber-800 text-white px-2 py-0.5 rounded text-[9px] font-bold">Copy MON</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-1 items-center font-bold text-[9px] text-[#735B3F] border-b border-[#E5DCB8] pb-1">
+          <span class="col-span-2">Day</span>
+          <span class="col-span-4 text-center">Open Time</span>
+          <span class="col-span-1 text-center"></span>
+          <span class="col-span-4 text-center">Close Time</span>
+          <span class="col-span-1 text-center" title="Override Closed?">Off</span>
+        </div>
+
+        <div id="edit-schedule-rows" class="space-y-1.5"></div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeEditModal()" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
+        <button onclick="saveStoreEdit()" class="flex-1 py-2 bg-[#3D2F1F] text-[#E5DCB8] font-bold rounded-xl text-xs">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#3D2F1F] text-[#E5DCB8] text-xs font-bold px-4 py-2.5 rounded-full shadow-xl opacity-0 pointer-events-none transition duration-300 z-50 flex items-center gap-2 border border-[#8C7253]">
+    <i class="fa-solid fa-check text-emerald-400"></i>
+    <span id="toast-text">Action completed</span>
+  </div>
+
+  <script>
+    const ADMIN_USERS = ["admin m2", "m2", "keekc", "kee", "kee kc", "admin", "master"];
+
+    function getPortalLoggedInUser() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromParam = urlParams.get('user') || urlParams.get('username') || urlParams.get('officer') || urlParams.get('name') || urlParams.get('id');
+      if (fromParam && fromParam.trim()) return fromParam.trim();
+
+      const possibleKeys = [
+        'portal_active_user', 'wafp_officer', 'wafp_logged_officer', 'currentUser', 
+        'wafp_active_officer', 'wafp_user', 'username', 'officer', 'user'
+      ];
+
+      for (let k of possibleKeys) {
+        let val = sessionStorage.getItem(k) || localStorage.getItem(k);
+        if (val && typeof val === 'string' && val.trim()) {
+          return val.trim();
+        }
+      }
+
+      return '';
+    }
+
+    function isUserAdmin() {
+      const name = (getPortalLoggedInUser() || '').toLowerCase();
+      const role = (localStorage.getItem('portal_user_role') || '').toLowerCase();
+      if (role === 'admin') return true;
+      return ADMIN_USERS.some(adminName => name === adminName || name.includes(adminName));
+    }
+
+    function enforceAdminGuard() {
+      const isAuth = sessionStorage.getItem('wa_directory_admin') === 'authenticated' || 
+                     localStorage.getItem('wa_directory_admin') === 'authenticated' ||
+                     isUserAdmin();
+      if (!isAuth) {
+        alert("Unauthorized Access! Password required to access Admin Directory Management.");
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    if (!enforceAdminGuard()) {
+      throw new Error("Unauthorized page access blocked.");
+    }
+
+    function exitAdminSession() {
+      sessionStorage.removeItem('wa_directory_admin');
+      localStorage.removeItem('wa_directory_admin');
+      window.location.href = "index.html";
+    }
+
+    // Auto-Format Unit Input (e.g. b102 -> #B1-02)
+    window.formatUnitInput = function(el) {
+      if (!el) return;
+      let val = el.value.trim().toUpperCase();
+      if (!val) return;
+
+      if (val.startsWith('#')) val = val.substring(1);
+      let clean = val.replace(/[^A-Z0-9]/g, '');
+
+      if (clean.length === 0) {
+        el.value = '#';
+        return;
+      }
+
+      if (clean.length <= 2) {
+        el.value = '#' + clean;
+      } else {
+        el.value = '#' + clean.substring(0, 2) + '-' + clean.substring(2);
+      }
+    };
+
+    function detectLevelFromUnit(unit) {
+      if (!unit) return "B1";
+      const u = unit.toUpperCase().trim();
+      if (u.includes("B1")) return "B1";
+      const match = u.match(/#(\d{1,2})/);
+      if (match) {
+        const floor = parseInt(match[1], 10);
+        if (floor === 1) return "L1";
+        if (floor === 2) return "L2";
+        if (floor === 3) return "L3";
+        if (floor >= 10) return "OFFICE_TOWER";
+      }
+      if (u.startsWith("#01-") || u.startsWith("#1-")) return "L1";
+      if (u.startsWith("#02-") || u.startsWith("#2-")) return "L2";
+      if (u.startsWith("#03-") || u.startsWith("#3-")) return "L3";
+      return "B1";
+    }
+
+    function cleanStr(str) { return (str || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+    const SCHEDULE_DAYS = [
+      { id: 'mon', name: 'MON' },
+      { id: 'tue', name: 'TUE' },
+      { id: 'wed', name: 'WED' },
+      { id: 'thu', name: 'THU' },
+      { id: 'fri', name: 'FRI' },
+      { id: 'sat', name: 'SAT' },
+      { id: 'sun', name: 'SUN' },
+      { id: 'ph',  name: 'PH' }
+    ];
+
+    function renderScheduleRows(prefix) {
+      const container = document.getElementById(`${prefix}-schedule-rows`);
+      if (!container) return;
+
+      container.innerHTML = SCHEDULE_DAYS.map(day => `
+        <div class="grid grid-cols-12 gap-1 items-center text-[10px] border-b border-slate-100 pb-1">
+          <span class="col-span-2 font-bold text-[#735B3F]">${day.name}</span>
+          
+          <!-- Open Time Box -->
+          <div class="col-span-4 flex items-center justify-center gap-0.5">
+            <input 
+              type="text" 
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="2"
+              id="${prefix}-open-h-${day.id}" 
+              placeholder="10" 
+              value="10"
+              oninput="handleTimeInput(this, '${prefix}-open-m-${day.id}')"
+              onblur="sanitizeTimeBlur(this, 'hh')"
+              class="w-7 p-1 border border-[#E5DCB8] rounded bg-white text-center font-mono font-bold text-[10px] focus:outline-none focus:border-[#735B3F]"
+            />
+            <span class="font-bold text-[#8C7253] text-[10px]">:</span>
+            <input 
+              type="text" 
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="2"
+              id="${prefix}-open-m-${day.id}" 
+              placeholder="00" 
+              value="00"
+              oninput="handleTimeInput(this, '${prefix}-open-ampm-${day.id}')"
+              onblur="sanitizeTimeBlur(this, 'mm')"
+              class="w-7 p-1 border border-[#E5DCB8] rounded bg-white text-center font-mono font-bold text-[10px] focus:outline-none focus:border-[#735B3F]"
+            />
+            <select 
+              id="${prefix}-open-ampm-${day.id}"
+              class="p-0.5 border border-[#E5DCB8] rounded bg-white font-bold text-[9px] text-[#5C4730]"
+            >
+              <option value="AM" selected>AM</option>
+              <option value="PM">PM</option>
+            </select>
+          </div>
+
+          <span class="col-span-1 text-center text-[#8C7253] font-bold text-[9px]">to</span>
+
+          <!-- Close Time Box -->
+          <div class="col-span-4 flex items-center justify-center gap-0.5">
+            <input 
+              type="text" 
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="2"
+              id="${prefix}-close-h-${day.id}" 
+              placeholder="10" 
+              value="10"
+              oninput="handleTimeInput(this, '${prefix}-close-m-${day.id}')"
+              onblur="sanitizeTimeBlur(this, 'hh')"
+              class="w-7 p-1 border border-[#E5DCB8] rounded bg-white text-center font-mono font-bold text-[10px] focus:outline-none focus:border-[#735B3F]"
+            />
+            <span class="font-bold text-[#8C7253] text-[10px]">:</span>
+            <input 
+              type="text" 
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="2"
+              id="${prefix}-close-m-${day.id}" 
+              placeholder="00" 
+              value="00"
+              oninput="handleTimeInput(this, '${prefix}-close-ampm-${day.id}')"
+              onblur="sanitizeTimeBlur(this, 'mm')"
+              class="w-7 p-1 border border-[#E5DCB8] rounded bg-white text-center font-mono font-bold text-[10px] focus:outline-none focus:border-[#735B3F]"
+            />
+            <select 
+              id="${prefix}-close-ampm-${day.id}"
+              class="p-0.5 border border-[#E5DCB8] rounded bg-white font-bold text-[9px] text-[#5C4730]"
+            >
+              <option value="AM">AM</option>
+              <option value="PM" selected>PM</option>
+            </select>
+          </div>
+
+          <!-- Override Closed Checkbox -->
+          <div class="col-span-1 flex items-center justify-center">
+            <input 
+              type="checkbox" 
+              id="${prefix}-closed-${day.id}" 
+              onchange="toggleDayClosed('${prefix}', '${day.id}')"
+              class="w-3.5 h-3.5 rounded border-[#8C7253] text-rose-600 focus:ring-rose-500 cursor-pointer" 
+              title="Override Closed?"
+            />
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.handleTimeInput = function(currentEl, nextElId) {
+      if (!currentEl) return;
+      currentEl.value = currentEl.value.replace(/[^0-9]/g, '');
+
+      if (currentEl.value.length >= 2) {
+        currentEl.value = currentEl.value.substring(0, 2);
+        const nextEl = document.getElementById(nextElId);
+        if (nextEl) {
+          nextEl.focus();
+          if (nextEl.tagName === 'INPUT') nextEl.select();
+        }
+      }
+    };
+
+    window.sanitizeTimeBlur = function(el, type) {
+      if (!el || !el.value) return;
+      let val = parseInt(el.value, 10);
+      if (isNaN(val)) val = 0;
+
+      if (type === 'hh') {
+        if (val < 1) val = 1;
+        if (val > 12) val = 12;
+      } else if (type === 'mm') {
+        if (val < 0) val = 0;
+        if (val > 59) val = 59;
+      }
+      el.value = String(val).padStart(2, '0');
+    };
+
+    window.toggleDayClosed = function(prefix, dayId) {
+      const isClosed = document.getElementById(`${prefix}-closed-${dayId}`)?.checked;
+      const openH = document.getElementById(`${prefix}-open-h-${dayId}`);
+      const openM = document.getElementById(`${prefix}-open-m-${dayId}`);
+      const openAmpm = document.getElementById(`${prefix}-open-ampm-${dayId}`);
+
+      const closeH = document.getElementById(`${prefix}-close-h-${dayId}`);
+      const closeM = document.getElementById(`${prefix}-close-m-${dayId}`);
+      const closeAmpm = document.getElementById(`${prefix}-close-ampm-${dayId}`);
+
+      [openH, openM, openAmpm, closeH, closeM, closeAmpm].forEach(el => {
+        if (el) {
+          el.disabled = isClosed;
+          if (isClosed) el.classList.add('bg-slate-100', 'text-slate-400');
+          else el.classList.remove('bg-slate-100', 'text-slate-400');
+        }
+      });
+    };
+
+    window.applyPreset = function(prefix, type) {
+      SCHEDULE_DAYS.forEach(day => {
+        const closedChk = document.getElementById(`${prefix}-closed-${day.id}`);
+        const openH = document.getElementById(`${prefix}-open-h-${day.id}`);
+        const openM = document.getElementById(`${prefix}-open-m-${day.id}`);
+        const openAmpm = document.getElementById(`${prefix}-open-ampm-${day.id}`);
+
+        const closeH = document.getElementById(`${prefix}-close-h-${day.id}`);
+        const closeM = document.getElementById(`${prefix}-close-m-${day.id}`);
+        const closeAmpm = document.getElementById(`${prefix}-close-ampm-${day.id}`);
+
+        if (type === 'mall') {
+          if (closedChk) closedChk.checked = false;
+          if (openH) openH.value = "10";
+          if (openM) openM.value = "00";
+          if (openAmpm) openAmpm.value = "AM";
+
+          if (closeH) closeH.value = "10";
+          if (closeM) closeM.value = "00";
+          if (closeAmpm) closeAmpm.value = "PM";
+
+          toggleDayClosed(prefix, day.id);
+        } else if (type === 'office') {
+          if (['mon', 'tue', 'wed', 'thu', 'fri'].includes(day.id)) {
+            if (closedChk) closedChk.checked = false;
+            if (openH) openH.value = "09";
+            if (openM) openM.value = "00";
+            if (openAmpm) openAmpm.value = "AM";
+
+            if (closeH) closeH.value = "06";
+            if (closeM) closeM.value = "00";
+            if (closeAmpm) closeAmpm.value = "PM";
+          } else {
+            if (closedChk) closedChk.checked = true;
+          }
+          toggleDayClosed(prefix, day.id);
+        }
+      });
+    };
+
+    window.copyMonToWeekdays = function(prefix) {
+      const monClosed = document.getElementById(`${prefix}-closed-mon`)?.checked;
+      const monOpenH = document.getElementById(`${prefix}-open-h-mon`)?.value || "10";
+      const monOpenM = document.getElementById(`${prefix}-open-m-mon`)?.value || "00";
+      const monOpenAmpm = document.getElementById(`${prefix}-open-ampm-mon`)?.value || "AM";
+
+      const monCloseH = document.getElementById(`${prefix}-close-h-mon`)?.value || "10";
+      const monCloseM = document.getElementById(`${prefix}-close-m-mon`)?.value || "00";
+      const monCloseAmpm = document.getElementById(`${prefix}-close-ampm-mon`)?.value || "PM";
+
+      ['tue', 'wed', 'thu', 'fri'].forEach(dayId => {
+        const closedChk = document.getElementById(`${prefix}-closed-${dayId}`);
+        const openH = document.getElementById(`${prefix}-open-h-${dayId}`);
+        const openM = document.getElementById(`${prefix}-open-m-${dayId}`);
+        const openAmpm = document.getElementById(`${prefix}-open-ampm-${dayId}`);
+
+        const closeH = document.getElementById(`${prefix}-close-h-${dayId}`);
+        const closeM = document.getElementById(`${prefix}-close-m-${dayId}`);
+        const closeAmpm = document.getElementById(`${prefix}-close-ampm-${dayId}`);
+
+        if (closedChk) closedChk.checked = monClosed;
+        if (openH) openH.value = monOpenH;
+        if (openM) openM.value = monOpenM;
+        if (openAmpm) openAmpm.value = monOpenAmpm;
+
+        if (closeH) closeH.value = monCloseH;
+        if (closeM) closeM.value = monCloseM;
+        if (closeAmpm) closeAmpm.value = monCloseAmpm;
+
+        toggleDayClosed(prefix, dayId);
+      });
+    };
+
+    function populateGridFromSavedHours(prefix, displayHoursText) {
+      renderScheduleRows(prefix);
+
+      if (!displayHoursText) {
+        applyPreset(prefix, 'mall');
+        return;
+      }
+
+      const dayMap = {};
+      SCHEDULE_DAYS.forEach(d => {
+        dayMap[d.name] = { closed: false, openH: "10", openM: "00", openAmpm: "AM", closeH: "10", closeM: "00", closeAmpm: "PM" };
+      });
+
+      const lines = displayHoursText.split('\n');
+      lines.forEach(line => {
+        const l = line.replace(/•/g, '').trim();
+        if (!l || !l.includes(':')) return;
+
+        const parts = l.split(':');
+        const dayHeader = parts[0].trim().toUpperCase();
+        const timePart = parts.slice(1).join(':').trim();
+
+        let targetDays = [];
+        if (dayHeader === 'MON TO FRI') targetDays = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+        else if (dayHeader === 'MON TO SUN' || dayHeader === 'MON TO SUN & PH') targetDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN', 'PH'];
+        else if (dayHeader === 'SAT & SUN' || dayHeader === 'WEEKENDS') targetDays = ['SAT', 'SUN'];
+        else if (dayHeader === 'SAT, SUN & PH' || dayHeader === 'WEEKENDS & PH') targetDays = ['SAT', 'SUN', 'PH'];
+        else {
+          const tokens = dayHeader.split(/[,&]/);
+          tokens.forEach(tok => {
+            const t = tok.trim();
+            if (['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN', 'PH'].includes(t)) {
+              targetDays.push(t);
+            }
+          });
+        }
+
+        const isClosed = timePart.toUpperCase().includes('CLOSED');
+        const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*to\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+
+        targetDays.forEach(dName => {
+          if (dayMap[dName]) {
+            if (isClosed) {
+              dayMap[dName].closed = true;
+            } else if (timeMatch) {
+              dayMap[dName].closed = false;
+              dayMap[dName].openH = String(parseInt(timeMatch[1], 10)).padStart(2, '0');
+              dayMap[dName].openM = timeMatch[2];
+              dayMap[dName].openAmpm = timeMatch[3].toUpperCase();
+
+              dayMap[dName].closeH = String(parseInt(timeMatch[4], 10)).padStart(2, '0');
+              dayMap[dName].closeM = timeMatch[5];
+              dayMap[dName].closeAmpm = timeMatch[6].toUpperCase();
+            }
+          }
+        });
+      });
+
+      SCHEDULE_DAYS.forEach(d => {
+        const data = dayMap[d.name];
+        const closedChk = document.getElementById(`${prefix}-closed-${d.id}`);
+        const openH = document.getElementById(`${prefix}-open-h-${d.id}`);
+        const openM = document.getElementById(`${prefix}-open-m-${d.id}`);
+        const openAmpm = document.getElementById(`${prefix}-open-ampm-${d.id}`);
+
+        const closeH = document.getElementById(`${prefix}-close-h-${d.id}`);
+        const closeM = document.getElementById(`${prefix}-close-m-${d.id}`);
+        const closeAmpm = document.getElementById(`${prefix}-close-ampm-${d.id}`);
+
+        if (closedChk) closedChk.checked = data.closed;
+        if (openH) openH.value = data.openH;
+        if (openM) openM.value = data.openM;
+        if (openAmpm) openAmpm.value = data.openAmpm;
+
+        if (closeH) closeH.value = data.closeH;
+        if (closeM) closeM.value = data.closeM;
+        if (closeAmpm) closeAmpm.value = data.closeAmpm;
+
+        toggleDayClosed(prefix, d.id);
+      });
+    }
+
+    function buildDisplayHoursFromGrid(prefix) {
+      const schedule = [];
+      SCHEDULE_DAYS.forEach(d => {
+        const isClosed = document.getElementById(`${prefix}-closed-${d.id}`)?.checked;
+        const openH = String(document.getElementById(`${prefix}-open-h-${d.id}`)?.value || '10').padStart(2, '0');
+        const openM = String(document.getElementById(`${prefix}-open-m-${d.id}`)?.value || '00').padStart(2, '0');
+        const openAmpm = document.getElementById(`${prefix}-open-ampm-${d.id}`)?.value || 'AM';
+
+        const closeH = String(document.getElementById(`${prefix}-close-h-${d.id}`)?.value || '10').padStart(2, '0');
+        const closeM = String(document.getElementById(`${prefix}-close-m-${d.id}`)?.value || '00').padStart(2, '0');
+        const closeAmpm = document.getElementById(`${prefix}-close-ampm-${d.id}`)?.value || 'PM';
+
+        if (isClosed) {
+          schedule.push({ day: d.name, time: 'Closed' });
+        } else {
+          schedule.push({ day: d.name, time: `${openH}:${openM} ${openAmpm} to ${closeH}:${closeM} ${closeAmpm}` });
+        }
+      });
+
+      if (schedule.length === 0) return null;
+
+      const grouped = [];
+      let i = 0;
+      while (i < schedule.length) {
+        const current = schedule[i];
+        let groupDays = [current.day];
+        let j = i + 1;
+        while (j < schedule.length && schedule[j].time === current.time) {
+          groupDays.push(schedule[j].day);
+          j++;
+        }
+
+        let dayText = groupDays[0];
+        if (groupDays.length > 1) {
+          const joined = groupDays.join(',');
+          if (joined === 'MON,TUE,WED,THU,FRI,SAT,SUN,PH') dayText = 'MON to SUN & PH';
+          else if (joined === 'MON,TUE,WED,THU,FRI,SAT,SUN') dayText = 'MON to SUN';
+          else if (joined === 'MON,TUE,WED,THU,FRI') dayText = 'MON to FRI';
+          else if (joined === 'SAT,SUN,PH') dayText = 'WEEKENDS & PH';
+          else if (joined === 'SAT,SUN') dayText = 'WEEKENDS';
+          else dayText = groupDays.join(' & ');
+        }
+
+        grouped.push(`• ${dayText}: ${current.time}`);
+        i = j;
+      }
+
+      return grouped.join('\n');
+    }
+
+    let directoryData = [];
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxdJvLJuGgBpOXIj1kRMLjfkFBA1ogAoc",
+      authDomain: "wa-fcc-portal-directory-8b99e.firebaseapp.com",
+      projectId: "wa-fcc-portal-directory-8b99e",
+      storageBucket: "wa-fcc-portal-directory-8b99e.firebasestorage.app",
+      messagingSenderId: "671239854575",
+      appId: "1:671239854575:web:d8beeecdf79f3868cbe1a"
+    };
+
+    let db = null;
+    if (typeof firebase !== 'undefined') {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        db.collection("directory").onSnapshot((snapshot) => {
+          if (snapshot && !snapshot.empty) {
+            directoryData = [];
+            snapshot.forEach(docSnap => {
+              const data = docSnap.data();
+              if (data && data.name) {
+                const itemLevel = detectLevelFromUnit(data.unit);
+                directoryData.push({ id: docSnap.id, status: "Active", ...data, level: itemLevel });
+              }
+            });
+            renderAdminManageList();
+          } else {
+            directoryData = [];
+            renderAdminManageList();
+          }
+        }, () => renderAdminManageList());
+      } catch (e) { renderAdminManageList(); }
+    }
+
+    function renderAdminManageList() {
+      const container = document.getElementById('admin-manage-list');
+      const searchVal = cleanStr((document.getElementById('admin-manage-search') || {}).value);
+      if (!container) return;
+
+      const items = directoryData.filter(i => !searchVal || cleanStr(i.name).includes(searchVal) || cleanStr(i.unit).includes(searchVal));
+      items.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+      if (items.length === 0) {
+        container.innerHTML = `<div class="text-[11px] text-[#A08967] text-center py-3">No matching records</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const id = item.id || item.unit;
+        const autoLvl = detectLevelFromUnit(item.unit);
+        const itemStatus = item.status || 'Active';
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-[#E5DCB8] text-xs">
+            <div class="min-w-0 flex-1 pr-2">
+              <span class="font-bold text-[#2C241B] block truncate">${item.name}</span>
+              <span class="text-[10px] text-[#8C7253] font-mono">${item.unit} • ${autoLvl} • <span class="font-semibold text-slate-700">${itemStatus}</span></span>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="openEditModal('${id}')" class="bg-[#8C7253] hover:bg-[#735B3F] text-white font-bold px-2 py-1 rounded-lg text-[10px] transition">Edit</button>
+              <button onclick="deleteStore('${id}', '${item.name.replace(/'/g, "\\'")}')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded-lg text-[10px] transition">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.handleAdminSearchInput = function(inputEl) {
+      const clearBtn = document.getElementById('admin-clear-search');
+      if (clearBtn) clearBtn.classList.toggle('hidden', !inputEl || inputEl.value.length === 0);
+      renderAdminManageList();
+    };
+
+    window.clearAdminSearch = function() {
+      const inputEl = document.getElementById('admin-manage-search');
+      const clearBtn = document.getElementById('admin-clear-search');
+      if (inputEl) { inputEl.value = ''; inputEl.focus(); }
+      if (clearBtn) clearBtn.classList.add('hidden');
+      renderAdminManageList();
+    };
+
+    window.openEditModal = function(id) {
+      const item = directoryData.find(i => (i.id || i.unit) === id);
+      if (!item) return;
+
+      document.getElementById('edit-doc-id').value = id;
+      document.getElementById('edit-name').value = item.name || '';
+      document.getElementById('edit-unit').value = item.unit || '';
+      document.getElementById('edit-status').value = item.status || 'Active';
+
+      populateGridFromSavedHours('edit', item.displayHours);
+      document.getElementById('edit-modal').classList.remove('hidden');
+    };
+
+    window.closeEditModal = function() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    };
+
+    window.saveStoreEdit = async function() {
+      const docId = document.getElementById('edit-doc-id').value;
+      const name = document.getElementById('edit-name').value.trim();
+      const unit = document.getElementById('edit-unit').value.trim();
+      const status = document.getElementById('edit-status').value;
+
+      if (!name || !unit) { alert("Please enter both store name and unit number!"); return; }
+
+      const autoLevel = detectLevelFromUnit(unit);
+      const cleanDocId = docId.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      const customHours = buildDisplayHoursFromGrid('edit');
+
+      const updatedObj = { 
+        name: name.toUpperCase(), 
+        unit: unit, 
+        level: autoLevel, 
+        status: status, 
+        isCustomTiming: true,
+        displayHours: customHours
+      };
+
+      if (db) { try { await db.collection("directory").doc(cleanDocId).set(updatedObj, { merge: true }); } catch (e) {} }
+
+      const idx = directoryData.findIndex(i => (i.id || i.unit).replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() === cleanDocId);
+      if (idx !== -1) directoryData[idx] = { id: cleanDocId, ...updatedObj };
+
+      renderAdminManageList();
+      closeEditModal();
+      showToast(`Updated "${name}"`);
+    };
+
+    window.deleteStore = async function(docIdOrUnit, storeName) {
+      if (!confirm(`Are you sure you want to delete "${storeName}"?`)) return;
+      const docId = docIdOrUnit.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      if (db) { try { await db.collection("directory").doc(docId).delete(); } catch (e) {} }
+      directoryData = directoryData.filter(item => (item.id || item.unit).replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() !== docId);
+      renderAdminManageList();
+      showToast(`Deleted "${storeName}"`);
+    };
+
+    window.addStoreToFirebase = async function() {
+      const name = document.getElementById('add-name').value.trim();
+      const unit = document.getElementById('add-unit').value.trim();
+      const status = document.getElementById('add-status').value;
+
+      if (!name || !unit) { alert("Please enter shop name and unit number!"); return; }
+
+      const autoLevel = detectLevelFromUnit(unit);
+      const docId = unit.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      const customHours = buildDisplayHoursFromGrid('add');
+
+      const newItem = { 
+        name: name.toUpperCase(), 
+        unit: unit, 
+        level: autoLevel, 
+        status: status, 
+        displayHours: customHours,
+        isCustomTiming: true
+      };
+
+      if (db) { try { await db.collection("directory").doc(docId).set(newItem); } catch (e) {} }
+
+      const idx = directoryData.findIndex(i => cleanStr(i.unit) === cleanStr(unit));
+      if (idx !== -1) directoryData[idx] = { id: docId, ...newItem };
+      else directoryData.unshift({ id: docId, ...newItem });
+
+      renderAdminManageList();
+      showToast(`Saved "${name}"`);
+      document.getElementById('add-name').value = '';
+      document.getElementById('add-unit').value = '';
+      document.getElementById('add-status').value = 'Active';
+    };
+
+    function showToast(msg) {
+      const toastText = document.getElementById('toast-text');
+      const toast = document.getElementById('toast');
+      if (toastText) toastText.innerText = msg;
+      if (toast) {
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 1800);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderScheduleRows('add');
+      applyPreset('add', 'mall');
+
+      const activeOfficer = getPortalLoggedInUser();
+      const adminBadge = document.getElementById('admin-user-display');
+      if (adminBadge && activeOfficer) {
+        adminBadge.innerText = `ADMIN (${activeOfficer.toUpperCase()})`;
+      }
+    });
+  </script>
+</body>
+</html>

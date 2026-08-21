@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0b0f19">
+    <title>Carpark Booth Charges Calculator</title>
+
+    <!-- Custom Embedded SVG Favicon & Mobile Touch Icon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%230f172a'/><stop offset='100%25' stop-color='%2338bdf8'/></linearGradient></defs><rect width='512' height='512' rx='120' fill='url(%23g)'/><path d='M160 100 h110 a85 85 0 0 1 0 170 h-50 v140 h-60 Z' fill='%23ffffff'/><circle cx='370' cy='370' r='45' fill='%2334d399'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%230f172a'/><stop offset='100%25' stop-color='%2338bdf8'/></linearGradient></defs><rect width='512' height='512' rx='120' fill='url(%23g)'/><path d='M160 100 h110 a85 85 0 0 1 0 170 h-50 v140 h-60 Z' fill='%23ffffff'/><circle cx='370' cy='370' r='45' fill='%2334d399'/></svg>">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Firebase App & Realtime Database SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- Landscape Orientation Warning Overlay -->
+<div class="landscape-warning">
+    <div class="warning-icon-wrapper">
+        <svg viewBox="0 0 24 24">
+            <path d="M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 5.29 18.21 0 11.5 0 8.04 0 4.93 1.43 2.7 3.73L0 1v7h7L4.17 5.03C5.97 3.32 8.57 2.25 11.5 2.25c1.82 0 3.53.53 4.98 1.44zM10.25 1.8L1 11.05l10.25 10.25 9.25-9.25L10.25 1.8zm0 17.5L3.12 12.17l7.13-7.13 7.13 7.13-7.13 7.13z"/>
+        </svg>
+    </div>
+    <div class="warning-title">PORTRAIT MODE RECOMMENDED</div>
+    <div class="warning-sub">Please rotate your device upright for the best experience.</div>
+</div>
+
+<!-- Officer Login & Password Verification Modal -->
+<div id="officerAuthModal" class="app-modal">
+    <div class="app-modal-content">
+        <div class="app-modal-header">
+            <h3>
+                <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Officer Login
+            </h3>
+            <button type="button" class="modal-close-x" onclick="closeOfficerAuthModal()">✕</button>
+        </div>
+
+        <div id="officerAuthError" class="auth-error"></div>
+
+        <div class="form-group">
+            <label for="officerUsernameInput">Username / Officer Name</label>
+            <input type="text" id="officerUsernameInput" placeholder="Enter username (e.g. arsath)" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+            <label for="officerPasswordInput">Password (FORCED CAPS)</label>
+            <input type="password" id="officerPasswordInput" class="force-caps-input" placeholder="ENTER PASSWORD" autocomplete="current-password" oninput="this.value = this.value.toUpperCase()">
+            <div class="setting-info">Password characters are automatically capitalized.</div>
+        </div>
+
+        <button type="button" class="vehicle-btn active" style="margin-top: 10px;" onclick="submitOfficerAuth()">
+            Login &amp; Authenticate
+        </button>
+        <button type="button" class="vehicle-btn" style="background:#0b0f19; color:var(--text-main); margin-top: 6px;" onclick="closeOfficerAuthModal()">
+            Cancel
+        </button>
+    </div>
+</div>
+
+<!-- Admin Access Control Modal -->
+<div id="adminModal" class="app-modal">
+    <div class="app-modal-content">
+        <div class="app-modal-header">
+            <h3>
+                <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.5 1.1 2.5 2.5S13.4 12 12 12s-2.5-1.1-2.5-2.5S10.6 7 12 7zm0 10.9c-1.8 0-3.4-.7-4.6-1.9.4-.9 2.5-1.5 4.6-1.5s4.2.6 4.6 1.5c-1.2 1.2-2.8 1.9-4.6 1.9z"/></svg>
+                Portal Accounts Permissions
+            </h3>
+            <button type="button" class="modal-close-x" onclick="closeAdminModal()">✕</button>
+        </div>
+
+        <div class="admin-toolbar-row">
+            <label style="margin:0;">Accounts (Sorted A to Z)</label>
+            <button type="button" class="btn-sync-accounts" onclick="loadPortalAccountsFromRTDB()">
+                <svg style="width:12px;height:12px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                Refresh
+            </button>
+        </div>
+
+        <div class="officers-list-container" id="officersListContainer">
+            <div style="text-align:center; padding: 25px; color: var(--text-muted); font-size: 12px;">Loading accounts from portalData/accounts...</div>
+        </div>
+
+        <button type="button" class="vehicle-btn" style="background:#0b0f19; color:var(--text-main); margin-top: 4px;" onclick="closeAdminModal()">Close</button>
+    </div>
+</div>
+
+<div class="app-container">
+    
+    <!-- Header Banner -->
+    <div class="header-banner">
+        <div class="header-top-row">
+            <button type="button" class="back-portal-btn" onclick="goToPortal()" title="Return to Portal">
+                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Portal
+            </button>
+
+            <div class="header-center-title">
+                <h1>Carpark Booth</h1>
+            </div>
+
+            <div class="header-right-group">
+                <div id="officerBadge" class="officer-badge" onclick="openOfficerAuthModal()" title="Tap to login & switch officer">
+                    <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;flex-shrink:0;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span id="officerNameLabel" class="officer-name-text">Login</span>
+                </div>
+
+                <button type="button" class="admin-gear-btn" onclick="openAdminModal()" title="Admin Barrier Access Settings">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.49,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.51,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.51,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.49,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <p>Real-Time Rate Calculator • SG Public Holidays Pre-programmed</p>
+    </div>
+
+    <!-- TAB 1: MAIN CALCULATOR VIEW -->
+    <div id="view-main" class="tab-view active">
+        
+        <!-- PayNow + Barrier Action Box -->
+        <div class="paynow-card">
+            <div class="paynow-header">
+                <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M3,11H5V13H3V11M11,5H13V9H11V5M9,11H13V15H11V13H9V11M15,11H17V13H15V11M19,11H21V13H19V11M3,15H5V19H3V15M19,15H21V19H19V15M11,17H13V19H11V17M15,17H17V19H15V17M5,5H9V9H5V5M5,3A2,2 0 0,0 3,5V9A2,2 0 0,0 5,11H9A2,2 0 0,0 9,3H5M7,7H7.01V7.01H7V7M15,5H19V9H15V5M15,3A2,2 0 0,0 13,5V9A2,2 0 0,0 15,11H19A2,2 0 0,0 19,3H15M17,7H17.01V7.01H17V7M5,17H7V19H5V17Z"/></svg>
+                Wisma Atria MCST 1471
+            </div>
+            
+            <div class="paynow-barrier-row">
+                <div class="paynow-col-left" id="qrContainer">
+                    <div class="qr-placeholder">
+                        <img src="MCST 1471.jpeg" alt="PayNow QR Code">
+                    </div>
+                    <span style="font-size: 10px; color: var(--text-muted); text-align: center;">Scan to Pay</span>
+                </div>
+
+                <div class="paynow-col-right" id="barrierContainer">
+                    <button type="button" id="btnOpenBarrier" class="btn-open-barrier" onclick="triggerOpenExitBarrier()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M13.96,12.29L11.21,9.54L12.63,8.12L17.57,13.07L12.63,18L11.21,16.59L13.96,13.84H6.5V12.29H13.96Z"/>
+                        </svg>
+                        <span>Open Exit Barrier</span>
+                        <span class="barrier-status-text" id="barrierStatusLabel">Collect Cash / Override</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle & Entry Block -->
+        <div class="card card-compact">
+            <h2>
+                <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M18.92 11.01C18.72 10.42 18.16 10 17.5 10H6.5C5.84 10 5.28 10.42 5.08 11.01L3 17V24C3 24.55 3.45 25 4 25H5C5.55 25 6 24.55 6 24V22H18V24C18 24.55 18.45 25 19 25H20C20.55 25 21 24.55 21 24V17L18.92 11.01M6.85 12H17.14L18.22 15H5.78L6.85 12M6.5 19C5.67 19 5 18.33 5 17.5C5 16.67 5.67 16 6.5 16C7.33 16 8 16.67 8 17.5C8 18.33 7.33 19 6.5 19M17.5 19C16.67 19 16 18.33 16 17.5C16 16.67 16.67 16 17.5 16C18.33 16 19 16.67 19 17.5C19 18.33 18.33 19 17.5 19Z"/></svg>
+                Vehicle &amp; Entry Time
+            </h2>
+            
+            <div class="form-group">
+                <label>Vehicle Type</label>
+                <div class="vehicle-toggle">
+                    <button type="button" class="vehicle-btn active" id="btnCar" onclick="setVehicle('car')">
+                        <svg viewBox="0 0 24 24"><path d="M18.92 11.01C18.72 10.42 18.16 10 17.5 10H6.5C5.84 10 5.28 10.42 5.08 11.01L3 17V24C3 24.55 3.45 25 4 25H5C5.55 25 6 24.55 6 24V22H18V24C18 24.55 18.45 25 19 25H20C20.55 25 21 24.55 21 24V17L18.92 11.01M6.85 12H17.14L18.22 15H5.78L6.85 12M6.5 19C5.67 19 5 18.33 5 17.5C5 16.67 5.67 16 6.5 16C7.33 16 8 16.67 8 17.5C8 18.33 7.33 19 6.5 19M17.5 19C16.67 19 16 18.33 16 17.5C16 16.67 16.67 16 17.5 16C18.33 16 19 16.67 19 17.5C19 18.33 18.33 19 17.5 19Z"/></svg>
+                        Car
+                    </button>
+                    <button type="button" class="vehicle-btn" id="btnMotor" onclick="setVehicle('motorcycle')">
+                        <svg viewBox="0 0 24 24"><path d="M19.5 11.2C18.1 11.2 16.9 12.1 16.4 13.3L12.5 10.7C12.7 10.2 12.8 9.6 12.8 9C12.8 6.5 10.8 4.5 8.3 4.5S3.8 6.5 3.8 9C3.8 11 5.1 12.7 7 13.3V14.8C5.2 14.3 3.8 12.7 3.8 10.8C3.8 8.4 5.8 6.4 8.2 6.4S12.7 8.4 12.7 10.8C12.7 11.6 12.5 12.3 12.1 12.9L16 15.5C15.8 16.1 15.7 16.8 15.7 17.5C15.7 19.9 17.7 21.9 20.2 21.9S24.7 19.9 24.7 17.5C24.7 15 22.4 11.2 19.5 11.2M8.3 12C6.6 12 5.3 10.7 5.3 9S6.6 6 8.3 6 11.3 7.3 11.3 9 10 12 8.3 12M19.7 20.4C18 20.4 16.7 19.1 16.7 17.4C16.7 15.7 18 14.4 19.7 14.4C21.4 14.4 22.7 15.7 22.7 17.4C22.7 19.1 21.3 20.4 19.7 20.4Z"/></svg>
+                        Motor
+                    </button>
+                </div>
+            </div>
+
+            <div class="entry-datetime-row">
+                <div class="form-group">
+                    <label>Entry Date</label>
+                    <input type="date" id="entryDateInput" class="centered-date-input" onchange="onCustomEntryChange('main')">
+                </div>
+
+                <div class="form-group">
+                    <label>Entry Time (24H)</label>
+                    <div class="time-input-row">
+                        <input type="text" id="entryHourInput" class="time-num-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="HH" onclick="selectAllText(this)" onfocus="selectAllText(this)" oninput="handleTimeInput(this, 'entryMinuteInput', 'main')">
+                        <span class="time-colon">:</span>
+                        <input type="text" id="entryMinuteInput" class="time-num-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="MM" onclick="selectAllText(this)" onfocus="selectAllText(this)" oninput="handleTimeInput(this, null, 'main')">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Real-time Exit Indicator Status -->
+        <div id="liveStatusContainer" class="live-status-box">
+            <div class="live-status-left">
+                <div class="pulsing-dot" id="liveDot"></div>
+                <span class="live-title" id="liveModeLabel">Exit: Real-Time Clock</span>
+            </div>
+            <span class="live-time-val" id="liveExitTimeDisplay">--:--:--</span>
+        </div>
+
+        <!-- Calculated Fee Card -->
+        <div class="card card-compact">
+            <h2>
+                <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1,15H11V11h2Zm0-8H11V7h2Z"/></svg>
+                Calculated Fee
+            </h2>
+            
+            <div id="resultsContent">
+                <div class="total-display">
+                    <div class="total-title">Total Due</div>
+                    <div class="total-amount" id="lblTotal">$0.00</div>
+                    <div class="total-duration" id="lblDuration">0 mins</div>
+                </div>
+
+                <div class="breakdown-title">Itemized Breakdown</div>
+                <div id="breakdownContainer"></div>
+            </div>
+            
+            <div id="errorContainer" class="error-msg" style="display: none;"></div>
+        </div>
+
+    </div>
+
+    <!-- TAB 2: SETTINGS & MANUAL OVERRIDE VIEW -->
+    <div id="view-settings" class="tab-view">
+        
+        <!-- Quick Rates Reference -->
+        <div class="card card-compact">
+            <h2>
+                <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M7 10H17V12H7V10M7 6H17V8H7V6M7 14H12V16H7V14"/></svg>
+                Rates Quick Reference
+            </h2>
+
+            <div class="ref-section">
+                <div class="ref-section-title">Cars (Weekdays Mon - Fri)</div>
+                <div class="ref-row">
+                    <span class="ref-label">Day (07:01am - 5:00pm) 1st Hr:</span>
+                    <span class="ref-value">$2.60</span>
+                </div>
+                <div class="ref-row">
+                    <span class="ref-label">Day Sub. 30-min block:</span>
+                    <span class="ref-value">$1.70</span>
+                </div>
+                <div class="ref-row" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 3px; margin-top: 3px;">
+                    <span class="ref-label">Night (5:01pm - 7:00am):</span>
+                    <span class="ref-value">$5.00 / entry</span>
+                </div>
+            </div>
+
+            <div class="ref-section">
+                <div class="ref-section-title">Cars (Weekends &amp; PH)</div>
+                <div class="ref-row">
+                    <span class="ref-label">Day (07:01am - 5:00pm) 1st Hr:</span>
+                    <span class="ref-value">$2.70</span>
+                </div>
+                <div class="ref-row">
+                    <span class="ref-label">Day Sub. 30-min block:</span>
+                    <span class="ref-value">$1.70</span>
+                </div>
+                <div class="ref-row" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 3px; margin-top: 3px;">
+                    <span class="ref-label">Night (5:01pm - 7:00am):</span>
+                    <span class="ref-value">$5.00 / entry</span>
+                </div>
+            </div>
+
+            <div class="ref-section" style="background-color: rgba(225, 29, 72, 0.1); border-color: rgba(251, 113, 133, 0.3);">
+                <div class="ref-section-title" style="color: #fb7185; border-color: rgba(251, 113, 133, 0.3);">Surcharges &amp; Motorcycles</div>
+                <div class="ref-row">
+                    <span class="ref-label" style="color: #fb7185;">Lunch Surcharge (Entry 12pm - 2pm):</span>
+                    <span class="ref-value" style="color: #fb7185;">+$1.10</span>
+                </div>
+                <div class="ref-row" style="border-top: 1px dashed rgba(251, 113, 133, 0.3); padding-top: 3px; margin-top: 3px;">
+                    <span class="ref-label" style="color: #34d399;">Motorcycle Flat Rate:</span>
+                    <span class="ref-value" style="color: #34d399;">$4.00 / entry</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time & Rate Overrides -->
+        <div class="card card-compact">
+            <h2>
+                <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.49,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.51,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.51,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.49,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+                Time &amp; Rate Overrides
+            </h2>
+
+            <div class="switch-row" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 8px;">
+                <div>
+                    <div class="switch-label">Real-Time Live Exit Mode</div>
+                    <div class="setting-info">When enabled, exit time updates continuously to current time.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="chkRealTimeExit" checked onchange="toggleRealTimeMode(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="entry-datetime-row">
+                <div class="form-group">
+                    <label>Manual Entry Date</label>
+                    <input type="date" id="settingsEntryDateInput" class="centered-date-input" onchange="onCustomEntryChange('settings')">
+                </div>
+
+                <div class="form-group">
+                    <label>Manual Entry Time (24H)</label>
+                    <div class="time-input-row">
+                        <input type="text" id="settingsEntryHourInput" class="time-num-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="HH" onclick="selectAllText(this)" onfocus="selectAllText(this)" oninput="handleTimeInput(this, 'settingsEntryMinuteInput', 'settings')">
+                        <span class="time-colon">:</span>
+                        <input type="text" id="settingsEntryMinuteInput" class="time-num-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="MM" onclick="selectAllText(this)" onfocus="selectAllText(this)" oninput="handleTimeInput(this, null, 'settings')">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label>Manual Exit Date &amp; Time</label>
+                <input type="datetime-local" id="settingsExitTime" onchange="onManualExitChange(this.value)">
+                <div class="setting-info">Keying in manual exit time turns off Real-time Mode automatically.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bottom Navigation Bar -->
+<nav class="nav-bar">
+    <button class="nav-btn active" id="navMain" onclick="switchTab('main')">
+        <svg viewBox="0 0 24 24"><path d="M7,15H9V17H7V15M11,15H13V17H11V15M15,15H17V17H15V15M19,15H21V17H19V15M7,11H9V13H7V11M11,11H13V13H11V11M15,11H17V13H15V11M19,11H21V13H19V11M7,7H9V9H7V7M11,7H13V9H11V7M15,7H17V9H15V7M19,7H21V9H19V7M5,19V5H22V19H5M3,21H24V3H3V21M1,5H3V19H1V5M1,3H3V3H1V3Z"/></svg>
+        Calculator
+    </button>
+    <button class="nav-btn" id="navSettings" onclick="switchTab('settings')">
+        <svg viewBox="0 0 24 24"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.49,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.51,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.51,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.49,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
+        Settings
+    </button>
+</nav>
+
+<!-- Main Application Logic Script -->
+<script src="app.js"></script>
+</body>
+</html>

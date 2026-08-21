@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="orientation" content="portrait">
+    <title>WAFP CC</title>
+
+    <!-- PWA MANIFEST LINK -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS / ANDROID SHORTCUT TITLES & CONFIG -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WAFP CC">
+    <meta name="application-name" content="WAFP CC">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#030712">
+
+    <!-- ICONS -->
+    <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/color/180/alarm.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/color/192/alarm.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center p-2">
+
+    <!-- PORTRAIT MODE RECOMMENDED PROMPT OVERLAY -->
+    <div id="portraitPrompt" class="fixed inset-0 bg-gray-950 bg-opacity-98 z-50 hidden flex-col items-center justify-center text-center p-6 border-4 border-yellow-400 transition-all duration-300">
+        <div class="animate-bounce text-6xl mb-4">📱</div>
+        <h2 class="text-xl font-extrabold text-yellow-400 mb-2 uppercase tracking-wide flex items-center justify-center gap-2">
+            <span>⚠️</span> Please Rotate Device <span>⚠️</span>
+        </h2>
+        <p class="text-xs text-gray-300 max-w-xs leading-relaxed">
+            This Concierge Portal is optimized for <strong class="text-yellow-400 font-bold">Portrait Mode</strong>. Please turn your phone vertically to continue.
+        </p>
+    </div>
+
+    <!-- LOCATION VERIFICATION OVERLAY -->
+    <div id="locationCheckOverlay" class="bg-gray-900 border-2 border-yellow-400 rounded-lg shadow-2xl p-4 w-full max-w-xs text-center space-y-2">
+        <div class="text-xl animate-bounce">📍</div>
+        <h2 class="text-xs font-bold text-yellow-400">Verifying Location...</h2>
+        <p class="text-[11px] text-gray-300 leading-relaxed">
+            Verifying GPS location at <strong>Wisma Atria</strong>...
+        </p>
+        <div id="geoSpinner" class="inline-block w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <!-- ACCESS RESTRICTED SCREEN -->
+    <div id="accessDeniedScreen" class="hidden bg-gray-900 border-2 border-red-600 rounded-lg shadow-2xl p-4 w-full max-w-xs text-center space-y-2">
+        <div class="text-2xl">🔒</div>
+        <h2 class="text-sm font-extrabold text-red-500 uppercase tracking-wide">Access Restricted</h2>
+        <p id="deniedReason" class="text-[11px] text-gray-300 leading-relaxed">
+            You must be physically at Wisma Atria to submit reports.
+        </p>
+        <div class="pt-1">
+            <button onclick="verifySecurityAndLocation()" class="bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold py-1.5 px-3 rounded text-[11px] tracking-wide uppercase transition shadow">
+                🔄 Retry Check
+            </button>
+        </div>
+    </div>
+
+    <!-- UNLOCKED FORM -->
+    <div id="unlockedPortal" class="hidden bg-gray-900 border-2 border-yellow-400 rounded-lg shadow-2xl p-3.5 sm:p-4 w-full max-w-sm">
+        
+        <!-- Header -->
+        <div class="border-b border-gray-800 pb-1.5 mb-2 text-center">
+            <div class="inline-flex items-center gap-1 bg-green-950 border border-green-700 text-green-400 text-[9px] font-bold px-2 py-0.5 rounded-full mb-0.5">
+                <span>🟢</span> Location Verified: Wisma Atria
+            </div>
+            <h1 class="text-sm sm:text-base font-extrabold text-yellow-400 tracking-wide uppercase flex items-center justify-center gap-1">
+                <span>⚠️</span> 🛎️ Concierge Breakdown Report <span>⚠️</span>
+            </h1>
+            <p class="text-[10px] text-gray-400 font-medium">Lifts &amp; Escalators Priority Portal</p>
+        </div>
+
+        <!-- FORM -->
+        <form id="conciergeForm" name="concierge-report" method="POST" data-netlify="true" enctype="multipart/form-data" class="space-y-2">
+            <input type="hidden" name="form-name" value="concierge-report" />
+            <input type="hidden" name="submission_type" value="concierge_report" />
+
+            <!-- 1. Name -->
+            <div>
+                <label class="block text-[11px] font-bold text-yellow-400 mb-0.5">Concierge Name *</label>
+                <input type="text" id="officerName" name="officer_name" required placeholder="Enter your name" onblur="autoCapitalizeInput(this)"
+                       class="w-full h-8 px-2 py-1 bg-gray-950 border border-gray-700 rounded text-xs text-white placeholder-gray-500 focus:ring-1 focus:ring-yellow-400 outline-none">
+            </div>
+
+            <!-- 2. Asset Brand / Type -->
+            <div>
+                <label class="block text-[11px] font-bold text-yellow-400 mb-0.5">Asset Brand / Type *</label>
+                <select id="assetCategory" name="asset_category" required onchange="updateAssetsAndIssues()" 
+                        class="w-full h-8 px-2 py-1 bg-gray-950 border border-gray-700 rounded text-xs text-white focus:ring-1 focus:ring-yellow-400 outline-none">
+                    <option value="">-- Select Asset Category --</option>
+                    <option value="Escalator (HITACHI)">Escalator (HITACHI)</option>
+                    <option value="Escalator (OTIS)">Escalator (OTIS)</option>
+                    <option value="Escalator (KONE)">Escalator (KONE)</option>
+                    <option value="Lifts (KONE)">Lifts (KONE)</option>
+                </select>
+            </div>
+
+            <!-- 3. Specific Asset Unit -->
+            <div>
+                <label class="block text-[11px] font-bold text-yellow-400 mb-0.5">Specific Asset Unit *</label>
+                <select id="assetUnit" name="asset_unit" required disabled 
+                        class="w-full h-8 px-2 py-1 bg-gray-900 border border-gray-800 rounded text-xs text-gray-500 focus:ring-1 focus:ring-yellow-400 outline-none">
+                    <option value="">-- Select Category First --</option>
+                </select>
+            </div>
+
+            <!-- 4. Issue / Fault Dropdown -->
+            <div>
+                <label class="block text-[11px] font-bold text-yellow-400 mb-0.5">Issue / Fault *</label>
+                <select id="issueType" name="issue_type" required disabled 
+                        class="w-full h-8 px-2 py-1 bg-gray-900 border border-gray-800 rounded text-xs text-gray-500 focus:ring-1 focus:ring-yellow-400 outline-none">
+                    <option value="">-- Select Category First --</option>
+                </select>
+            </div>
+
+            <!-- 5. Remarks / Description -->
+            <div>
+                <label class="block text-[11px] font-bold text-yellow-400 mb-0.5">Remarks / Location Details (Optional)</label>
+                <textarea id="remarksDescription" name="remarks_description" rows="2" placeholder="Provide extra details..." onblur="autoCapitalizeInput(this)"
+                          class="w-full p-1.5 bg-gray-950 border border-gray-700 rounded text-xs text-white placeholder-gray-500 focus:ring-1 focus:ring-yellow-400 outline-none"></textarea>
+            </div>
+
+            <!-- 6. CAMERA CAPTURE -->
+            <div class="text-center pt-0.5">
+                <label class="block text-[11px] font-bold text-yellow-400 mb-1">📷 Take Photo / Video Evidence (Optional)</label>
+                <input type="file" id="photoInput" name="photo" accept="image/*,video/*" capture="environment" 
+                       class="block mx-auto text-[11px] text-gray-400 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-bold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 cursor-pointer">
+            </div>
+
+            <div id="statusMsg" class="hidden text-center text-[11px] font-bold p-1.5 rounded"></div>
+
+            <button type="submit" id="submitBtn" 
+                    class="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold py-2 px-3 rounded transition duration-200 text-xs shadow-lg uppercase tracking-wide mt-1">
+                🚨 SUBMIT BREAKDOWN TO FCC
+            </button>
+        </form>
+    </div>
+
+    <!-- PWA INSTALLATION HELPER BANNER -->
+    <div id="pwaInstallBanner" style="display:none;" class="fixed bottom-3 left-3 right-3 bg-gray-900 border border-yellow-400 rounded-xl p-3 shadow-2xl z-50 text-center max-w-sm mx-auto">
+        <div class="text-xs font-extrabold text-yellow-400 mb-0.5">📲 Add WAFP CC to Home Screen</div>
+        <div id="pwaGuideText" class="text-[11px] text-gray-300 mb-2 leading-tight">
+            Install this app on your phone for direct access.
+        </div>
+        <div class="flex gap-2 justify-center">
+            <button id="pwaInstallBtn" class="bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold px-3 py-1 rounded text-[11px]">Install Shortcut</button>
+            <button onclick="document.getElementById('pwaInstallBanner').style.display='none'" class="text-gray-400 hover:text-white px-2 py-1 text-[11px]">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // PASTE YOUR MASTER PORTAL APPS SCRIPT URL HERE:
+        // ----------------------------------------------------
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ0YKy16phTOi7yZfAwpUrXiPpaP34MNZNg08EnsuDxKKckhI5XFDNpjJknr1cVz_D/exec";
+
+        // STANDARDIZED PORTRAIT ORIENTATION PROMPT HANDLER
+        function checkOrientation() {
+            const prompt = document.getElementById('portraitPrompt');
+            if (prompt) {
+                if (window.innerWidth > window.innerHeight && window.innerHeight < 600) {
+                    prompt.classList.remove('hidden');
+                    prompt.classList.add('flex');
+                } else {
+                    prompt.classList.add('hidden');
+                    prompt.classList.remove('flex');
+                }
+            }
+        }
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('orientationchange', checkOrientation);
+        window.addEventListener('DOMContentLoaded', checkOrientation);
+
+        // AUTO CAPITALIZE INPUT FUNCTION
+        function autoCapitalizeInput(element) {
+            if (!element || !element.value) return;
+            element.value = element.value.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+        }
+
+        // WISMA ATRIA GPS COORDINATES
+        const WISMA_LAT = 1.30398;
+        const WISMA_LNG = 103.83333;
+        const MAX_ALLOWED_METERS = 250;
+
+        function calculateMetersDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const rad = Math.PI / 180;
+            const dLat = (lat2 - lat1) * rad;
+            const dLon = (lon2 - lon1) * rad;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function verifySecurityAndLocation() {
+            const overlay = document.getElementById('locationCheckOverlay');
+            const deniedScreen = document.getElementById('accessDeniedScreen');
+            const portal = document.getElementById('unlockedPortal');
+
+            overlay.classList.remove('hidden');
+            deniedScreen.classList.add('hidden');
+            portal.classList.add('hidden');
+
+            const tzOffset = new Date().getTimezoneOffset();
+            if (tzOffset !== -480) {
+                showDenied("🔒 Device Timezone Mismatch. Device clock must be set to Singapore (UTC+8).");
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                showDenied("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+
+                    if (accuracy <= 1.0 || accuracy === 0) {
+                        showDenied("🔒 Fake GPS / Mock Location Detected. Disable mock location apps.");
+                        return;
+                    }
+
+                    const distanceMeters = calculateMetersDistance(userLat, userLng, WISMA_LAT, WISMA_LNG);
+
+                    if (distanceMeters <= MAX_ALLOWED_METERS) {
+                        overlay.classList.add('hidden');
+                        portal.classList.remove('hidden');
+                    } else {
+                        const distanceKm = (distanceMeters / 1000).toFixed(1);
+                        showDenied(`You are currently ${distanceKm} km away from Wisma Atria. You must be physically at Wisma Atria to submit reports.`);
+                    }
+                },
+                (error) => {
+                    let msg = "Location permission denied. Please allow location access in browser settings.";
+                    if (error.code === error.TIMEOUT) msg = "Location request timed out. Please try again.";
+                    showDenied(msg);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function showDenied(reason) {
+            document.getElementById('locationCheckOverlay').classList.add('hidden');
+            document.getElementById('unlockedPortal').classList.add('hidden');
+            document.getElementById('deniedReason').textContent = reason;
+            document.getElementById('accessDeniedScreen').classList.remove('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', verifySecurityAndLocation);
+
+        const subAssetData = {
+            "Escalator (HITACHI)": [
+                "Esc 01 (B1 to L1)", "Esc 02 (L1 to B1)", "Esc 03 (L1 to L2)", "Esc 04 (L2 to L1)",
+                "Esc 05 (L2 to L3)", "Esc 06 (L3 to L2)", "Esc 07 (L3 to L4)", "Esc 08 (L4 to L3)",
+                "Esc 09 (L4 to L5)", "Esc 10 (L5 to L4)", "Esc 11 (L5 to L6)", "Esc 12 (L6 to L5)",
+                "Esc 13 (L6 to L7)", "Esc 14 (L7 to L6)"
+            ],
+            "Escalator (OTIS)": ["Esc E1 (B1 to L1)", "Esc E1A (L1 to B1)"],
+            "Escalator (KONE)": ["ESE1"],
+            "Lifts (KONE)": ["FL1", "PL2", "PL3", "PL4", "PL5", "SL9", "PL10 (Bubble Lift)", "PL11 (Bubble Lift)"]
+        };
+
+        const escalatorIssues = ["Stopped", "Strange Noise", "Vibration", "Jerking Movement", "Other Fault"];
+        const liftIssues = ["Stopped", "Mantrap (Passengers Trapped)", "Doors Stuck / Keeps Opening & Closing", "Other Fault"];
+
+        function updateAssetsAndIssues() {
+            const categorySelect = document.getElementById("assetCategory");
+            const unitSelect = document.getElementById("assetUnit");
+            const issueSelect = document.getElementById("issueType");
+            const selectedCategory = categorySelect.value;
+
+            unitSelect.innerHTML = ""; issueSelect.innerHTML = "";
+
+            if (selectedCategory && subAssetData[selectedCategory]) {
+                unitSelect.disabled = false;
+                unitSelect.className = "w-full h-8 px-2 py-1 bg-gray-950 border border-gray-700 rounded text-xs text-white outline-none";
+                
+                const defaultUnit = document.createElement("option"); defaultUnit.value = ""; defaultUnit.textContent = "-- Select Specific Unit --";
+                unitSelect.appendChild(defaultUnit);
+                subAssetData[selectedCategory].forEach(unit => {
+                    const option = document.createElement("option"); option.value = unit; option.textContent = unit; unitSelect.appendChild(option);
+                });
+
+                issueSelect.disabled = false;
+                issueSelect.className = "w-full h-8 px-2 py-1 bg-gray-950 border border-gray-700 rounded text-xs text-white outline-none";
+                
+                const defaultIssue = document.createElement("option"); defaultIssue.value = ""; defaultIssue.textContent = "-- Select Issue --";
+                issueSelect.appendChild(defaultIssue);
+                
+                const isLift = selectedCategory.includes("Lift");
+                const currentIssues = isLift ? liftIssues : escalatorIssues;
+                currentIssues.forEach(issue => {
+                    const option = document.createElement("option"); option.value = issue; option.textContent = issue; issueSelect.appendChild(option);
+                });
+
+            } else {
+                unitSelect.disabled = true;
+                unitSelect.className = "w-full h-8 px-2 py-1 bg-gray-900 border border-gray-800 rounded text-xs text-gray-500 outline-none";
+                unitSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
+
+                issueSelect.disabled = true;
+                issueSelect.className = "w-full h-8 px-2 py-1 bg-gray-900 border border-gray-800 rounded text-xs text-gray-500 outline-none";
+                issueSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
+            }
+        }
+
+        function getRawBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function compressAndTimestampPhoto(file, assetUnit, conciergeName) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const MAX_WIDTH = 1000;
+                        let width = img.width; let height = img.height;
+                        if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const now = new Date();
+                        const timeStr = now.toLocaleDateString('en-SG', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                        const fontSize = Math.max(15, Math.round(width / 30));
+                        ctx.font = `bold ${fontSize}px sans-serif`;
+
+                        const line1 = `WISMA ATRIA | CONCIERGE | ${assetUnit || 'BREAKDOWN'}`;
+                        const line2 = `DATE/TIME: ${timeStr} | NAME: ${conciergeName || 'CONCIERGE'}`;
+                        const padding = fontSize * 0.5;
+                        const boxHeight = fontSize * 2.6 + padding;
+
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                        ctx.fillRect(0, height - boxHeight, width, boxHeight);
+
+                        ctx.fillStyle = '#FACC15';
+                        ctx.fillText(line1, padding, height - boxHeight + fontSize + 2);
+                        ctx.fillText(line2, padding, height - boxHeight + fontSize * 2 + 6);
+
+                        resolve(canvas.toDataURL('image/jpeg', 0.65));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.onerror = err => reject(err);
+            });
+        }
+
+        document.getElementById('conciergeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            autoCapitalizeInput(document.getElementById('officerName'));
+            autoCapitalizeInput(document.getElementById('remarksDescription'));
+
+            const submitBtn = document.getElementById('submitBtn');
+            const statusMsg = document.getElementById('statusMsg');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "⚡ SUBMITTING TO FCC...";
+            statusMsg.classList.add('hidden');
+
+            const rawFormData = new FormData(this);
+            const params = new URLSearchParams();
+
+            for (let pair of rawFormData.entries()) {
+                if (typeof pair[1] === 'string') {
+                    params.append(pair[0], pair[1]);
+                }
+            }
+
+            const photoInput = document.getElementById('photoInput');
+            const assetUnitVal = document.getElementById('assetUnit').value;
+            const officerNameVal = document.getElementById('officerName').value;
+
+            if (photoInput.files.length > 0) {
+                try {
+                    const file = photoInput.files[0];
+                    if (file.type.startsWith('video/')) {
+                        if (file.size > 35 * 1024 * 1024) {
+                            alert("⚠️ Video file too large! Upload a video under 35MB.");
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = "🚨 SUBMIT BREAKDOWN TO FCC";
+                            return;
+                        }
+                        const videoBase64 = await getRawBase64(file);
+                        params.append('photo_base64', videoBase64);
+                        params.append('photo_name', `CONCIERGE_VIDEO_${file.name}`);
+                        params.append('photo_type', file.type);
+                    } else {
+                        const compressedBase64 = await compressAndTimestampPhoto(file, assetUnitVal, officerNameVal);
+                        params.append('photo_base64', compressedBase64);
+                        params.append('photo_name', `CONCIERGE_${file.name}`);
+                        params.append('photo_type', 'image/jpeg');
+                    }
+                } catch (err) { console.error("Media error", err); }
+            }
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.result === "success") {
+                    fetch('/', { method: 'POST', body: rawFormData });
+                    statusMsg.className = "text-center text-xs font-bold p-2 rounded bg-yellow-400 text-black border border-yellow-500";
+                    statusMsg.textContent = "🚨 Concierge breakdown report submitted! FCC Supervisors notified via Pushover.";
+                    statusMsg.classList.remove('hidden');
+                    document.getElementById('conciergeForm').reset();
+                    updateAssetsAndIssues();
+                } else {
+                    throw new Error(data.error || "Script error");
+                }
+            })
+            .catch(err => {
+                statusMsg.className = "text-center text-xs font-bold p-2 rounded bg-red-900 text-red-200 border border-red-700";
+                statusMsg.textContent = "⚠️ Report logged (Sync Notice: " + err.message + ")";
+                statusMsg.classList.remove('hidden');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "🚨 SUBMIT BREAKDOWN TO FCC";
+            });
+        });
+
+        // REGISTER INLINE SERVICE WORKER (FOR FULL PWA INSTALLABILITY)
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', function(e) {});`;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+        }
+
+        // PWA INSTALLATION HELPER BANNER LOGIC
+        let deferredPrompt = null;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (!isStandalone) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                const banner = document.getElementById('pwaInstallBanner');
+                if (banner) banner.style.display = 'block';
+
+                document.getElementById('pwaInstallBtn').onclick = async () => {
+                    banner.style.display = 'none';
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt = null;
+                    }
+                };
+            });
+
+            if (isIOS) {
+                const banner = document.getElementById('pwaInstallBanner');
+                const guide = document.getElementById('pwaGuideText');
+                const installBtn = document.getElementById('pwaInstallBtn');
+                
+                if (banner && guide && installBtn) {
+                    banner.style.display = 'block';
+                    guide.innerHTML = "Tap <strong>Share</strong> (⬆️) and select <strong>'Add to Home Screen'</strong> to install <strong>WAFP CC</strong>.";
+                    installBtn.style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

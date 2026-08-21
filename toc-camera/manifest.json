@@ -1,0 +1,21 @@
+{
+  "short_name": "TOC Camera",
+  "name": "TOC Camera Web Companion",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=192&h=192&q=80",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=512&h=512&q=80",
+      "type": "image/jpeg",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#121214",
+  "theme_color": "#1E1B24",
+  "display": "standalone",
+  "orientation": "portrait"
+}

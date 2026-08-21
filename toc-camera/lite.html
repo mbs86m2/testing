@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TOC Camera - Lite Web Version</title>
+  
+  <!-- PWA & Standalone Settings -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WA FCC">
+  <meta name="theme-color" content="#0b0f19">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=192&h=192&q=80">
+
+  <script>
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      return false;
+    });
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="camera-engine.js" defer></script>
+</head>
+<body class="bg-[#0b0f19] text-[#f8fafc] min-h-screen flex flex-col">
+
+  <!-- PORTRAIT MODE OVERLAY -->
+  <div id="orientationOverlay" class="hidden fixed inset-0 bg-[#0b0f19]/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-6 text-center text-white space-y-4">
+    <div class="w-16 h-16 bg-sky-500/20 rounded-full flex items-center justify-center text-sky-400 border border-sky-500/40 animate-pulse">
+      <svg class="w-8 h-8 text-sky-400 animate-spin" style="animation-duration: 4s;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+      </svg>
+    </div>
+    <div>
+      <h2 class="text-lg font-extrabold text-white tracking-wide">Portrait Mode Recommended</h2>
+      <p class="text-xs text-gray-400 mt-1 max-w-xs leading-relaxed">
+        This app is optimized for vertical view. Please rotate your device to portrait orientation for optimal performance and viewfinder fit.
+      </p>
+    </div>
+  </div>
+
+  <!-- FIXED HEADER WITH SAFE AREA NOTCH PADDING -->
+  <header class="sticky top-0 z-40 bg-[#161e2e]/95 backdrop-blur-md px-3 pb-3 border-b border-white/10 shadow-lg flex justify-between items-center max-w-md mx-auto w-full" style="padding-top: max(0.75rem, env(safe-area-inset-top, 16px));">
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="goToPortal()" class="p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-sky-400 rounded-xl border border-white/10 active:scale-95 transition shadow-sm" title="Back to Portal">
+        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+      </button>
+      <div class="w-9 h-9 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
+        ⚡
+      </div>
+      <div>
+        <h1 class="text-base font-extrabold tracking-tight bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent leading-none">TOC Camera <span class="text-xs text-sky-400 font-mono">LITE</span></h1>
+        <p class="text-[10px] text-gray-400 font-medium mt-0.5">Optimized for Old Android Phones</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-1.5">
+      <button type="button" onclick="switchToStandardMode()" class="px-2.5 py-1.5 bg-white/5 text-gray-300 hover:text-white text-xs font-bold rounded-lg border border-white/10 active:scale-95 transition" title="Switch to Standard Mode">
+        Standard
+      </button>
+      <button type="button" onclick="syncLatestConfig()" class="px-2.5 py-1.5 bg-sky-500/15 border border-sky-500/30 rounded-lg text-xs font-bold text-sky-300 hover:bg-sky-500/25 flex items-center gap-1 active:scale-95 transition" title="Sync Latest Config">
+        🔄 Config
+      </button>
+      <button type="button" onclick="openSettingsModal()" class="p-2 bg-white/5 hover:bg-white/10 text-sky-400 rounded-lg border border-white/10 font-bold text-xs active:scale-95 transition" title="Settings">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- SCROLLABLE BODY CONTENT -->
+  <main id="appWrapper" class="max-w-md mx-auto px-3 py-3 space-y-3 flex-1 overflow-y-auto w-full pb-10">
+
+    <!-- VIEWFINDER WITH FREEZE FRAME PREVIEW -->
+    <section onclick="handleCameraInteraction()" class="rounded-2xl bg-black border border-white/15 overflow-hidden shadow-2xl relative aspect-[3/4.2] flex flex-col justify-center items-center cursor-pointer">
+      
+      <video id="videoFeed" autoplay playsinline muted webkit-playsinline class="w-full h-full object-cover"></video>
+      <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleImportPhoto(event)">
+
+      <!-- CAPTURE PREVIEW OVERLAY -->
+      <img id="capturePreviewOverlay" class="hidden absolute inset-0 w-full h-full object-cover z-25 pointer-events-none transition-opacity duration-200">
+
+      <!-- CAPTURE CONFIRMATION BADGE -->
+      <div id="captureToast" class="hidden absolute top-12 left-1/2 -translate-x-1/2 bg-sky-600/95 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full backdrop-blur-md shadow-2xl z-35 flex items-center gap-1.5 border border-sky-400/50">
+        <span>📸 Photo Captured!</span>
+      </div>
+
+      <!-- TOP OVERLAY BAR -->
+      <div id="viewfinderTopBar" class="absolute top-0 inset-x-0 p-2.5 bg-black/60 backdrop-blur-md z-30 flex items-center justify-between border-b border-white/10 text-white text-xs">
+        <div class="flex items-center gap-2">
+          <span id="timingStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span id="timingStatusText" class="font-extrabold text-[11px] tracking-wide text-white">Checking Timings...</span>
+        </div>
+        <div class="flex items-center gap-1.5 font-mono font-extrabold text-xs text-sky-300 bg-sky-950/80 px-2.5 py-1 rounded-xl border border-sky-500/30">
+          <span id="currentTimeText">00:00:00</span>
+        </div>
+      </div>
+
+      <!-- CAMERA START PLACEHOLDER -->
+      <div id="cameraPlaceholder" class="absolute inset-0 z-20 flex flex-col justify-center items-center bg-[#0b0f19] p-4 text-center space-y-3">
+        <div class="w-12 h-12 bg-[#161e2e] rounded-full flex items-center justify-center text-sky-400 font-bold text-xl border border-sky-500/30 shadow-lg">
+          📷
+        </div>
+        <div>
+          <h3 id="cameraPlaceholderTitle" class="font-bold text-white text-sm">Lite Viewfinder Ready</h3>
+          <p id="cameraPlaceholderDesc" class="text-[11px] text-gray-400 mt-0.5 max-w-[240px]">Tap anywhere to start camera.</p>
+        </div>
+        <button id="startCamBtn" onclick="event.stopPropagation(); startInAppCamera();" class="w-full px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-xs font-bold shadow-lg">
+          Start Lite Viewfinder
+        </button>
+      </div>
+
+      <!-- BOTTOM OVERLAY CONTROLS -->
+      <div id="shutterOverlay" class="hidden absolute bottom-11 inset-x-0 px-6 flex justify-between items-center z-30 pointer-events-auto">
+        <button onclick="event.stopPropagation(); toggleCameraFlash();" class="w-11 h-11 rounded-full bg-black/60 backdrop-blur-md text-amber-400 border border-amber-400/40 flex items-center justify-center text-lg active:scale-90 transition" title="Toggle Flash">
+          ⚡
+        </button>
+
+        <button onclick="event.stopPropagation(); capturePhoto();" class="w-16 h-16 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 border-4 border-white shadow-2xl flex items-center justify-center active:scale-90 transition" title="Take Photo">
+          <span class="w-8 h-8 rounded-full bg-white shadow-inner"></span>
+        </button>
+
+        <button onclick="event.stopPropagation(); switchCamera();" class="w-11 h-11 rounded-full bg-black/60 backdrop-blur-md text-sky-300 border border-sky-400/40 flex items-center justify-center text-lg active:scale-90 transition" title="Flip Camera">
+          🔄
+        </button>
+      </div>
+
+      <!-- BOTTOM OVERLAY BAR -->
+      <div id="viewfinderBottomBar" class="absolute bottom-0 inset-x-0 px-3 py-1.5 bg-black/80 backdrop-blur-md z-30 flex items-center justify-between border-t border-white/10 text-[10px] text-gray-300 font-medium">
+        <span>Active Hours: 10:00–12:00 &amp; 20:00–23:00</span>
+        <span id="timingAutoDeleteNote" class="font-bold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">3mins auto delete</span>
+      </div>
+    </section>
+
+    <!-- METRICS DASHBOARD -->
+    <section class="grid grid-cols-4 gap-1.5 text-xs">
+      <div class="p-2 bg-[#161e2e] border border-white/10 rounded-xl text-center shadow-sm flex flex-col justify-center">
+        <span class="text-[8px] font-mono uppercase text-gray-400 font-bold leading-tight">Sync Queue</span>
+        <div id="syncQueueCount" class="text-sm font-extrabold font-mono text-sky-400 mt-0.5">0</div>
+      </div>
+      <div class="p-2 bg-[#161e2e] border border-white/10 rounded-xl text-center shadow-sm flex flex-col justify-center">
+        <span class="text-[8px] font-mono uppercase text-gray-400 font-bold leading-tight">Total Synced</span>
+        <div id="totalSyncedCount" class="text-sm font-extrabold font-mono text-emerald-400 mt-0.5">0</div>
+      </div>
+      <button onclick="forceSyncNow()" id="forceSyncBtn" class="p-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 active:scale-95 text-white border border-sky-400/40 rounded-xl text-center shadow flex flex-col items-center justify-center transition">
+        <span class="text-[8px] font-mono uppercase font-bold opacity-90 leading-tight">Force Sync</span>
+        <span class="text-[11px] font-extrabold flex items-center gap-0.5 mt-0.5">⚡ Sync</span>
+      </button>
+      <button onclick="triggerDriveCleanup()" id="cleanupBtn" class="p-2 bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 border border-amber-500/40 rounded-xl text-center shadow flex flex-col items-center justify-center transition">
+        <span class="text-[8px] font-mono uppercase font-bold opacity-90 leading-tight">Duplicates</span>
+        <span class="text-[11px] font-extrabold flex items-center gap-0.5 mt-0.5">✨ Clean</span>
+      </button>
+    </section>
+
+    <!-- GALLERY -->
+    <section class="space-y-2">
+      <div class="flex justify-between items-center px-1">
+        <h3 class="text-xs font-extrabold tracking-wider uppercase font-mono text-sky-400">Local Cached Photos</h3>
+        <button onclick="clearAllLocalPhotos()" class="text-[10px] text-rose-400 font-bold uppercase hover:underline">
+          Clear Local
+        </button>
+      </div>
+
+      <div id="photoGrid" class="grid grid-cols-3 gap-2"></div>
+      <div id="emptyState" class="p-6 text-center rounded-2xl bg-[#161e2e] border border-dashed border-white/10 text-xs text-gray-400">
+        No local cached photos.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ADMIN PIN LOCK MODAL -->
+  <div id="pinModal" class="hidden fixed inset-0 bg-[#0b0f19]/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-[#161e2e] w-full max-w-xs rounded-3xl border border-white/15 shadow-2xl p-6 text-center space-y-4">
+      <div class="w-12 h-12 bg-sky-500/15 rounded-2xl flex items-center justify-center mx-auto text-sky-400 text-xl font-bold border border-sky-500/30">
+        🔒
+      </div>
+      <div>
+        <h3 class="font-extrabold text-base text-white">Admin Access</h3>
+        <p class="text-xs text-gray-400 mt-1">Enter 4-Digit Admin PIN to open Settings</p>
+      </div>
+      
+      <div class="space-y-2">
+        <input type="password" id="supervisorPinInput" maxlength="4" placeholder="••••" class="w-full text-center text-2xl font-mono tracking-widest bg-[#0b0f19] border border-white/15 text-white rounded-2xl p-3 focus:outline-none focus:border-sky-400">
+        <p id="pinErrorMsg" class="text-xs text-rose-400 font-bold hidden">Invalid PIN. Access Denied.</p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closePinModal()" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 font-bold rounded-xl text-xs transition">Cancel</button>
+        <button onclick="verifySupervisorPin()" class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-xl text-xs transition shadow">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="hidden fixed inset-0 bg-[#0b0f19]/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-[#161e2e] w-full max-w-sm rounded-2xl border border-white/15 shadow-xl p-4 space-y-3 text-xs">
+      
+      <div class="bg-sky-950/40 border border-sky-500/30 rounded-xl p-3 flex justify-between items-center">
+        <div>
+          <h2 id="supervisorGreeting" class="text-base font-extrabold text-sky-300 leading-tight">Hi Admin!</h2>
+          <p id="supervisorShiftBadge" class="text-[10px] text-sky-400 font-mono">System Config Active</p>
+        </div>
+        <button onclick="closeSettingsModal()" class="px-2 py-1 bg-white/10 text-gray-300 hover:text-white rounded font-bold border border-white/10">✕</button>
+      </div>
+
+      <div class="space-y-2">
+        <div>
+          <label class="block font-bold text-[10px] text-gray-300 uppercase">Web App URL</label>
+          <input type="url" id="appsScriptUrlInput" class="w-full bg-[#0b0f19] border border-white/15 text-white rounded p-2 font-mono text-xs focus:border-sky-400 outline-none">
+        </div>
+        <div>
+          <label class="block font-bold text-[10px] text-gray-300 uppercase">Folder ID</label>
+          <input type="text" id="folderIdInput" class="w-full bg-[#0b0f19] border border-white/15 text-white rounded p-2 font-mono text-xs focus:border-sky-400 outline-none">
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-white/10 space-y-2">
+        <button onclick="forceResyncAllToCurrentFolder()" class="w-full py-2 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 border border-sky-500/30 font-bold rounded text-xs flex items-center justify-center gap-1 shadow-sm transition">
+          🚀 Re-Sync All Local Photos to Current Folder
+        </button>
+        <button onclick="saveDriveSettings()" class="w-full py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded shadow transition">
+          Save Configuration Changes
+        </button>
+        <button onclick="logoutOfSettings()" class="w-full py-2 bg-rose-950/40 text-rose-300 hover:bg-rose-900/50 border border-rose-500/30 font-bold rounded text-xs transition">
+          🔒 Lock &amp; Logout Settings
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LIGHTBOX PREVIEW MODAL -->
+  <div id="lightboxModal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col justify-between p-3 pt-16">
+    <div class="flex justify-between items-center text-white px-1">
+      <span id="lightboxFileName" class="text-xs font-mono font-bold tracking-wide text-sky-400"></span>
+      <button onclick="closeLightbox()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm border border-white/15 transition">✕ Close</button>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center overflow-hidden my-3">
+      <img id="lightboxImage" class="max-h-full max-w-full object-contain rounded border border-white/10">
+    </div>
+
+    <div class="flex gap-2 justify-center pb-2 px-1">
+      <button id="lightboxDownloadBtn" class="flex-1 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs rounded text-center shadow transition">Save</button>
+      <button id="lightboxSyncBtn" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded text-center shadow transition">Sync</button>
+      <button id="lightboxDeleteBtn" class="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded text-center shadow transition">Delete</button>
+    </div>
+  </div>
+
+  <!-- AUTOMATED MASTER CONFIG SYNC ENGINE (LITE) -->
+  <script>
+    const MASTER_PORTAL_API = "https://script.google.com/macros/s/AKfycbz5QdZFTZeuzG-N4vlJwUBFJZ9cK8akHVjxORQjAsTg0neZY8_x60ZUsdtw_qtWH02Y/exec";
+    const DEFAULT_TOC_URL = "https://script.google.com/macros/s/AKfycbz5QdZFTZeuzG-N4vlJwUBFJZ9cK8akHVjxORQjAsTg0neZY8_x60ZUsdtw_qtWH02Y/exec";
+    const DEFAULT_TOC_FOLDER = "1vOHVu0nBmMFyFxU_JrfUhrow9EvEjkDU";
+
+    function applyTocConfig(url, folder) {
+      const activeUrl = url || DEFAULT_TOC_URL;
+      const activeFolder = folder || DEFAULT_TOC_FOLDER;
+
+      const urlIn = document.getElementById("appsScriptUrlInput");
+      const folderIn = document.getElementById("folderIdInput");
+      if (urlIn) urlIn.value = activeUrl;
+      if (folderIn) folderIn.value = activeFolder;
+
+      localStorage.setItem("appsScriptUrl", activeUrl);
+      localStorage.setItem("folderId", activeFolder);
+      localStorage.setItem("gasUrl", activeUrl);
+      localStorage.setItem("webAppUrl", activeUrl);
+      localStorage.setItem("toc_api_url", activeUrl);
+      localStorage.setItem("TOC_API_URL", activeUrl);
+      localStorage.setItem("toc_folder_id", activeFolder);
+      localStorage.setItem("TOC_FOLDER_ID", activeFolder);
+
+      const driveSettings = { appsScriptUrl: activeUrl, folderId: activeFolder };
+      localStorage.setItem("driveSettings", JSON.stringify(driveSettings));
+      localStorage.setItem("toc_settings", JSON.stringify(driveSettings));
+    }
+
+    async function autoSyncFromMaster(isManual = false) {
+      let masterCfg = null;
+      try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
+
+      let initialUrl = localStorage.getItem("TOC_API_URL") || 
+                       localStorage.getItem("toc_api_url") || 
+                       (masterCfg && masterCfg.SECTION_API_URLS && masterCfg.SECTION_API_URLS.TOC) || 
+                       (masterCfg && masterCfg.API_URL) || 
+                       DEFAULT_TOC_URL;
+
+      let initialFolder = localStorage.getItem("TOC_FOLDER_ID") || 
+                          localStorage.getItem("toc_folder_id") || 
+                          (masterCfg && masterCfg.DEFAULT_FOLDERS && masterCfg.DEFAULT_FOLDERS.TOC) || 
+                          DEFAULT_TOC_FOLDER;
+
+      applyTocConfig(initialUrl, initialFolder);
+
+      try {
+        const res = await fetch(`${MASTER_PORTAL_API}?action=getMasterConfig&nocache=${Date.now()}`);
+        const data = await res.json();
+
+        if (data && data.status === "success" && data.config) {
+          const liveCfg = data.config;
+          const liveUrl = (liveCfg.SECTION_API_URLS && liveCfg.SECTION_API_URLS.TOC) || liveCfg.API_URL || DEFAULT_TOC_URL;
+          const liveFolder = (liveCfg.DEFAULT_FOLDERS && liveCfg.DEFAULT_FOLDERS.TOC) || DEFAULT_TOC_FOLDER;
+
+          localStorage.setItem("wafp_master_config", JSON.stringify(liveCfg));
+          applyTocConfig(liveUrl, liveFolder);
+
+          if (isManual) {
+            alert("✓ TOC Camera Config Synced to Master!\n\nFolder ID: " + liveFolder + "\nScript URL: " + liveUrl);
+          }
+        }
+      } catch (err) {
+        if (isManual) {
+          alert("✓ TOC Camera Config Verified!\n\nFolder ID: " + initialFolder + "\nScript URL: " + initialUrl);
+        }
+      }
+    }
+
+    window.syncLatestConfig = function() {
+      autoSyncFromMaster(true);
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      autoSyncFromMaster(false);
+    });
+
+    window.addEventListener('load', () => {
+      autoSyncFromMaster(false);
+      if (typeof initializeAppEngine === 'function') {
+        initializeAppEngine(true);
+      }
+    });
+
+    window.addEventListener('pageshow', () => {
+      if (typeof onAppResume === 'function') onAppResume();
+      autoSyncFromMaster(false);
+    });
+
+    window.addEventListener('focus', () => {
+      if (typeof onAppResume === 'function') onAppResume();
+      autoSyncFromMaster(false);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>L2 Photo Capture</title>
+
+  <!-- Mobile & PWA settings -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0f19">
+  <link rel="manifest" href="../manifest.json">
+    
+  <!-- FAVICON & MOBILE HOME SCREEN SHORTCUT ICONS -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/camera.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/camera.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/180/camera.png">
+  <meta name="apple-mobile-web-app-title" content="L2 Photo">
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #161e2e;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #34d399;
+      --danger: #fb7185;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text-main);
+      text-align: center;
+      min-height: 100vh;
+    }
+    
+    /* Layout alignment wrapper matching Parking Violation app spacing */
+    .main-wrapper {
+      max-width: 450px;
+      margin: 0 auto;
+    }
+
+    /* Styled Header Box matching Portal standard */
+    .header-box {
+      background-color: var(--card-bg);
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .header-text {
+      text-align: center;
+    }
+    .header-text h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+    }
+    .header-text p {
+      margin: 2px 0 0 0;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* Navigation Back Arrow Button */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s;
+    }
+    .back-link:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+    .back-link:active {
+      transform: scale(0.95);
+    }
+    .back-link svg {
+      width: 18px;
+      height: 18px;
+      color: #38bdf8;
+    }
+    .header-spacer {
+      width: 36px;
+      height: 36px;
+    }
+
+    /* Main Content Container matching rounded borders and soft shadow */
+    .container {
+      background: var(--card-bg);
+      padding: 24px 18px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+    }
+    .container p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      color: white;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-blue { 
+      background: linear-gradient(135deg, #0284c7, #38bdf8); 
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
+    .btn-green { 
+      background: linear-gradient(135deg, #059669, #34d399); 
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+      display: none; 
+    }
+    .btn:disabled { 
+      background: #334155; 
+      color: #94a3b8; 
+      box-shadow: none;
+      cursor: not-allowed; 
+      transform: none;
+    }
+    #status {
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    /* Responsive Flexbox Gallery Layout */
+    #gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+      padding: 12px;
+      border: 1.5px dashed rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      background: #0b0f19;
+      display: none;
+      max-height: 250px;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    .gallery-item {
+      position: relative;
+      width: calc((100% - 24px) / 3);
+      aspect-ratio: 1;
+      box-sizing: border-box;
+    }
+    .gallery-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+    }
+    .delete-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background-color: #ef4444;
+      color: white;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      user-select: none;
+      z-index: 10;
+      border: 1.5px solid #ffffff;
+    }
+    
+    /* Full-screen Lightbox Modal */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 1000; 
+      padding-top: 60px; 
+      left: 0;
+      top: 0;
+      width: 100%; 
+      height: 100%; 
+      background-color: rgba(11, 15, 25, 0.95); 
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-sizing: border-box;
+    }
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      animation: zoom 0.2s ease-in-out;
+    }
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      color: #f8fafc;
+      font-size: 36px;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      line-height: 1;
+    }
+    @keyframes zoom {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Success tick styling */
+    .success-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 16px;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .success-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1.5px solid rgba(52, 211, 153, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #34d399;
+      font-size: 32px;
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.25);
+    }
+    .success-text {
+      font-size: 16px;
+      font-weight: 800;
+      color: #34d399;
+      margin-top: 12px;
+      line-height: 1.3;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* PORTRAIT MODE PROMPT OVERLAY */
+    #portrait-prompt {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(11, 15, 25, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #ffffff;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .phone-icon-wrapper {
+      width: 68px;
+      height: 68px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+    }
+    .phone-icon-svg {
+      width: 36px;
+      height: 36px;
+      color: #38bdf8;
+      animation: rotatePhone 2.5s infinite ease-in-out;
+    }
+    @keyframes rotatePhone {
+      0%, 10% { transform: rotate(0deg); }
+      40%, 60% { transform: rotate(-90deg); }
+      90%, 100% { transform: rotate(0deg); }
+    }
+
+    @media screen and (orientation: landscape) and (max-height: 600px) {
+      #portrait-prompt {
+        display: flex !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- PORTRAIT MODE PROMPT OVERLAY -->
+<div id="portrait-prompt">
+  <div class="phone-icon-wrapper">
+    <svg class="phone-icon-svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+    </svg>
+  </div>
+  <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 800; color: #ffffff;">Portrait Mode Recommended</h3>
+  <p style="margin: 0; font-size: 13px; color: #94a3b8; max-width: 280px; line-height: 1.5;">
+    For the best experience, please rotate your device to <strong style="color: #38bdf8;">portrait mode</strong> (upright).
+  </p>
+</div>
+
+<div class="main-wrapper">
+  <!-- Styled Header Box Section -->
+  <header class="header-box">
+    <!-- Circular Back Arrow Button -->
+    <a class="back-link" href="../index.html" target="_top" title="Back to Portal">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    
+    <!-- Centered Header Text -->
+    <div class="header-text">
+      <h1>Wisma Atria</h1>
+      <p>L2 Staircase Photo</p>
+    </div>
+
+    <!-- Empty Spacer to maintain flexbox alignment -->
+    <div class="header-spacer"></div>
+  </header>
+
+  <!-- Main content wrapper card -->
+  <div class="container">
+    <p>Tap the button below to take photo, and press upload.</p>
+    
+    <!-- Trigger standard camera app on iOS/Android -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+    
+    <button class="btn btn-blue" id="takePhotoBtn">📷 Take Photo</button>
+    <button class="btn btn-green" id="uploadBtn">📤 Upload</button>
+    
+    <div id="status">Ready</div>
+    <div id="gallery"></div>
+  </div>
+</div>
+
+<!-- Lightbox Modal Overlay -->
+<div id="imageModal" class="modal">
+  <span class="close-modal" id="closeModal">&times;</span>
+  <img class="modal-content" id="modalImg" alt="Preview">
+</div>
+
+<script>
+  // =========================================================
+  // DYNAMIC MASTER PORTAL CONFIGURATION RESOLVER
+  // =========================================================
+  function getActiveStaircaseApiUrl() {
+    let masterCfg = null;
+    try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
+
+    return localStorage.getItem("STAIRCASE_API_URL") || 
+           localStorage.getItem("staircase_api_url") || 
+           (masterCfg && masterCfg.SECTION_API_URLS && masterCfg.SECTION_API_URLS.STAIRCASE) || 
+           (masterCfg && masterCfg.API_URL) || 
+           "https://script.google.com/macros/s/AKfycbz5QdZFTZeuzG-N4vlJwUBFJZ9cK8akHVjxORQjAsTg0neZY8_x60ZUsdtw_qtWH02Y/exec";
+  }
+
+  function getActiveStaircaseFolderId() {
+    let masterCfg = null;
+    try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
+
+    return localStorage.getItem("STAIRCASE_FOLDER_ID") || 
+           localStorage.getItem("staircase_folder_id") || 
+           (masterCfg && masterCfg.DEFAULT_FOLDERS && masterCfg.DEFAULT_FOLDERS.STAIRCASE) || 
+           "1o6tzEfpDsJGXjs7MabioL8DcaWNlBq_T";
+  }
+
+  let SCRIPT_URL = getActiveStaircaseApiUrl();
+
+  const cameraInput = document.getElementById('cameraInput');
+  const takePhotoBtn = document.getElementById('takePhotoBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const statusDiv = document.getElementById('status');
+  const galleryDiv = document.getElementById('gallery');
+  const imageModal = document.getElementById('imageModal');
+  const modalImg = document.getElementById('modalImg');
+  const closeModal = document.getElementById('closeModal');
+
+  let photoQueue = [];
+  let isUploading = false;
+  let lastSavedFolder = "";
+
+  window.addEventListener('load', () => {
+    SCRIPT_URL = getActiveStaircaseApiUrl();
+  });
+
+  takePhotoBtn.addEventListener('click', () => {
+    cameraInput.click();
+  });
+
+  cameraInput.addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    statusDiv.innerText = "Processing image...";
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const maxDimension = 1000; 
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height *= maxDimension / width;
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width *= maxDimension / height;
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Generate precise date/time formats
+        const now = new Date();
+        const pad = (num) => String(num).padStart(2, '0');
+
+        const year = now.getFullYear();
+        const month = pad(now.getMonth() + 1);
+        const day = pad(now.getDate());
+        
+        const hours24 = pad(now.getHours());
+        const minutes = pad(now.getMinutes());
+        const seconds = pad(now.getSeconds());
+
+        // 1. Filename format: YYYY-MM-DD at HH.MM.SS.jpeg
+        const filename = `${year}-${month}-${day} at ${hours24}.${minutes}.${seconds}

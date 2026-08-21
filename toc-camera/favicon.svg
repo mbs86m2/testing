@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" rx="128" fill="#0F172A"/>
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="#A855F7" stroke-width="12" opacity="0.8"/>
+  <!-- File Sheet -->
+  <path d="M120 96 C120 78, 134 64, 152 64 L296 64 L392 160 L392 416 C392 434, 378 448, 360 448 L152 448 C134 448, 120 434, 120 416 Z" fill="#1E293B" stroke="#A855F7" stroke-width="16"/>
+  <!-- Folded Corner -->
+  <path d="M296 64 L296 160 L392 160 Z" fill="#C084FC"/>
+  <!-- Camera Body inside File -->
+  <rect x="168" y="220" width="144" height="104" rx="16" fill="#334155" stroke="#E2E8F0" stroke-width="12"/>
+  <path d="M216 220 L232 196 L264 196 L280 220 Z" fill="#E2E8F0"/>
+  <circle cx="240" cy="272" r="32" fill="#0F172A" stroke="#38BDF8" stroke-width="10"/>
+  <circle cx="240" cy="272" r="12" fill="#38BDF8"/>
+  <!-- Time / Clock Badge at Bottom-Right -->
+  <circle cx="348" cy="356" r="84" fill="#F59E0B" stroke="#0F172A" stroke-width="16"/>
+  <path d="M348 304 L348 356 L384 356" fill="none" stroke="#0F172A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="348" cy="356" r="8" fill="#0F172A"/>
+</svg>

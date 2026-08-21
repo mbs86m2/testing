@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wisma Atria Parking Log Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Mobile & PWA settings -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0f19">
+  <link rel="manifest" href="../manifest.json">
+    
+  <!-- HOME SCREEN SHORTCUT CONFIGURATIONS -->
+  <link rel="apple-touch-icon" sizes="192x192" href="https://img.icons8.com/fluency/192/siren.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/180/siren.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/siren.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/siren.png">
+  <meta name="apple-mobile-web-app-title" content="Wisma Parking">
+
+  <!-- PORTRAIT ORIENTATION PROMPT CSS -->
+  <style>
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+    @media screen and (orientation: landscape) and (max-height: 550px) {
+      #portrait-prompt {
+        display: flex !important;
+      }
+    }
+  </style>
+
+  <!-- 5-MINUTE IDLE AUTO-RETURN TO PORTAL -->
+  <script>
+    (function () {
+      const TIMEOUT_DURATION = 5 * 60 * 1000; // 5 minutes
+      const PORTAL_URL = "../index.html";
+
+      let idleTimer;
+
+      function resetTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          window.location.href = PORTAL_URL;
+        }, TIMEOUT_DURATION);
+      }
+
+      ["mousemove", "keypress", "touchstart", "scroll", "click", "input"].forEach(evt => {
+        window.addEventListener(evt, resetTimer, { passive: true });
+      });
+
+      resetTimer();
+    })();
+  </script>
+</head>
+<body class="bg-[#0b0f19] text-[#f8fafc] font-sans min-h-screen pb-14">
+
+  <!-- PORTRAIT ORIENTATION PROMPT OVERLAY -->
+  <div id="portrait-prompt" class="hidden fixed inset-0 bg-[#0b0f19]/95 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-6 text-center text-white">
+    <div class="w-16 h-16 bg-sky-500/20 text-sky-400 rounded-full flex items-center justify-center mb-4 border border-sky-500/30 animate-pulse">
+      <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V3a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <h3 class="text-lg font-bold text-white mb-1">Portrait Mode Recommended</h3>
+    <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Please rotate your mobile device to portrait orientation for the best logging experience.</p>
+  </div>
+
+  <!-- HEADER NAVIGATION WITH LOOKUP BUTTON -->
+  <div class="max-w-md mx-auto px-4 pt-4">
+    <header class="mb-4 flex justify-between items-center bg-[#161e2e] p-3 rounded-2xl border border-white/10 shadow-lg relative z-10">
+      <!-- Back to Portal Link -->
+      <a href="../index.html" target="_top" class="p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-sky-400 rounded-xl border border-white/10 transition inline-flex items-center justify-center active:scale-95" title="Back to Portal">
+        <svg class="h-5 w-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      </a>
+      
+      <div class="text-center">
+        <h1 class="text-base font-extrabold tracking-tight bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">Wisma Atria</h1>
+        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Parking Log Assistant</p>
+      </div>
+
+      <!-- Database Lookup / Settings Button -->
+      <button type="button" onclick="openSettingsPrompt()" class="py-1.5 px-3 bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 rounded-xl border border-sky-500/30 transition flex items-center gap-1.5 shadow-sm active:scale-95" title="Vehicle Records Lookup">
+        <svg class="h-4 w-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span class="text-xs font-extrabold tracking-tight">Lookup</span>
+      </button>
+    </header>
+
+    <!-- STEP PROGRESS Stepper -->
+    <div id="capture-stepper" class="flex items-center justify-between mb-5 px-6">
+      <div id="step1-dot" class="w-7 h-7 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-sky-500/20">1</div>
+      <div class="flex-1 h-0.5 bg-white/10 mx-2" id="line1"></div>
+      <div id="step2-dot" class="w-7 h-7 rounded-full bg-[#0b0f19] text-gray-400 border border-white/10 flex items-center justify-center font-bold text-xs">2</div>
+      <div class="flex-1 h-0.5 bg-white/10 mx-2" id="line2"></div>
+      <div id="step3-dot" class="w-7 h-7 rounded-full bg-[#0b0f19] text-gray-400 border border-white/10 flex items-center justify-center font-bold text-xs">3</div>
+    </div>
+
+    <!-- MAIN RECORDING CONTAINER -->
+    <div id="main-logging-container" class="bg-[#161e2e] rounded-2xl shadow-xl border border-white/10 p-5 flex flex-col justify-between min-h-[380px]">
+      
+      <!-- HIDDEN NATIVE CAPTURE HOOKS -->
+      <input type="file" accept="image/*" capture="environment" id="file-plate" class="hidden" onchange="processCapturedFile(this, 'plate')">
+      <input type="file" accept="image/*" capture="environment" id="file-notice" class="hidden" onchange="processCapturedFile(this, 'notice')">
+      <input type="file" accept="image/*" capture="environment" id="file-vehicle" class="hidden" onchange="processCapturedFile(this, 'vehicle')">
+
+      <!-- STEP 1: OFFICER NAME, LEVEL & PLATE -->
+      <div id="step-1" class="step-pane">
+        <h2 class="text-sm font-bold mb-3 text-sky-400 flex items-center gap-1.5 uppercase tracking-wider">Step 1: Choose Level &amp; Plate Photo</h2>
+        
+        <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Officer Name</label>
+        <input type="text" id="officer-name-input" placeholder="Enter your name" class="w-full px-3 py-2 bg-[#0b0f19] border border-white/15 rounded-xl mb-4 text-sm text-white placeholder-gray-500 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 font-semibold capitalize" autocapitalize="words" oninput="formatOfficerName(this); updatePlateCameraButtonState(); checkValidation();">
+
+        <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Carpark Level</label>
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <button type="button" onclick="selectLevel(5)" id="btn-lvl-5" class="level-btn py-2.5 border border-white/10 rounded-xl font-bold text-gray-300 bg-[#0b0f19] hover:bg-white/5 transition">Lvl 5</button>
+          <button type="button" onclick="selectLevel(6)" id="btn-lvl-6" class="level-btn py-2.5 border border-white/10 rounded-xl font-bold text-gray-300 bg-[#0b0f19] hover:bg-white/5 transition">Lvl 6</button>
+          <button type="button" onclick="selectLevel(7)" id="btn-lvl-7" class="level-btn py-2.5 border border-white/10 rounded-xl font-bold text-gray-300 bg-[#0b0f19] hover:bg-white/5 transition">Lvl 7</button>
+        </div>
+
+        <!-- STEP 1 DYNAMIC CAMERA BOX TRIGGER -->
+        <div id="plate-capture-trigger" class="block">
+          <button type="button" id="btn-plate-camera" onclick="handlePlateCameraClick()" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-white/15 py-10 rounded-2xl transition bg-[#0b0f19]/60 opacity-60 cursor-not-allowed">
+            <svg id="plate-camera-icon" class="h-10 w-10 text-gray-500 mb-2 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span id="plate-camera-text" class="text-xs font-bold text-gray-500">Enter Name &amp; Level to unlock camera</span>
+          </button>
+        </div>
+
+        <div id="plate-preview-box" class="hidden">
+          <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">Captured Plate</label>
+          <div class="relative rounded-xl overflow-hidden border border-white/15 bg-black">
+            <img id="plate-preview-img" class="max-h-40 w-full object-cover" alt="Plate Preview">
+          </div>
+          <button type="button" onclick="retakePhoto('plate')" class="mt-2 w-full py-2 bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-lg hover:bg-rose-900/50 transition">
+            Retake Photo
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: NOTICE -->
+      <div id="step-2" class="step-pane hidden">
+        <h2 class="text-sm font-bold mb-1 text-sky-400 flex items-center gap-1.5 uppercase tracking-wider">Step 2: Take Photo of Notice</h2>
+        <p class="text-xs text-gray-400 mb-5">Align physical notice inside your camera frame and capture.</p>
+        
+        <div id="notice-capture-trigger" class="block">
+          <button type="button" onclick="triggerCameraInput('notice')" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-400/40 py-12 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 active:scale-95 transition">
+            <svg class="h-10 w-10 text-sky-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="text-xs font-bold text-sky-300">Open Camera straight away</span>
+          </button>
+        </div>
+
+        <div id="notice-preview-box" class="hidden">
+          <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">Captured Notice</label>
+          <div class="relative rounded-xl overflow-hidden border border-white/15 bg-black">
+            <img id="notice-preview-img" class="max-h-40 w-full object-cover" alt="Notice Preview">
+          </div>
+          <button type="button" onclick="retakePhoto('notice')" class="mt-2 w-full py-2 bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-lg hover:bg-rose-900/50 transition">
+            Retake Photo
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: VEHICLE -->
+      <div id="step-3" class="step-pane hidden">
+        <h2 class="text-sm font-bold mb-1 text-sky-400 flex items-center gap-1.5 uppercase tracking-wider">Step 3: Take Photo of Vehicle</h2>
+        <p class="text-xs text-gray-400 mb-5">Ensure a wide shot of the vehicle is captured.</p>
+        
+        <div id="vehicle-capture-trigger" class="block">
+          <button type="button" onclick="triggerCameraInput('vehicle')" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-400/40 py-12 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 active:scale-95 transition">
+            <svg class="h-10 w-10 text-sky-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="text-xs font-bold text-sky-300">Open Camera straight away</span>
+          </button>
+        </div>
+
+        <div id="vehicle-preview-box" class="hidden">
+          <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">Captured Vehicle Preview</label>
+          <div class="relative rounded-xl overflow-hidden border border-white/15 bg-black">
+            <img id="vehicle-preview-img" class="max-h-40 w-full object-cover" alt="Vehicle Preview">
+          </div>
+          <button type="button" onclick="retakePhoto('vehicle')" class="mt-2 w-full py-2 bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-lg hover:bg-rose-900/50 transition">
+            Retake Photo
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP NAVIGATION BUTTONS -->
+      <div class="flex space-x-2 mt-4" id="nav-container">
+        <button id="btn-back" onclick="changeStep(-1)" class="hidden flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 font-bold text-sm rounded-xl transition">Back</button>
+        <button id="btn-next" onclick="changeStep(1)" class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-sm rounded-xl disabled:opacity-40 transition shadow-lg" disabled>Next</button>
+      </div>
+
+    </div>
+
+    <!-- BATCH QUEUE CARDS -->
+    <div id="queue-box-container" class="mt-4 hidden animate-fade-in">
+      <div class="bg-[#161e2e] rounded-2xl shadow-xl border border-white/10 p-4">
+        <h3 class="text-sm font-bold text-white mb-3 flex justify-between items-center">
+          <span>Pending Upload Queue</span>
+          <span id="queue-badge" class="bg-sky-500/20 text-sky-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-sky-500/30">0</span>
+        </h3>
+        <div id="queue-list" class="space-y-2 max-h-48 overflow-y-auto mb-4 pr-1"></div>
+        <button type="button" onclick="uploadBatchQueue()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition active:scale-95 shadow-lg">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Upload All Queued Vehicles
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BROWSER LOOKUP SCREEN -->
+  <div id="settings-screen" class="hidden max-w-md mx-auto px-4 mt-1">
+    <div class="bg-[#161e2e] rounded-2xl shadow-xl border border-white/10 p-5 min-h-[440px] flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <svg class="h-5 w-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Vehicle Records Lookup
+          </h2>
+          <button onclick="closeSettingsScreen()" class="text-xs text-sky-400 font-extrabold hover:underline">Exit Search</button>
+        </div>
+
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="search-query-input" placeholder="Enter full or partial plate" class="flex-1 px-3 py-2 bg-[#0b0f19] border border-white/15 rounded-xl text-sm text-white placeholder-gray-500 uppercase outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400" oninput="handleSearchInputChange(this)" onkeydown="handleSearchKeydown(event)">
+          <button onclick="performAppSearch()" class="px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 shadow">
+            Search
+          </button>
+        </div>
+
+        <div id="search-flag-stats" class="hidden text-xs bg-rose-950/40 border border-rose-500/30 rounded-xl p-3 mb-4 text-rose-300 font-bold flex flex-col space-y-2">
+          <div class="flex justify-between items-center w-full">
+            <span>Times Flagged (This Year):</span>
+            <span id="search-flag-count" class="text-base font-black text-rose-400">0</span>
+          </div>
+          <div class="flex gap-2 w-full pt-1.5 border-t border-rose-500/20">
+            <button type="button" onclick="printSearchResults()" class="flex-1 py-1.5 bg-[#0b0f19] hover:bg-white/10 text-white font-bold rounded-lg border border-white/10 transition flex items-center justify-center gap-1">
+              <svg class="h-3.5 w-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              Print
+            </button>
+            <button type="button" onclick="emailSearchResults()" class="flex-1 py-1.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-lg transition flex items-center justify-center gap-1 shadow">
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              Email
+            </button>
+          </div>
+        </div>
+
+        <div id="search-results" class="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+          <p class="text-xs text-gray-400 text-center py-10">Enter a plate query to scan the database records.</p>
+        </div>
+      </div>
+      
+      <p class="text-[9px] text-gray-400 text-center pt-4 uppercase tracking-wider font-semibold">Access Password: wisma123</p>
+    </div>
+  </div>
+
+  <!-- PASSWORD PROMPT MODAL (FOR NON-ADMINS) -->
+  <div id="password-modal" class="hidden fixed inset-0 bg-[#0b0f19]/90 backdrop-blur-md z-[250] flex items-center justify-center p-4">
+    <div class="bg-[#161e2e] rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl border border-white/15">
+      <div class="w-12 h-12 bg-sky-500/15 text-sky-400 rounded-full flex items-center justify-center mx-auto mb-3 border border-sky-500/30">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      </div>
+      <h3 class="text-base font-bold text-white mb-1">Access Lookup Dashboard</h3>
+      <p class="text-xs text-gray-400 mb-4 leading-relaxed">Please enter password to view records.</p>
+      
+      <input type="password" id="input-settings-password" placeholder="Password" class="w-full px-3 py-2.5 bg-[#0b0f19] border border-white/15 rounded-xl mb-4 text-center text-sm text-white outline-none focus:border-sky-400 font-semibold tracking-widest font-mono shadow-sm" onkeydown="handlePasswordKeydown(event)">
+      
+      <div class="flex space-x-2">
+        <button type="button" onclick="closePasswordPrompt()" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 font-bold text-xs rounded-xl transition">Cancel</button>
+        <button type="button" onclick="verifySettingsPassword()" class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs rounded-xl transition shadow">Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECORD DETAIL & PHOTO VIEWER POPUP MODAL -->
+  <div id="photo-viewer-modal" class="hidden fixed inset-0 bg-[#0b0f19]/90 backdrop-blur-md z-[150] flex items-center justify-center p-4">
+    <div class="bg-[#161e2e] rounded-2xl w-full max-w-sm p-5 shadow-2xl border border-white/15 max-h-[88vh] flex flex-col justify-between overflow-y-auto">
+      <div>
+        <div class="flex justify-between items-center pb-3 mb-3 border-b border-white/10">
+          <div>
+            <h3 id="modal-detail-plate" class="text-lg font-black text-sky-400 tracking-wide">PLATE NO.</h3>
+            <p id="modal-detail-meta" class="text-[11px] text-gray-400 font-semibold">Date • Time</p>
+          </div>
+          <button type="button" onclick="closePhotoViewerModal()" class="w-8 h-8 rounded-full bg-white/10 text-gray-300 hover:bg-white/20 flex items-center justify-center text-sm font-bold transition">✕</button>
+        </div>
+
+        <div class="bg-[#0b0f19] rounded-xl p-2.5 border border-white/10 mb-4 text-xs flex justify-between items-center text-gray-300">
+          <span><strong>Officer:</strong> <span id="modal-detail-officer" class="font-bold text-white">—</span></span>
+          <span id="modal-detail-level-badge" class="bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">Lvl —</span>
+        </div>
+
+        <div class="space-y-3">
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">1. License Plate Photo</span>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-black min-h-[120px] flex items-center justify-center">
+              <img id="modal-img-plate" class="w-full max-h-48 object-contain cursor-pointer" alt="Plate Photo" onclick="zoomImage(this.src)">
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">2. Notice Photo</span>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-black min-h-[120px] flex items-center justify-center">
+              <img id="modal-img-notice" class="w-full max-h-48 object-contain cursor-pointer" alt="Notice Photo" onclick="zoomImage(this.src)">
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">3. Vehicle Overview Photo</span>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-black min-h-[120px] flex items-center justify-center">
+              <img id="modal-img-vehicle" class="w-full max-h-48 object-contain cursor-pointer" alt="Vehicle Photo" onclick="zoomImage(this.src)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" onclick="closePhotoViewerModal()" class="w-full mt-5 py-3 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-xl border border-white/15 transition shadow active:scale-95">
+        Close Record
+      </button>
+    </div>
+  </div>
+
+  <!-- CUSTOM TOAST NOTIFICATION WINDOW -->
+  <div id="toast-notification" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#161e2e]/95 text-white text-xs font-semibold px-6 py-5 rounded-2xl shadow-2xl z-[300] flex flex-col items-center justify-center gap-2.5 border border-white/20 transition duration-150 w-64 text-center">
+    <svg class="h-8 w-8 text-amber-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <span id="toast-message" class="leading-relaxed">Notification Message</span>
+  </div>
+
+  <!-- CUSTOM CONFIRM DELETE MODAL -->
+  <div id="delete-confirm-modal" class="hidden fixed inset-0 bg-[#0b0f19]/90 z-[260] flex items-center justify-center p-4">
+    <div class="bg-[#161e2e] rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl border border-white/15">
+      <div class="w-10 h-10 bg-rose-950/40 text-rose-400 rounded-full flex items-center justify-center mx-auto mb-3 border border-rose-500/30">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </div>
+      <h3 class="text-sm font-bold text-white mb-1">Delete Record?</h3>
+      <p class="text-[11px] text-gray-400 mb-4 leading-relaxed">This will delete <span id="del-modal-plate" class="font-extrabold text-sky-400"></span> from Google Sheets and trash all 3 related photos in Drive.</p>
+      
+      <div class="flex space-x-2">
+        <button onclick="closeConfirmDeleteModal()" class="flex-1 py-2 bg-white/5 text-gray-300 font-bold text-xs rounded-xl border border-white/10 hover:bg-white/10">Cancel</button>
+        <button onclick="executeRecordDeletion()" class="flex-1 py-2 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-xs rounded-xl shadow">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM QUEUE EDIT MODAL -->
+  <div id="queue-edit-modal" class="hidden fixed inset-0 bg-[#0b0f19]/90 z-50 flex items-center justify-center p-4 animate-fade-in">
+    <input type="file" accept="image/*" capture="environment" id="edit-file-plate" class="hidden" onchange="processEditPhoto(this, 'plate')">
+    <input type="file" accept="image/*" capture="environment" id="edit-file-notice" class="hidden" onchange="processEditPhoto(this, 'notice')">
+    <input type="file" accept="image/*" capture="environment" id="edit-file-vehicle" class="hidden" onchange="processEditPhoto(this, 'vehicle')">
+
+    <div class="bg-[#161e2e] rounded-2xl p-5 w-full max-w-sm text-center shadow-2xl border border-white/15 flex flex-col justify-between min-h-[360px]">
+      <div>
+        <h3 class="text-sm font-bold text-white mb-1 border-b border-white/10 pb-2 flex justify-between items-center">
+          <span>Edit Queued Vehicle</span>
+          <button onclick="closeQueueEditModal()" class="text-xs text-gray-400 font-bold hover:text-white">Cancel</button>
+        </h3>
+        <p class="text-[10px] text-gray-400 mb-4 text-left leading-relaxed">Tap the red [×] to remove any captured photo, then tap the icon to snap a replacement photo.</p>
+
+        <div class="grid grid-cols-3 gap-2 text-center mb-6">
+          <div class="space-y-1">
+            <span class="text-[9px] text-sky-400 font-bold block">Plate</span>
+            <div id="edit-plate-box" class="relative hidden w-full aspect-square rounded-lg overflow-hidden border border-white/15 bg-black">
+              <img id="edit-plate-img" class="w-full h-full object-cover" alt="Edit Plate">
+              <button type="button" onclick="removeEditPhoto('plate')" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-[10px] shadow hover:bg-rose-700 transition">×</button>
+            </div>
+            <button type="button" id="edit-plate-trigger" onclick="triggerEditCameraInput('plate')" class="w-full aspect-square rounded-lg border-2 border-dashed border-sky-400/40 flex flex-col items-center justify-center bg-sky-500/10 hover:bg-sky-500/20 transition">
+              <svg class="h-5 w-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="text-[8px] font-bold text-sky-300 mt-1">Capture</span>
+            </button>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[9px] text-sky-400 font-bold block">Notice</span>
+            <div id="edit-notice-box" class="relative hidden w-full aspect-square rounded-lg overflow-hidden border border-white/15 bg-black">
+              <img id="edit-notice-img" class="w-full h-full object-cover" alt="Edit Notice">
+              <button type="button" onclick="removeEditPhoto('notice')" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-[10px] shadow hover:bg-rose-700 transition">×</button>
+            </div>
+            <button type="button" id="edit-notice-trigger" onclick="triggerEditCameraInput('notice')" class="w-full aspect-square rounded-lg border-2 border-dashed border-sky-400/40 flex flex-col items-center justify-center bg-sky-500/10 hover:bg-sky-500/20 transition">
+              <svg class="h-5 w-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="text-[8px] font-bold text-sky-300 mt-1">Capture</span>
+            </button>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[9px] text-sky-400 font-bold block">Vehicle</span>
+            <div id="edit-vehicle-box" class="relative hidden w-full aspect-square rounded-lg overflow-hidden border border-white/15 bg-black">
+              <img id="edit-vehicle-img" class="w-full h-full object-cover" alt="Edit Vehicle">
+              <button type="button" onclick="removeEditPhoto('vehicle')" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-[10px] shadow hover:bg-rose-700 transition">×</button>
+            </div>
+            <button type="button" id="edit-vehicle-trigger" onclick="triggerEditCameraInput('vehicle')" class="w-full aspect-square rounded-lg border-2 border-dashed border-sky-400/40 flex flex-col items-center justify-center bg-sky-500/10 hover:bg-sky-500/20 transition">
+              <svg class="h-5 w-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="text-[8px] font-bold text-sky-300 mt-1">Capture</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" onclick="saveQueueEdits()" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-sm rounded-xl transition active:scale-95 shadow">Save Changes</button>
+    </div>
+  </div>
+
+  <!-- LOADER OVERLAY -->
+  <div id="loader-overlay" class="hidden fixed inset-0 bg-[#0b0f19]/90 backdrop-blur-md z-[280] flex flex-col items-center justify-center text-white p-6">
+    <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-sky-400 border-white/20 mb-4"></div>
+    <p id="loader-message" class="text-sm font-semibold">Processing capture...</p>
+    <p class="text-[11px] text-gray-400 mt-1">Applying high-contrast timestamp.</p>
+  </div>
+
+  <!-- POPUP SAVED CONFIRMATION FOR BATCH UPLOAD -->
+  <div id="result-modal" class="hidden fixed inset-0 bg-[#0b0f19]/90 z-50 flex items-center justify-center p-4">
+    <div class="bg-[#161e2e] rounded-2xl p-6 w-full max-w-xs text-center shadow-2xl border border-white/15">
+      <div id="success-icon" class="w-16 h-16 bg-emerald-950/50 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner ring-8 ring-emerald-950/30 border border-emerald-500/30">
+        <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      
+      <h3 id="success-title" class="text-lg font-bold text-white mb-1">Upload Successful</h3>
+      <p id="success-body" class="text-xs text-gray-400 mb-5 leading-relaxed whitespace-pre-line">All queued vehicles have been saved to Google Drive &amp; Sheets.</p>
+
+      <button onclick="closeConfirmationModal()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-extrabold text-sm rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT LOGIC -->
+  <script>
+    function getActiveParkingApiUrl() {
+      let masterCfg = null;
+      try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
+
+      return localStorage.getItem("PARKING_API_URL") || 
+             localStorage.getItem("parking_api_url") || 
+             (masterCfg && masterCfg.SECTION_API_URLS && masterCfg.SECTION_API_URLS.PARKING) || 
+             (masterCfg && masterCfg.API_URL) || 
+             "https://script.google.com/macros/s/AKfycbz5QdZFTZeuzG-N4vlJwUBFJZ9cK8akHVjxORQjAsTg0neZY8_x60ZUsdtw_qtWH02Y/exec";
+    }
+
+    function getActiveParkingSpreadsheetId() {
+      let masterCfg = null;
+      try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
+
+      return localStorage.getItem("PARKING_SPREADSHEET_ID") || 
+             localStorage.getItem("parking_sheet_id") || 
+             (masterCfg && masterCfg.SPREADSHEET_IDS && masterCfg.SPREADSHEET_IDS.PARKING) || 
+             "10IARDKGoFNxOaGVcdgyw3DDix1rqbxm_3qL55Zn4oVo";
+    }
+
+    let GAS_API_URL = getActiveParkingApiUrl();
+    const PORTAL_URL = "../index.html";
+
+    const ADMIN_USERS = ["admin m2", "m2", "keekc", "kee", "kee kc", "admin", "master"];
+
+    function getPortalLoggedInUser() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromParam = urlParams.get('user') || urlParams.get('username') || urlParams.get('officer') || urlParams.get('name') || urlParams.get('id');
+      if (fromParam && fromParam.trim()) return fromParam.trim();
+
+      const possibleKeys = [
+        'portal_active_user', 'wafp_officer', 'wafp_logged_officer', 'currentUser', 
+        'wafp_active_officer', 'wafp_user', 'username', 'officer', 'user'
+      ];
+
+      for (let k of possibleKeys) {
+        let val = sessionStorage.getItem(k) || localStorage.getItem(k);
+        if (val && typeof val === 'string' && val.trim()) {
+          return val.trim();
+        }
+      }
+
+      return '';
+    }
+
+    function isUserAdmin() {
+      const name = (getPortalLoggedInUser() || '').toLowerCase();
+      const role = (localStorage.getItem('portal_user_role') || '').toLowerCase();
+      if (role === 'admin') return true;
+      return ADMIN_USERS.some(adminName => name === adminName || name.includes(adminName));
+    }
+
+    let currentStep = 1;
+    let payload = { officer: null, level: null, plateImage: null, noticeImage: null, vehicleImage: null };
+    
+    let isSettingsUnlocked = false;
+    const SETTINGS_PASSWORD = "wisma123";
+    let activeSearchResults = [];
+    let itemPendingDeletion = null;
+    let activeEditQueueIndex = null;
+
+    let batchQueue = [];
+    try {
+      let rawQueue = localStorage.getItem('wisma_batch_queue');
+      if (rawQueue && rawQueue !== "undefined" && rawQueue !== "null") {
+        batchQueue = JSON.parse(rawQueue);
+      }
+      if (!Array.isArray(batchQueue)) {
+        batchQueue = [];
+      }
+    } catch (e) {
+      console.warn("Cleared corrupt local cache storage:", e);
+      batchQueue = [];
+    }
+
+    window.addEventListener('load', () => {
+      GAS_API_URL = getActiveParkingApiUrl();
+      
+      const activeOfficer = getPortalLoggedInUser();
+      const officerInput = document.getElementById('officer-name-input');
+      if (officerInput && activeOfficer) {
+        officerInput.value = activeOfficer.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+      }
+
+      checkValidation();
+      renderBatchQueue();
+      updatePlateCameraButtonState();
+    });
+
+    function formatOfficerName(input) {
+      if (!input || !input.value) return;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+
+      input.value = input.value.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+
+      if (start !== null && end !== null) {
+        try { input.setSelectionRange(start, end); } catch (e) {}
+      }
+    }
+
+    function formatDriveImageUrl(inputStr) {
+      if (!inputStr || typeof inputStr !== 'string') return '';
+      
+      const str = inputStr.trim();
+      if (str.startsWith('data:image')) return str;
+      
+      const match = str.match(/(?:\/d\/|id=)([a-zA-Z0-9_-]{25,})/);
+      if (match && match[1]) {
+        return 'https://lh3.googleusercontent.com/d/' + match[1];
+      }
+      
+      if (/^[a-zA-Z0-9_-]{25,}$/.test(str)) {
+        return 'https://lh3.googleusercontent.com/d/' + str;
+      }
+      
+      return str;
+    }
+
+    async function apiCall(action, data = {}) {
+      GAS_API_URL = getActiveParkingApiUrl();
+      const spreadsheetId = getActiveParkingSpreadsheetId();
+
+      if (!GAS_API_URL) {
+        return { status: "error", message: "GAS_API_URL is missing in index.html." };
+      }
+
+      const postPayload = { 
+        action: action, 
+        spreadsheetId: spreadsheetId,
+        data: { ...data, spreadsheetId: spreadsheetId } 
+      };
+
+      try {
+        const response = await fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(postPayload)
+        });
+
+        const rawText = await response.text();
+
+        try {
+          return JSON.parse(rawText);
+        } catch (jsonErr) {
+          return { 
+            status: "error", 
+            message: "Google Apps Script returned an invalid response (Not JSON).\nEnsure deployment access is set to 'Anyone'." 
+          };
+        }
+
+      } catch (err) {
+        console.error("API Call Error:", err);
+        return { 
+          status: "error", 
+          message: "Connection Error: Ensure 'Who has access' in Apps Script is set to 'Anyone'." 
+        };
+      }
+    }
+
+    function openSettingsPrompt() {
+      if (isSettingsUnlocked || isUserAdmin()) {
+        isSettingsUnlocked = true;
+        showSettingsScreen();
+        loadRecentViolationsDefault();
+      } else {
+        const passInput = document.getElementById('input-settings-password');
+        if (passInput) passInput.value = '';
+        const modal = document.getElementById('password-modal');
+        if (modal) modal.classList.remove('hidden');
+        setTimeout(() => {
+          if (passInput) passInput.focus();
+        }, 150);
+      }
+    }
+
+    function closePasswordPrompt() {
+      document.getElementById('password-modal').classList.add('hidden');
+    }
+
+    function verifySettingsPassword() {
+      const typedPass = document.getElementById('input-settings-password').value.trim();
+      if (typedPass === SETTINGS_PASSWORD) {
+        isSettingsUnlocked = true;
+        closePasswordPrompt();
+        showSettingsScreen();
+        loadRecentViolationsDefault();
+      } else {
+        showToast("Incorrect lookup password.");
+      }
+    }
+
+    function handlePasswordKeydown(event) {
+      if (event.key === "Enter" || event.keyCode === 13) {
+        event.preventDefault();
+        verifySettingsPassword();
+      }
+    }
+
+    function showSettingsScreen() {
+      document.getElementById('main-logging-container').classList.add('hidden');
+      document.getElementById('capture-stepper').classList.add('hidden');
+      document.getElementById('queue-box-container').classList.add('hidden');
+      document.getElementById('settings-screen').classList.remove('hidden');
+      document.getElementById('search-query-input').focus();
+    }
+
+    function closeSettingsScreen() {
+      isSettingsUnlocked = false;
+      document.getElementById('search-query-input').value = '';
+      document.getElementById('search-results').innerHTML = '<p class="text-xs text-gray-400 text-center py-10">Enter a plate query to scan the database records.</p>';
+      document.getElementById('search-flag-stats').classList.add('hidden');
+      activeSearchResults = [];
+
+      document.getElementById('settings-screen').classList.add('hidden');
+      document.getElementById('main-logging-container').classList.remove('hidden');
+      document.getElementById('capture-stepper').classList.remove('hidden');
+      renderBatchQueue();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notification');
+      const message = document.getElementById('toast-message');
+      message.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    function handleSearchInputChange(input) {
+      const query = input.value.trim();
+      if (query === "") {
+        document.getElementById('search-flag-stats').classList.add('hidden');
+        loadRecentViolationsDefault();
+      }
+    }
+
+    function handleSearchKeydown(event) {
+      if (event.key === "Enter" || event.keyCode === 13) {
+        event.preventDefault();
+        performAppSearch();
+      }
+    }
+
+    function openConfirmDeleteModal(date, time, plate) {
+      itemPendingDeletion = { date: date, time: time, plate: plate };
+      document.getElementById('del-modal-plate').innerText = plate;
+      document.getElementById('delete-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeConfirmDeleteModal() {
+      document.getElementById('delete-confirm-modal').classList.add('hidden');
+      itemPendingDeletion = null;
+    }
+
+    async function executeRecordDeletion() {
+      if (!itemPendingDeletion) return;
+      
+      const target = itemPendingDeletion; 
+      closeConfirmDeleteModal();
+      showGlobalLoader("Deleting record and trashing related photos...");
+      
+      const response = await apiCall("deleteViolationRecord", target);
+      hideGlobalLoader();
+
+      if (response && response.status === "success") {
+        showToast("Record successfully deleted!");
+        const query = document.getElementById('search-query-input').value.trim();
+        if (query) {
+          performAppSearch();
+        } else {
+          loadRecentViolationsDefault();
+        }
+      } else {
+        showToast("Deletion failed: " + (response ? response.message : "Error"));
+      }
+    }
+
+    async function performAppSearch() {
+      const query = document.getElementById('search-query-input').value.trim();
+      if (!query) {
+        showToast("Please enter a plate query.");
+        return;
+      }
+
+      showGlobalLoader("Searching Google Sheet database...");
+
+      const response = await apiCall("searchViolations", { query: query });
+      hideGlobalLoader();
+
+      if (response && response.status === "success") {
+        activeSearchResults = response.results || [];
+        displaySearchResults(response.results, query);
+      } else {
+        showToast("Search failed: " + (response ? response.message : "Error"));
+      }
+    }
+
+    function displaySearchResults(results, query) {
+      const resultsDiv = document.getElementById('search-results');
+      const statsDiv = document.getElementById('search-flag-stats');
+      const countSpan = document.getElementById('search-flag-count');
+
+      resultsDiv.innerHTML = '';
+
+      if (!results || results.length === 0) {
+        statsDiv.classList.add('hidden');
+        resultsDiv.innerHTML = `<p class="text-xs text-rose-400 font-bold text-center py-8">No records match: "${query.toUpperCase()}"</p>`;
+        return;
+      }
+
+      statsDiv.classList.remove('hidden');
+      countSpan.innerText = results.length;
+
+      results.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "p-3 bg-[#0b0f19] hover:bg-white/5 border border-white/10 rounded-xl space-y-1 text-xs text-gray-300 shadow-sm cursor-pointer transition active:scale-[0.98]";
+        
+        card.onclick = (e) => {
+          if (!e.target.closest('button')) {
+            openPhotoViewerModal(item);
+          }
+        };
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center border-b border-white/10 pb-1">
+            <span class="font-black text-sky-400 text-sm tracking-wide">${item.plate || item.plateNumber}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-gray-400 font-bold">${item.level}</span>
+              <button type="button" onclick="openConfirmDeleteModal('${item.date}', '${item.time}', '${item.plate || item.plateNumber}')" class="p-1 hover:bg-rose-950/50 text-rose-400 rounded-lg transition" title="Delete record and photos">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="space-y-0.5 text-[11px] text-gray-400 pt-1">
+            <div class="flex justify-between">
+              <span><strong>Date:</strong> ${item.date}</span>
+              <span><strong>Time:</strong> ${item.time}</span>
+            </div>
+            <div class="flex justify-between items-center pt-0.5">
+              <span><strong>Officer:</strong> ${item.officer || item.officerName}</span>
+              <span class="text-[10px] text-sky-400 font-bold underline">Tap to view photos 📷</span>
+            </div>
+          </div>
+        `;
+        resultsDiv.appendChild(card);
+      });
+    }
+
+    async function loadRecentViolationsDefault() {
+      const resultsDiv = document.getElementById('search-results');
+      resultsDiv.innerHTML = `
+        <div class="flex items-center justify-center py-12 gap-2 text-gray-400 text-xs">
+          <div class="animate-spin rounded-full h-4 w-4 border-2 border-t-sky-400 border-white/20"></div>
+          Loading recent records...
+        </div>
+      `;
+      
+      const response = await apiCall("getRecentViolations");
+      displayRecentViolations(response);
+    }
+
+    function displayRecentViolations(response) {
+      const resultsDiv = document.getElementById('search-results');
+      resultsDiv.innerHTML = '';
+      
+      if (response && response.status === "success" && response.results && response.results.length > 0) {
+        const results = response.results;
+        
+        const container = document.createElement('div');
+        container.className = "space-y-1 font-mono text-[11px] text-gray-300 bg-[#0b0f19] border border-white/10 p-3 rounded-xl max-h-[250px] overflow-y-auto shadow-inner animate-fade-in";
+        
+        results.forEach(item => {
+          const formattedTime = formatTimeTo12Hour(item.time);
+          const plateNo = item.plate || item.plateNumber || 'UNKNOWN';
+
+          const row = document.createElement('div');
+          row.className = "flex justify-between items-center py-2 px-1 border-b border-white/5 last:border-0 hover:bg-white/5 rounded-lg cursor-pointer transition";
+          
+          row.onclick = (e) => {
+            if (!e.target.closest('button')) {
+              openPhotoViewerModal(item);
+            }
+          };
+
+          row.innerHTML = `
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-white tracking-wide">${plateNo}</span>
+              <span class="text-[9px] text-gray-400 font-bold">(${item.level})</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[10px] text-gray-400 text-center">${item.date}</span>
+              <span class="text-gray-300 text-right w-14 text-[10px]">${formattedTime}</span>
+              <button type="button" onclick="openConfirmDeleteModal('${item.date}', '${item.time}', '${plateNo}')" class="p-1 hover:bg-rose-950/50 text-rose-400 rounded-lg transition" title="Delete record and photos">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+        resultsDiv.appendChild(container);
+      } else {
+        resultsDiv.innerHTML = `<p class="text-xs text-gray-400 text-center py-10">No recent vehicle logs found.</p>`;
+      }
+    }
+
+    function openPhotoViewerModal(record) {
+      document.getElementById('modal-detail-plate').innerText = record.plate || record.plateNumber || 'UNKNOWN';
+      document.getElementById('modal-detail-meta').innerText = `${record.date || ''} at ${formatTimeTo12Hour(record.time) || ''}`;
+      document.getElementById('modal-detail-officer').innerText = record.officer || record.officerName || '—';
+      document.getElementById('modal-detail-level-badge').innerText = `Lvl ${record.level || '—'}`;
+
+      const placeholder = 'https://via.placeholder.com/400x250?text=No+Photo+Available';
+
+      const rawPlate = record.plateUrl || record.platePhoto || record.plateImage || record.plate_photo || record.plateId || record[5] || '';
+      const rawNotice = record.noticeUrl || record.noticePhoto || record.noticeImage || record.notice_photo || record.noticeId || record[6] || '';
+      const rawVehicle = record.vehicleUrl || record.vehiclePhoto || record.vehicleImage || record.vehicle_photo || record.vehicleId || record[7] || '';
+
+      const srcPlate = formatDriveImageUrl(rawPlate) || placeholder;
+      const srcNotice = formatDriveImageUrl(rawNotice) || placeholder;
+      const srcVehicle = formatDriveImageUrl(rawVehicle) || placeholder;
+
+      document.getElementById('modal-img-plate').src = srcPlate;
+      document.getElementById('modal-img-notice').src = srcNotice;
+      document.getElementById('modal-img-vehicle').src = srcVehicle;
+
+      document.getElementById('photo-viewer-modal').classList.remove('hidden');
+    }
+
+    function closePhotoViewerModal() {
+      document.getElementById('photo-viewer-modal').classList.add('hidden');
+    }
+
+    function zoomImage(srcUrl) {
+      if (srcUrl && !srcUrl.includes('placeholder')) {
+        window.open(srcUrl, '_blank');
+      }
+    }
+
+    function formatTimeTo12Hour(timeStr) {
+      if (!timeStr || !timeStr.includes(":")) return timeStr || "—";
+      const parts = timeStr.split(":");
+      let hrs = parseInt(parts[0], 10);
+      let mins = parts[1];
+      const ampm = hrs >= 12 ? 'pm' : 'am';
+      hrs = hrs % 12;
+      hrs = hrs ? hrs : 12; 
+      return `${hrs}.${mins}${ampm}`;
+    }
+
+    function printSearchResults() {
+      if (activeSearchResults.length === 0) return;
+      
+      const printWindow = window.open('', '_blank');
+      let rowsHtml = '';
+      
+      activeSearchResults.forEach(item => {
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid #334155;">
+            <td style="padding: 10px; font-weight: bold; color: #38bdf8;">${item.plate || item.plateNumber}</td>
+            <td style="padding: 10px;">${item.date}</td>
+            <td style="padding: 10px;">${item.time}</td>
+            <td style="padding: 10px;">${item.level}</td>
+            <td style="padding: 10px;">${item.officer || item.officerName}</td>
+          </tr>
+        `;
+      });
+
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Wisma Atria Parking Violation Report</title>
+          <style>
+            body { font-family: -apple-system, sans-serif; margin: 30px; color: #0b0f19; }
+            h1 { font-size: 20px; border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 15px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background-color: #f1f5f9; text-align: left; padding: 10px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #cbd5e1; }
+            .meta { font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
+            .footer { margin-top: 35px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>Wisma Atria Parking Violation History</h1>
+          <div class="meta">
+            <strong>Target Query:</strong> ${document.getElementById('search-query-input').value.toUpperCase()}<br>
+            <strong>Total Occurrences:</strong> ${activeSearchResults.length} time(s) flagged
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>License Plate</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Carpark Level</th>
+                <th>Officer Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          <div class="footer">
+            Report printed on ${new Date().toLocaleString()} | Wisma Atria Parking Log Assistant
+          </div>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          <\/script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    function emailSearchResults() {
+      if (activeSearchResults.length === 0) return;
+      
+      let queryVal = document.getElementById('search-query-input').value.toUpperCase();
+      let bodyText = `Wisma Atria Parking Violation History\n`;
+      bodyText += `Query: ${queryVal}\n`;
+      bodyText += `Total Flagged: ${activeSearchResults.length} occurrence(s)\n\n`;
+      
+      activeSearchResults.forEach((item, idx) => {
+        bodyText += `${idx + 1}. Plate: ${item.plate || item.plateNumber} | Date: ${item.date} | Time: ${item.time} | Level: ${item.level} | Officer: ${item.officer || item.officerName}\n`;
+      });
+      
+      bodyText += `\nReport generated on ${new Date().toLocaleString()}\nWisma Atria Parking Log Assistant`;
+      
+      const subject = encodeURIComponent(`Parking Violation Report: ${queryVal}`);
+      const body = encodeURIComponent(bodyText);
+      
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+
+    function triggerCameraInput(type) {
+      document.getElementById('file-' + type).click();
+    }
+
+    function selectLevel(num) {
+      payload.level = num;
+      document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.classList.remove('bg-gradient-to-r', 'from-sky-500', 'to-blue-600', 'text-white', 'border-sky-400', 'shadow-md');
+        btn.classList.add('border-white/10', 'text-gray-300', 'bg-[#0b0f19]');
+      });
+      const selectedBtn = document.getElementById('btn-lvl-' + num);
+      if (selectedBtn) {
+        selectedBtn.classList.remove('border-white/10', 'text-gray-300', 'bg-[#0b0f19]');
+        selectedBtn.classList.add('bg-gradient-to-r', 'from-sky-500', 'to-blue-600', 'text-white', 'border-sky-400', 'shadow-md');
+      }
+      
+      updatePlateCameraButtonState();
+      checkValidation();
+    }
+
+    function updatePlateCameraButtonState() {
+      const officerName = document.getElementById('officer-name-input').value.trim();
+      const btn = document.getElementById('btn-plate-camera');
+      const icon = document.getElementById('plate-camera-icon');
+      const text = document.getElementById('plate-camera-text');
+
+      if (!btn || !icon || !text) return;
+
+      if (officerName && payload.level) {
+        btn.className = "w-full flex flex-col items-center justify-center border-2 border-dashed border-sky-400/50 py-10 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 active:scale-95 transition cursor-pointer shadow-lg shadow-sky-500/10";
+        icon.className = "h-10 w-10 text-sky-400 mb-2 transition";
+        text.className = "text-xs font-bold text-sky-300";
+        text.innerText = "Open Camera to take Plate Photo";
+      } else {
+        btn.className = "w-full flex flex-col items-center justify-center border-2 border-dashed border-white/15 py-10 rounded-2xl transition bg-[#0b0f19]/60 opacity-60 cursor-not-allowed";
+        icon.className = "h-10 w-10 text-gray-500 mb-2 transition";
+        text.className = "text-xs font-bold text-gray-500";
+        if (!officerName && !payload.level) {
+          text.innerText = "Enter Name & Level to unlock camera";
+        } else if (!officerName) {
+          text.innerText = "Enter Officer Name to unlock camera";
+        } else {
+          text.innerText = "Select Carpark Level to unlock camera";
+        }
+      }
+    }
+
+    function handlePlateCameraClick() {
+      const officerName = document.getElementById('officer-name-input').value.trim();
+      if (!officerName) {
+        showToast("Please enter your Officer Name first!");
+        document.getElementById('officer-name-input').focus();
+        return;
+      }
+      if (!payload.level) {
+        showToast("Please select a Carpark Level first!");
+        return;
+      }
+
+      triggerCameraInput('plate');
+    }
+
+    function retakePhoto(type) {
+      payload[type + 'Image'] = null;
+      document.getElementById('file-' + type).value = '';
+      document.getElementById(type + '-preview-img').src = '';
+      document.getElementById(type + '-preview-box').classList.add('hidden');
+      
+      const trigger = document.getElementById(type + '-capture-trigger');
+      if (trigger) trigger.classList.remove('hidden');
+
+      if (type === 'plate') {
+        updatePlateCameraButtonState();
+      }
+
+      checkValidation();
+      triggerCameraInput(type);
+    }
+
+    function processCapturedFile(input, type) {
+      if (input.files && input.files[0]) {
+        showGlobalLoader("Applying high-contrast timestamp...");
+        
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+          input.value = ''; 
+          
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = function() {
+            const stampedBase64 = processAndTimestamp(img);
+            payload[type + 'Image'] = stampedBase64;
+            
+            const previewImg = document.getElementById(type + '-preview-img');
+            if (previewImg) previewImg.src = stampedBase64;
+            
+            const previewBox = document.getElementById(type + '-preview-box');
+            if (previewBox) previewBox.classList.remove('hidden');
+            
+            const trigger = document.getElementById(type + '-capture-trigger');
+            if (trigger) trigger.classList.add('hidden');
+            
+            hideGlobalLoader();
+            checkValidation();
+            
+            if (type === 'vehicle') {
+              addCurrentToBatchQueue();
+            } else {
+              changeStep(1); 
+            }
+          };
+        };
+      }
+    }
+
+    function processAndTimestamp(img) {
+      const maxDim = 768; 
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const now = new Date();
+      const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const dd = ("0" + now.getDate()).slice(-2);
+      const mmm = months[now.getMonth()];
+      const yyyy = now.getFullYear();
+      const hh = ("0" + now.getHours()).slice(-2);
+      const min = ("0" + now.getMinutes()).slice(-2);
+      const ss = ("0" + now.getSeconds()).slice(-2);
+      const timestampString = `${dd}-${mmm}-${yyyy} ${hh}:${min}:${ss}`;
+
+      const fontSize = Math.max(13, Math.round(width * 0.035));
+      ctx.font = `bold ${fontSize}px monospace`;
+
+      const textWidth = ctx.measureText(timestampString).width;
+      const pad = 8;
+      
+      const rectX = 15;
+      const rectY = height - fontSize - (pad * 2) - 15;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+      ctx.fillRect(rectX, rectY, textWidth + (pad * 2), fontSize + (pad * 2));
+
+      ctx.fillStyle = '#FFFF00'; 
+      ctx.textBaseline = 'top';
+      ctx.fillText(timestampString, rectX + pad, rectY + pad);
+
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    function checkValidation() {
+      const nextBtn = document.getElementById('btn-next');
+      const officerName = document.getElementById('officer-name-input').value.trim();
+      
+      if (currentStep === 1) {
+        nextBtn.disabled = !(payload.level && payload.plateImage && officerName);
+      } else if (currentStep === 2) {
+        nextBtn.disabled = !payload.noticeImage;
+      } else if (currentStep === 3) {
+        nextBtn.disabled = !payload.vehicleImage;
+      } else {
+        nextBtn.disabled = false;
+      }
+    }
+
+    function changeStep(val) {
+      if (currentStep === 3 && val === 1) {
+        return; 
+      }
+
+      document.getElementById('step-' + currentStep).classList.add('hidden');
+      currentStep += val;
+      document.getElementById('step-' + currentStep).classList.remove('hidden');
+
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('step' + i + '-dot');
+        const line = document.getElementById('line' + i);
+        if (i < currentStep) {
+          dot.className = "w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs";
+          if (line) line.className = "flex-1 h-0.5 bg-emerald-500 mx-2";
+        } else if (i === currentStep) {
+          dot.className = "w-7 h-7 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-sky-500/20";
+          if (line) line.className = "flex-1 h-0.5 bg-white/10 mx-2";
+        } else {
+          dot.className = "w-7 h-7 rounded-full bg-[#0b0f19] text-gray-400 border border-white/10 flex items-center justify-center font-bold text-xs";
+          if (line) line.className = "flex-1 h-0.5 bg-white/10 mx-2";
+        }
+      }
+
+      document.getElementById('btn-back').classList.toggle('hidden', currentStep === 1);
+      
+      const nextBtn = document.getElementById('btn-next');
+      if (nextBtn) nextBtn.classList.toggle('hidden', currentStep === 3);
+
+      checkValidation();
+    }
+
+    function showGlobalLoader(msg) {
+      document.getElementById('loader-message').innerText = msg;
+      document.getElementById('loader-overlay').classList.remove('hidden');
+    }
+
+    function hideGlobalLoader() {
+      document.getElementById('loader-overlay').classList.add('hidden');
+    }
+
+    function addCurrentToBatchQueue() {
+      const officerName = document.getElementById('officer-name-input').value.trim();
+      const itemToQueue = {
+        id: Date.now(),
+        officer: officerName, 
+        level: payload.level,
+        plateImage: payload.plateImage,
+        noticeImage: payload.noticeImage,
+        vehicleImage: payload.vehicleImage
+      };
+      
+      batchQueue.push(itemToQueue);
+      try { localStorage.setItem('wisma_batch_queue', JSON.stringify(batchQueue)); } catch(e){}
+      
+      renderBatchQueue();
+      showToast("Added to pending queue!");
+      resetApp();
+    }
+
+    function renderBatchQueue() {
+      const container = document.getElementById('queue-box-container');
+      const list = document.getElementById('queue-list');
+      const badge = document.getElementById('queue-badge');
+      
+      list.innerHTML = '';
+      badge.innerText = '0';
+      
+      if (batchQueue.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+      
+      container.classList.remove('hidden');
+      badge.innerText = batchQueue.length;
+      
+      batchQueue.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2.5 bg-[#0b0f19] border border-white/10 rounded-xl text-xs active:bg-white/5 transition cursor-pointer";
+        div.innerHTML = `
+          <div onclick="openQueueEditModal(${index})" class="flex items-center gap-3 flex-1 mr-2">
+            <div class="w-10 h-10 rounded-lg bg-cover bg-center border border-white/15" style="background-image: url(${item.plateImage})"></div>
+            <div>
+              <span class="font-bold text-white block font-sans">Level ${item.level} Vehicle</span>
+              <span class="text-gray-400 text-[10px] font-sans">Logged ${new Date(item.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+          </div>
+          <button type="button" onclick="event.stopPropagation(); removeFromQueue(${index});" class="px-2.5 py-1.5 bg-rose-950/40 border border-rose-500/30 hover:bg-rose-900/50 text-rose-300 font-bold rounded-lg transition flex items-center gap-1 shadow-sm" title="Delete from Queue">
+            <svg class="h-3.5 w-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Delete
+          </button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function removeFromQueue(index) {
+      batchQueue.splice(index, 1);
+      try { localStorage.setItem('wisma_batch_queue', JSON.stringify(batchQueue)); } catch(e){}
+      renderBatchQueue();
+    }
+
+    function openQueueEditModal(index) {
+      activeEditQueueIndex = index;
+      renderEditModalPreviews();
+      document.getElementById('queue-edit-modal').classList.remove('hidden');
+    }
+
+    function closeQueueEditModal() {
+      document.getElementById('queue-edit-modal').classList.add('hidden');
+      activeEditQueueIndex = null;
+    }
+
+    function renderEditModalPreviews() {
+      if (activeEditQueueIndex === null) return;
+      const item = batchQueue[activeEditQueueIndex];
+      
+      ['plate', 'notice', 'vehicle'].forEach(key => {
+        const previewImg = document.getElementById('edit-' + key + '-img');
+        const previewBox = document.getElementById('edit-' + key + '-box');
+        const triggerBtn = document.getElementById('edit-' + key + '-trigger');
+        
+        const b64 = item[key + 'Image'];
+        if (b64) {
+          previewImg.src = b64;
+          previewBox.classList.remove('hidden');
+          triggerBtn.classList.add('hidden');
+        } else {
+          previewImg.src = '';
+          previewBox.classList.add('hidden');
+          triggerBtn.classList.remove('hidden');
+        }
+      });
+    }
+
+    function removeEditPhoto(key) {
+      if (activeEditQueueIndex === null) return;
+      const item = batchQueue[activeEditQueueIndex];
+      item[key + 'Image'] = null; 
+      renderEditModalPreviews(); 
+    }
+
+    function triggerEditCameraInput(key) {
+      document.getElementById('edit-file-' + key).click();
+    }
+
+    function processEditPhoto(input, type) {
+      if (input.files && input.files[0] && activeEditQueueIndex !== null) {
+        showGlobalLoader("Applying high-contrast timestamp...");
+        
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+          input.value = ''; 
+          
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = function() {
+            const stampedBase64 = processAndTimestamp(img);
+            
+            const item = batchQueue[activeEditQueueIndex];
+            item[type + 'Image'] = stampedBase64;
+            
+            renderEditModalPreviews();
+            renderBatchQueue(); 
+            hideGlobalLoader();
+          };
+        };
+      }
+    }
+
+    function saveQueueEdits() {
+      if (activeEditQueueIndex === null) return;
+      const item = batchQueue[activeEditQueueIndex];
+      
+      if (!item.plateImage || !item.noticeImage || !item.vehicleImage) {
+        showToast("All 3 photos must be captured before saving!");
+        return;
+      }
+      
+      try { localStorage.setItem('wisma_batch_queue', JSON.stringify(batchQueue)); } catch(e){}
+      
+      closeQueueEditModal();
+      renderBatchQueue();
+      showToast("Changes saved successfully!");
+    }
+
+    async function uploadBatchQueue() {
+      if (batchQueue.length === 0) return;
+      
+      const total = batchQueue.length;
+      showGlobalLoader(`Preparing upload (0 of ${total})...`);
+
+      let successCount = 0;
+      let failedItems = [];
+      let lastErrorReason = "";
+
+      for (let i = 0; i < batchQueue.length; i++) {
+        const item = batchQueue[i];
+        showGlobalLoader(`Uploading vehicle ${i + 1} of ${total}...`);
+
+        try {
+          const res = await apiCall("processViolation", item);
+          if (res && res.status === "success") {
+            successCount++;
+          } else {
+            failedItems.push(item);
+            lastErrorReason = res ? res.message : "Server error";
+          }
+        } catch (err) {
+          failedItems.push(item);
+          lastErrorReason = err.toString();
+        }
+      }
+
+      hideGlobalLoader();
+
+      if (failedItems.length === 0) {
+        batchQueue = [];
+        try { localStorage.setItem('wisma_batch_queue', '[]'); } catch(e){}
+        renderBatchQueue(); 
+        
+        showSuccessModal("Upload Successful", "All queued vehicles have been successfully saved to Google Drive & Sheets.");
+      } else {
+        batchQueue = failedItems;
+        try { localStorage.setItem('wisma_batch_queue', JSON.stringify(batchQueue)); } catch(e){}
+        renderBatchQueue();
+        
+        showSuccessModal("Upload Results", `${successCount} uploaded successfully.\n${failedItems.length} failed.\n\nReason: ${lastErrorReason}`);
+      }
+    }
+
+    function showSuccessModal(title, bodyText) {
+      const titleEl = document.getElementById('success-title');
+      const bodyEl = document.getElementById('success-body');
+      if (titleEl) titleEl.innerText = title;
+      if (bodyEl) bodyEl.innerText = bodyText;
+      
+      const modal = document.getElementById('result-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeConfirmationModal() {
+      document.getElementById('result-modal').classList.add('hidden');
+      resetApp();
+    }
+
+    function resetApp() {
+      payload = { officer: null, level: null, plateImage: null, noticeImage: null, vehicleImage: null };
+      currentStep = 1;
+
+      ['plate', 'notice', 'vehicle'].forEach(key => {
+        const fileInput = document.getElementById('file-' + key);
+        if (fileInput) fileInput.value = '';
+
+        const previewImg = document.getElementById(key + '-preview-img');
+        if (previewImg) previewImg.src = '';
+
+        const previewBox = document.getElementById(key + '-preview-box');
+        if (previewBox) previewBox.classList.add('hidden');
+        
+        const trigger = document.getElementById(key + '-capture-trigger');
+        if (trigger) trigger.classList.remove('hidden');
+      });
+
+      document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.classList.remove('bg-gradient-to-r', 'from-sky-500', 'to-blue-600', 'text-white', 'border-sky-400', 'shadow-md');
+        btn.classList.add('border-white/10', 'text-gray-300', 'bg-[#0b0f19]');
+      });
+
+      const activeOfficer = getPortalLoggedInUser();
+      const officerInput = document.getElementById('officer-name-input');
+      if (officerInput && activeOfficer) {
+        officerInput.value = activeOfficer.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+      }
+
+      updatePlateCameraButtonState();
+
+      const step1 = document.getElementById('step-1');
+      if (step1) step1.classList.remove('hidden');
+
+      const step2 = document.getElementById('step-2');
+      if (step2) step2.classList.add('hidden');
+
+      const step3 = document.getElementById('step-3');
+      if (step3) step3.classList.add('hidden');
+
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('step' + i + '-dot');
+        const line = document.getElementById('line' + i);
+        if (dot) {
+          dot.className = i === 1 
+            ? "w-7 h-7 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-sky-500/20" 
+            : "w-7 h-7 rounded-full bg-[#0b0f19] text-gray-400 border border-white/10 flex items-center justify-center font-bold text-xs";
+        }
+        if (line) {
+          line.className = "flex-1 h-0.5 bg-white/10 mx-2";
+        }
+      }
+
+      const backBtn = document.getElementById('btn-back');
+      if (backBtn) backBtn.classList.add('hidden');
+
+      const nextBtn = document.getElementById('btn-next');
+      if (nextBtn) {
+        nextBtn.innerText = 'Next';
+        nextBtn.disabled = true;
+        nextBtn.classList.remove('hidden');
+      }
+
+      const resultModal = document.getElementById('result-modal');
+      if (resultModal) resultModal.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

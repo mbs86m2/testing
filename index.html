@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- PREVENT MOBILE AUTO-ZOOM ON INPUT TAP -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0f19">
+    <meta name="description" content="Wisma Atria FCC Projects Portal">
+    <title>WAFP</title>
+
+    <!-- iOS & ANDROID SHORTCUT CONFIGURATION -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WAFP">
+    <meta name="application-name" content="WAFP">
+
+    <!-- 1. ANDROID & CHROME PWA MANIFEST -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- 2. iOS HOMESCREEN ICON (PNG) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="photos/apple-touch-icon.png">
+
+    <!-- 3. DESKTOP BROWSER TAB ICON (SVG) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%230f172a'/><stop offset='50%25' stop-color='%231e1b4b'/><stop offset='100%25' stop-color='%23090d16'/></linearGradient><linearGradient id='accent' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2338bdf8'/><stop offset='50%25' stop-color='%23818cf8'/><stop offset='100%25' stop-color='%23c084fc'/></linearGradient><linearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2338bdf8'/><stop offset='50%25' stop-color='%2334d399'/></linearGradient></defs><rect width='512' height='512' rx='115' fill='url(%23bg)'/><path d='M256 75 L385 125 V240 C385 325 328 398 256 435 C184 398 127 325 127 240 V125 L256 75 Z' fill='none' stroke='url(%23accent)' stroke-width='16' stroke-linecap='round' stroke-linejoin='round'/><path d='M256 95 L368 139 V238 C368 312 318 376 256 410 C194 376 144 312 144 238 V139 L256 95 Z' fill='%23161e2e' opacity='0.75'/><text x='256' y='200' font-family='sans-serif' font-weight='800' font-size='56' fill='url(%23gold)' text-anchor='middle' letter-spacing='6'>WA</text><text x='256' y='305' font-family='sans-serif' font-weight='900' font-size='96' fill='%23ffffff' text-anchor='middle' letter-spacing='3'>FCC</text><text x='256' y='355' font-family='sans-serif' font-weight='700' font-size='22' fill='%2394a3b8' text-anchor='middle' letter-spacing='7'>PORTAL</text></svg>">
+
+    <!-- EXTERNAL STYLESHEET -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- ONE-LINER HEADER & DYNAMIC SAFE AREA STYLING -->
+    <style>
+        /* BALANCED TOP PADDING SO PLACARDS START CLEARLY BELOW HEADER */
+        .wrapper, #mainWrapper {
+            padding-top: calc(env(safe-area-inset-top, 16px) + 92px) !important;
+            padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 30px) !important;
+            box-sizing: border-box;
+        }
+
+        /* FIXED HEADER PADDING */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11, 15, 25, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 100;
+            padding-top: env(safe-area-inset-top, 8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-sizing: border-box;
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px 8px 10px;
+            max-width: 440px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .header-title-container {
+            text-align: center;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .header-title-container h1 {
+            font-size: 0.92rem;
+            margin: 0 0 3px 0;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+
+        /* STRICT ONE-LINER STATUS ROW */
+        .header-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .status-pill {
+            font-size: 0.58rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            line-height: 1.15;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .pill-officer {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.14);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+        .pill-location {
+            color: #34d399;
+            background: rgba(52, 211, 153, 0.14);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+        }
+        .pill-online {
+            color: #34d399;
+            background: rgba(52, 211, 153, 0.14);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+        }
+        .pill-offline {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.14);
+            border: 1px solid rgba(248, 113, 113, 0.35);
+        }
+
+        /* COMPACT SELECT DROPDOWNS */
+        .compact-select {
+            height: 34px;
+            padding: 4px 8px;
+            font-size: 0.72rem !important;
+            font-weight: 600;
+            background: #0b0f19;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 6px;
+            outline: none;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .compact-select option {
+            background: #161e2e;
+            color: #f8fafc;
+            font-size: 0.72rem;
+            padding: 6px;
+        }
+
+        /* ROLE BADGES IN OFFICERS LIST */
+        .badge-role-admin {
+            background: rgba(234, 179, 8, 0.22);
+            color: #facc15;
+            border: 1px solid rgba(234, 179, 8, 0.55);
+            font-size: 0.66rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            line-height: 1.2;
+        }
+        .badge-role-normal {
+            background: rgba(56, 189, 248, 0.18);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            font-size: 0.66rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            line-height: 1.2;
+        }
+
+        /* AUDIT LOG ACTIVE TIMER & ICON BUTTONS */
+        .audit-item-timer {
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 6px;
+            padding: 1px 5px;
+            font-family: monospace;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 4px;
+        }
+        .btn-audit-icon {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+        }
+        .btn-audit-icon:active { transform: scale(0.95); }
+        .btn-audit-logout { background: #f43f5e; color: #fff; }
+        .btn-audit-del { background: #e11d48; color: #fff; }
+
+        /* LIVE BROADCAST ANNOUNCEMENT (BOTTOM 4TH ROW) */
+        .broadcast-bottom-card {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.14), rgba(30, 27, 75, 0.65));
+            border: 1px solid rgba(234, 179, 8, 0.45);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* 15-MIN SHIFT ENDING POPUP BANNER */
+        .shift-alert-banner {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 24px);
+            max-width: 400px;
+            background: #991b1b;
+            color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #f87171;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.76rem;
+        }
+
+        /* ADMIN FLOATING EMERGENCY SPEED DIAL BUTTON */
+        .fab-speed-dial {
+            position: fixed;
+            bottom: 22px;
+            right: 18px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.2s ease;
+        }
+        .fab-speed-dial:active { transform: scale(0.92); }
+
+        /* INTEGRITY CHECK SCANNER ROW STYLES */
+        .scan-row { padding: 4px 6px; border-radius: 6px; transition: all 0.3s ease; }
+        .scan-active {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8 !important;
+            font-weight: 700;
+            animation: scanPulse 1s infinite alternate;
+        }
+        @keyframes scanPulse { 0% { opacity: 0.8; } 100% { opacity: 1; } }
+    </style>
+
+    <!-- FIREBASE COMPAT SDK V10 -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+    <div class="landscape-overlay">
+        <div style="font-size: 2.8rem; margin-bottom: 12px;">📱</div>
+        <h2>Portrait Mode Recommended</h2>
+        <p>Please rotate your phone upright to Portrait Mode for the optimal portal layout.</p>
+    </div>
+
+    <!-- 15-MIN SHIFT ENDING POPUP ALERT -->
+    <div id="shiftEndingBanner" class="shift-alert-banner">
+        <div style="font-size: 1.6rem;">⏰</div>
+        <div style="flex:1;">
+            <div style="font-weight: 800; font-size:0.8rem; margin-bottom:1px;">Shift Ending Soon</div>
+            <div style="opacity: 0.95; line-height: 1.3;">15 minutes remaining. Please finalize and submit all pending reports before your shift ends.</div>
+        </div>
+        <button onclick="dismissShiftEndingAlert()" style="background:transparent; border:none; color:white; font-size:1.1rem; font-weight:bold; cursor:pointer;">✕</button>
+    </div>
+
+    <!-- FIRST LOGIN BROADCAST POPUP MODAL -->
+    <div id="broadcastPopupModal" class="modal-overlay" style="display:none; z-index:10600;">
+        <div class="modal-card" style="max-width: 330px; height: auto; text-align: center; border: 1px solid rgba(234, 179, 8, 0.5); box-shadow: 0 15px 35px rgba(0,0,0,0.8);">
+            <div style="font-size:2.2rem; margin-bottom:6px;">📢</div>
+            <h2 style="font-size:1.05rem; color:#facc15; margin-bottom:4px;">Team Announcement</h2>
+            <div id="broadcastPopupText" style="font-size:0.78rem; color:#f8fafc; line-height:1.4; margin:10px 0 14px 0; background:rgba(11,15,25,0.7); padding:10px 12px; border-radius:8px; text-align:left; border:1px solid rgba(255,255,255,0.1);">
+                <!-- Populated via JS -->
+            </div>
+            <button type="button" class="btn-submit" style="background:#eab308; color:#0b0f19; font-weight:800; height:36px;" onclick="dismissBroadcastPopup()">
+                ✓ Acknowledge &amp; Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. OFFICER LOGIN OVERLAY -->
+    <div id="loginOverlay" class="modal-overlay">
+        <div class="modal-card" style="max-width: 360px; height: auto;">
+            <div style="font-size:2.2rem; margin-bottom:8px; text-align:center;">🔐</div>
+            <h2>Officer Portal Login</h2>
+            <p>Authentication, shift hours, and workplace location check required.</p>
+
+            <form id="loginForm" onsubmit="handleOfficerLogin(event)">
+                <div class="input-group">
+                    <label>Officer ID / Username (small letters)</label>
+                    <input type="text" id="usernameInput" class="force-lower" placeholder="Enter Username" required autocomplete="username" oninput="this.value = this.value.toLowerCase()">
+                </div>
+
+                <div class="input-group">
+                    <label>Password (CAPS)</label>
+                    <input type="password" id="passwordInput" class="force-upper" placeholder="Enter Password" required autocomplete="current-password" oninput="this.value = this.value.toUpperCase()">
+                </div>
+
+                <div id="statusBox" class="status-box"></div>
+
+                <button type="submit" id="loginBtn" class="btn-submit">
+                    Verify &amp; Log In &rarr;
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. SETTINGS PASSWORD OVERLAY -->
+    <div id="settingsAuthOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal-card" style="max-width: 340px; height: auto;">
+            <div style="font-size:2rem; text-align:center; margin-bottom:4px;">⚙️</div>
+            <h2>Portal Settings Lock</h2>
+            <p>Enter settings password to access officer management.</p>
+
+            <form onsubmit="handleSettingsPasswordSubmit(event)">
+                <div class="input-group">
+                    <label>Settings Password</label>
+                    <input type="password" id="settingsPwInput" placeholder="Enter password" required autocomplete="off">
+                </div>
+
+                <div id="settingsAuthStatus" class="status-box"></div>
+
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button type="submit" class="btn-submit" style="flex:1;">Unlock &crarr;</button>
+                    <button type="button" class="btn-sm btn-close" onclick="closeSettingsAuthOverlay()" style="padding:0 12px;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. ADMIN SETTINGS OVERLAY (STRICTLY FOR ADMINS) -->
+    <div id="settingsOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div>
+                    <h2 style="margin:0; font-size:1.05rem; text-align:left;">⚙️ Management &amp; Audit Logs</h2>
+                    <div id="cloudStatusBadge" style="font-size:0.64rem; font-weight:700; color:#34d399; margin-top:1px;">🟢 Firebase Realtime Active</div>
+                </div>
+                <button class="btn-sm btn-del" onclick="closeAdminSettings()">✕ Close</button>
+            </div>
+
+            <div class="tab-bar">
+                <button id="tabAuditBtn" class="tab-btn active" onclick="switchSettingsTab('audit')">📋 Login History</button>
+                <button id="tabOfficersBtn" class="tab-btn" onclick="switchSettingsTab('officers')">👥 Officers List</button>
+                <button id="tabBroadcastBtn" class="tab-btn" onclick="switchSettingsTab('broadcast')">📢 Broadcast</button>
+            </div>
+
+            <!-- TAB 1: LOGIN HISTORY VIEW -->
+            <div id="viewAudit" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:0.72rem; font-weight:700; color:#38bdf8;">LOGIN HISTORY LOGS</span>
+                    <button class="btn-sm btn-del" style="font-size:0.65rem;" onclick="clearLoginLogs()">Clear History</button>
+                </div>
+                <div id="auditCycleLabel" style="font-size:0.65rem; color:#34d399; font-weight:700; margin-bottom:6px;">
+                    📅 Showing Current 24h Shift Cycle (Since 08:00 AM)
+                </div>
+                
+                <div id="auditList" class="audit-list"></div>
+            </div>
+
+            <!-- TAB 2: OFFICERS MANAGEMENT VIEW (COMPACT SIDE-BY-SIDE ALIGNED INPUTS) -->
+            <div id="viewOfficers" style="display:none;">
+                <div class="search-box">
+                    <input type="text" id="officerSearchInput" placeholder="🔍 Search officer name, role, or shift..." oninput="toggleOfficerSearchClearBtn(); renderOfficersList()">
+                    <button type="button" id="clearOfficerSearchBtn" class="search-clear-btn" onclick="clearOfficerSearch()" title="Clear Search">✕</button>
+                </div>
+
+                <div id="officersList" class="officers-list"></div>
+
+                <form id="officerForm" onsubmit="saveOfficerAccount(event)" style="background:#161e2e; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); margin-top:6px;">
+                    <div style="font-size:0.72rem; font-weight:700; color:#34d399; margin-bottom:8px;" id="formTitle">➕ ADD NEW OFFICER</div>
+                    
+                    <input type="hidden" id="editOriginalUsername" value="">
+
+                    <!-- ROW 1: USERNAME & PASSWORD -->
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <label>Username (small letters)</label>
+                            <input type="text" id="adminUserIn" class="force-lower" placeholder="e.g. officer1" required oninput="this.value = this.value.toLowerCase()">
+                        </div>
+
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <label>Password (CAPS)</label>
+                            <input type="text" id="adminPassIn" class="force-upper" placeholder="e.g. 1234" required oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                    </div>
+
+                    <!-- ROW 2: ACCOUNT ROLE & ASSIGNED SHIFT (SIDE-BY-SIDE COMPACT) -->
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <label>Account Role</label>
+                            <select id="adminRoleIn" class="compact-select">
+                                <option value="officer">👮 Normal Officer</option>
+                                <option value="admin">👑 Administrator</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <label>Assigned Shift</label>
+                            <select id="adminShiftIn" class="compact-select">
+                                <option value="day">☀️ Day (08:00 - 20:00)</option>
+                                <option value="mid">🌤️ Mid (10:00 - 22:30)</option>
+                                <option value="night">🌙 Night (20:00 - 08:00)</option>
+                                <option value="any">🔄 24 Hours (Any)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ROW 3: GPS & CO/MA TOGGLES -->
+                    <div style="display:flex; gap:16px; align-items:center; margin-bottom:10px; background:rgba(11,15,25,0.6); padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="adminBypassGps">
+                            <label for="adminBypassGps">Remote Access (GPS Bypass)</label>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="adminComaBypass" title="Allows login from 0755hrs to 2230hrs">
+                            <label for="adminComaBypass" title="Allows login from 0755hrs to 2230hrs">CO/MA Bypass</label>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:6px;">
+                        <button type="submit" id="saveAccountBtn" class="btn-submit" style="height:34px; font-size:0.78rem; flex:1.2;">Save Account</button>
+                        <button type="button" class="btn-sm btn-close" onclick="resetOfficerForm()" style="height:34px; padding:0 10px;">Cancel</button>
+                        <button type="button" class="btn-sm btn-close" onclick="refreshCloudMasterData()" style="height:34px; background:#475569; padding:0 8px;" title="Sync with Cloud Master List">🔄 Sync Master</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 3: BROADCAST MANAGEMENT VIEW (ADMIN ONLY) -->
+            <div id="viewBroadcast" style="display:none; flex-direction:column; gap:8px;">
+                <div style="font-size:0.75rem; font-weight:700; color:#facc15;">📢 POST LIVE TEAM ANNOUNCEMENT</div>
+                <p style="font-size:0.7rem; color:#94a3b8; margin:0;">This announcement appears on officers' mobile screens upon login and at the bottom of the portal.</p>
+                
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>Announcement Text</label>
+                    <textarea id="broadcastInput" rows="3" placeholder="e.g. Lift PL03 is under maintenance until 1600hrs. Check B1 & L2 for water ponding." style="width:100%; border-radius:8px; padding:8px; font-size:0.75rem; background:#0b0f19; color:white; border:1px solid rgba(255,255,255,0.2);"></textarea>
+                </div>
+
+                <div style="display:flex; gap:8px; margin-top:4px;">
+                    <button type="button" class="btn-submit" style="background:#eab308; color:#0b0f19; font-weight:800;" onclick="publishLiveBroadcast()">📢 Publish Announcement</button>
+                    <button type="button" class="btn-sm btn-del" onclick="clearLiveBroadcast()">✕ Clear</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 4. ADMIN EMERGENCY SPEED DIAL MODAL -->
+    <div id="speedDialModal" class="modal-overlay" style="display:none; z-index:10500;">
+        <div class="modal-card" style="max-width: 330px; height: auto; text-align: left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:0.95rem; color:#ef4444; display:flex; align-items:center; gap:6px;">
+                    <span>🚨</span> Emergency Hotlines
+                </h3>
+                <button onclick="closeSpeedDialModal()" style="background:transparent; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="tel:62351251" style="display:flex; justify-content:space-between; align-items:center; background:#161e2e; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); text-decoration:none; color:white;">
+                    <div>
+                        <div style="font-weight:700; font-size:0.78rem;">🏢 FCC</div>
+                        <div style="font-size:0.68rem; color:#94a3b8;">Supervisors</div>
+                    </div>
+                    <span style="background:#ef4444; color:white; padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">CALL</span>
+                </a>
+
+                <a href="tel:18002585388" style="display:flex; justify-content:space-between; align-items:center; background:#161e2e; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); text-decoration:none; color:white;">
+                    <div>
+                        <div style="font-weight:700; font-size:0.78rem;">🛗 KONE 24h Lift Emergency</div>
+                        <div style="font-size:0.68rem; color:#94a3b8;">1800 258 5388 • Mantrap &amp; Faults</div>
+                    </div>
+                    <span style="background:#ef4444; color:white; padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">CALL</span>
+                </a>
+
+                <a href="tel:995" style="display:flex; justify-content:space-between; align-items:center; background:#161e2e; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); text-decoration:none; color:white;">
+                    <div>
+                        <div style="font-weight:700; font-size:0.78rem;">🚒 SCDF Fire / Ambulance</div>
+                        <div style="font-size:0.68rem; color:#94a3b8;">Emergency: 995</div>
+                    </div>
+                    <span style="background:#ef4444; color:white; padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">CALL</span>
+                </a>
+
+                <a href="tel:999" style="display:flex; justify-content:space-between; align-items:center; background:#161e2e; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); text-decoration:none; color:white;">
+                    <div>
+                        <div style="font-weight:700; font-size:0.78rem;">👮 Police Hotline</div>
+                        <div style="font-size:0.68rem; color:#94a3b8;">Emergency: 999</div>
+                    </div>
+                    <span style="background:#ef4444; color:white; padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:800;">CALL</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. AUTOMATED MASTER INTEGRITY SCANNER MODAL -->
+    <div id="wafpSyncOverlay" class="modal-overlay" style="display:none; z-index:11000;">
+        <div class="modal-card" style="max-width: 350px; height: auto; text-align: center; border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+            <div id="syncIcon" style="font-size:2.2rem; margin-bottom:6px;">🔍</div>
+            <h2 id="syncTitle" style="font-size:1.05rem; color:#38bdf8; margin-bottom:4px;">System Links Integrity</h2>
+            <p id="syncSubtitle" style="font-size:0.75rem; color:#cbd5e1; margin-bottom:12px; line-height:1.4;">
+                Connecting to Master Portal...
+            </p>
+            
+            <div id="syncDifferencesBox" style="background:#090d16; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 12px; font-size:0.72rem; text-align:left; margin-bottom:14px; max-height:180px; overflow-y:auto; line-height:1.9; font-family:monospace;">
+                <div id="scan-toc" class="scan-row" style="color:#94a3b8;">⏳ TOC Camera: Waiting...</div>
+                <div id="scan-breakdown" class="scan-row" style="color:#94a3b8;">⏳ Breakdown Reports: Waiting...</div>
+                <div id="scan-parking" class="scan-row" style="color:#94a3b8;">⏳ Parking Violations: Waiting...</div>
+                <div id="scan-staircase" class="scan-row" style="color:#94a3b8;">⏳ L2 Staircase: Waiting...</div>
+            </div>
+
+            <div id="syncCountdownBox" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px; font-size: 0.78rem; font-weight: 700; color: #38bdf8; text-align: center;">
+                ⏳ Checking system links...
+            </div>
+        </div>
+    </div>
+
+    <!-- PERMANENT FIXED TOP HEADER LAYER -->
+    <header>
+        <div class="header-inner">
+            <button id="logoutBtn" class="logout-btn" title="Log Out" onclick="handleManualLogout()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
+
+            <div class="header-title-container">
+                <h1>Wisma Atria FCC Portal</h1>
+                
+                <!-- PUBLIC HEADER BADGES (STRICT ONE-LINER) -->
+                <div class="header-status-row">
+                    <!-- 1. OFFICER BADGE -->
+                    <div id="officerBadge" class="status-pill pill-officer" style="display:none;">
+                        👮 Officer: <span id="currentOfficerDisplay">OFFICER</span>
+                    </div>
+
+                    <!-- 2. LOCATION BADGE -->
+                    <div id="locationBadge" class="status-pill pill-location">
+                        🟢 Location: Wisma Atria
+                    </div>
+
+                    <!-- 3. ONLINE / OFFLINE BADGE -->
+                    <div id="networkBadge" class="status-pill pill-online">
+                        🟢 Online
+                    </div>
+                </div>
+            </div>
+
+            <!-- STRICTLY REVEALED FOR ADMINS -->
+            <button id="settingsBtn" class="settings-btn" style="display:none;" title="Admin Settings" onclick="clickSettingsBtn()">⚙️</button>
+        </div>
+    </header>
+
+    <!-- MAIN PORTAL WRAPPER (DYNAMICALLY SPACED SO PLACARDS START CLEARLY BELOW HEADER) -->
+    <div class="wrapper" id="mainWrapper">
+        <div id="hubView" class="cards-container"></div>
+
+        <!-- 4TH ROW: LIVE TEAM ANNOUNCEMENT BANNER (AT THE BOTTOM OF PLACARDS) -->
+        <div id="broadcastBannerContainer" style="display:none;">
+            <div class="broadcast-bottom-card">
+                <div style="font-size:1.4rem;">📢</div>
+                <div style="flex:1;">
+                    <div style="font-size:0.66rem; font-weight:800; color:#facc15; text-transform:uppercase; letter-spacing:0.5px;">Live Duty Announcement</div>
+                    <div id="broadcastTextDisplay" style="font-size:0.75rem; color:#f8fafc; font-weight:600; line-height:1.3; margin-top:2px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>Google AI Studio &bull; Projects Portal</footer>
+    </div>
+
+    <!-- ADMIN FLOATING EMERGENCY SPEED DIAL BUTTON -->
+    <button id="emergencySpeedDialBtn" class="fab-speed-dial" onclick="openSpeedDialModal()" title="FCC Emergency Speed Dial">
+        📞
+    </button>
+
+    <!-- APPLICATION & MODULAR PLACARDS JAVASCRIPT -->
+    <script src="app.js"></script>
+    <script src="placards.js"></script>
+
+    <!-- LIVE HEADER BADGES & 15-MIN SHIFT ALERT ENGINE -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginForm = document.getElementById("loginForm");
+            if (loginForm) {
+                loginForm.addEventListener("submit", function() {
+                    const userInput = document.getElementById("usernameInput")?.value?.trim();
+                    if (userInput) {
+                        sessionStorage.setItem("wafp_officer", userInput);
+                        localStorage.setItem("wafp_officer", userInput);
+                        localStorage.setItem("wafp_logged_officer", userInput);
+                        localStorage.setItem("currentUser", userInput);
+                        sessionStorage.setItem("wafp_session_start_time", Date.now().toString());
+                        syncOfficerHeaderBadge();
+                    }
+                }, true);
+            }
+        });
+
+        function getLoggedInOfficerName() {
+            const possibleKeys = [
+                "portal_active_user", "wafp_officer", "wafp_logged_officer", "currentUser", 
+                "officer", "wafp_user", "loggedOfficer", "officerName", "username", "officer_id"
+            ];
+
+            for (let key of possibleKeys) {
+                const val = sessionStorage.getItem(key) || localStorage.getItem(key);
+                if (val && typeof val === 'string' && val.trim() !== '') {
+                    return val.trim().toUpperCase();
+                }
+            }
+            return null;
+        }
+
+        function syncOfficerHeaderBadge() {
+            const officerName = getLoggedInOfficerName();
+            const badge = document.getElementById("officerBadge");
+            const display = document.getElementById("currentOfficerDisplay");
+            const settingsBtn = document.getElementById("settingsBtn");
+            const fabSpeedDial = document.getElementById("emergencySpeedDialBtn");
+
+            const isAuth = localStorage.getItem('portal_authenticated') === 'true';
+            const userRole = (localStorage.getItem('portal_user_role') || '').toLowerCase().trim();
+            const activeUser = (localStorage.getItem('portal_active_user') || '').toLowerCase().trim();
+            const isAdmin = userRole === 'admin' || ['m2', 'keekc', 'admin', 'master'].includes(activeUser);
+
+            if (settingsBtn) settingsBtn.style.display = (isAuth && isAdmin) ? 'flex' : 'none';
+            if (fabSpeedDial) fabSpeedDial.style.display = (isAuth && isAdmin) ? 'flex' : 'none';
+
+            if (badge && display) {
+                if (officerName) {
+                    display.innerText = officerName;
+                    badge.style.display = "inline-flex";
+                } else {
+                    const loginOverlay = document.getElementById("loginOverlay");
+                    const isLoginOpen = loginOverlay && (
+                        loginOverlay.style.display === "flex" || 
+                        (loginOverlay.style.display !== "none" && getComputedStyle(loginOverlay).display !== "none")
+                    );
+                    badge.style.display = isLoginOpen ? "none" : "inline-flex";
+                    if (!isLoginOpen) display.innerText = "OFFICER";
+                }
+            }
+        }
+
+        function updateNetworkStatus() {
+            const netBadge = document.getElementById("networkBadge");
+            if (!netBadge) return;
+
+            if (navigator.onLine) {
+                netBadge.className = "status-pill pill-online";
+                netBadge.innerHTML = "🟢 Online";
+            } else {
+                netBadge.className = "status-pill pill-offline";
+                netBadge.innerHTML = "🔴 Offline";
+            }
+        }
+
+        window.addEventListener("online", updateNetworkStatus);
+        window.addEventListener("offline", updateNetworkStatus);
+
+        function checkShiftEndingReminder() {
+            const isAuth = localStorage.getItem('portal_authenticated') === 'true';
+            const authExpiry = parseInt(localStorage.getItem('portal_auth_expiry') || '0', 10);
+            if (!isAuth || !authExpiry) return;
+
+            const now = Date.now();
+            const remainingMs = authExpiry - now;
+            const fifteenMinsMs = 15 * 60 * 1000;
+
+            if (remainingMs <= fifteenMinsMs && remainingMs > 0) {
+                const banner = document.getElementById("shiftEndingBanner");
+                const alreadyAlerted = sessionStorage.getItem("wafp_15m_notified");
+
+                if (banner && banner.style.display !== "flex" && !alreadyAlerted) {
+                    banner.style.display = "flex";
+                    sessionStorage.setItem("wafp_15m_notified", "true");
+
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        new Notification("⏰ Wisma Atria FCC: Shift Ending Soon", {
+                            body: "15 minutes remaining on duty. Please submit all pending reports before your shift ends.",
+                            icon: "photos/apple-touch-icon.png"
+                        });
+                    }
+                }
+            }
+        }
+
+        function dismissShiftEndingAlert() {
+            const banner = document.getElementById("shiftEndingBanner");
+            if (banner) banner.style.display = "none";
+        }
+
+        function dismissBroadcastPopup() {
+            const modal = document.getElementById("broadcastPopupModal");
+            if (modal) modal.style.display = "none";
+        }
+
+        function openSpeedDialModal() {
+            document.getElementById("speedDialModal").style.display = "flex";
+        }
+        function closeSpeedDialModal() {
+            document.getElementById("speedDialModal").style.display = "none";
+        }
+
+        window.addEventListener("load", () => {
+            syncOfficerHeaderBadge();
+            updateNetworkStatus();
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        });
+
+        setInterval(() => {
+            syncOfficerHeaderBadge();
+            checkShiftEndingReminder();
+        }, 1000);
+    </script>
+
+    <!-- AUTOMATED MASTER INTEGRITY SCANNER SCRIPT (SKIPS WHEN LOGGED IN) -->
+    <script>
+        const MASTER_PORTAL_API = "https://script.google.com/macros/s/AKfycbz5QdZFTZeuzG-N4vlJwUBFJZ9cK8akHVjxORQjAsTg0neZY8_x60ZUsdtw_qtWH02Y/exec";
+        
+        let localWafpConfig = JSON.parse(localStorage.getItem("wafp_master_config")) || {
+            version: "2026.4",
+            SECTION_API_URLS: {
+                PARKING: "https://script.google.com/macros/s/AKfycbxFMHw735Dh5DIhnGfajhexS5YXUrZSGwccNmlymfjG-iIFxQHtzDNJkIk8PLNS4rTu/exec",
+                BREAKDOWN: "https://script.google.com/macros/s/AKfycbwJ0YKy16phTOi7yZfAwpUrXiPpaP34MNZNg08EnsuDxKKckhI5XFDNpjJknr1cVz_D/exec",
+                STAIRCASE: "https://script.google.com/macros/s/AKfycbyHnsL4p31xcRG4XGhYAOMYMZ8rzqbvliTz_vULJkt21J95GDGwlCfYrzYjDy0xnghB/exec",
+                TOC: "https://script.google.com/macros/s/AKfycbySv0cEND7TmLsQlf9zHpkWlGNjeOu-QYinZU86B0u-8M_xq8KTHnxLa6vO4yYKTdyTFg/exec"
+            },
+            SPREADSHEET_IDS: {
+                PARKING: "10IARDKGoFNxOaGVcdgyw3DDix1rqbxm_3qL55Zn4oVo",
+                BREAKDOWN: "1rbjfI3G4DsnAojN7O0w04xRNE6efFPs11ESDDAE76oY"
+            },
+            DEFAULT_FOLDERS: {
+                TOC: "1vOHVu0nBmMFyFxU_JrfUhrow9EvEjkDU",
+                STAIRCASE: "1o6tzEfpDsJGXjs7MabioL8DcaWNlBq_T",
+                PARKING_REPORTS: "1bMhOSGlZNM979lXcY3AC9PUC4OzOwx9O"
+            }
+        };
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        window.addEventListener("load", () => {
+            const isAuth = localStorage.getItem('portal_authenticated') === 'true';
+            const activeUser = localStorage.getItem('portal_active_user');
+
+            if (isAuth && activeUser) {
+                const modal = document.getElementById("wafpSyncOverlay");
+                if (modal) modal.style.display = "none";
+                return;
+            }
+
+            const modal = document.getElementById("wafpSyncOverlay");
+            if (modal) modal.style.display = "flex";
+            setTimeout(runSequentialIntegrityScan, 400);
+        });
+
+        async function runSequentialIntegrityScan() {
+            const iconEl = document.getElementById("syncIcon");
+            const titleEl = document.getElementById("syncTitle");
+            const subEl = document.getElementById("syncSubtitle");
+            const countBox = document.getElementById("syncCountdownBox");
+
+            const checks = [
+                { id: 'scan-toc', key: 'TOC', label: 'TOC Camera' },
+                { id: 'scan-breakdown', key: 'BREAKDOWN', label: 'Breakdown Reports' },
+                { id: 'scan-parking', key: 'PARKING', label: 'Parking Violations' },
+                { id: 'scan-staircase', key: 'STAIRCASE', label: 'L2 Staircase' }
+            ];
+
+            let masterCfg = null;
+            let masterVersion = "2026.4";
+            let fetchSuccess = false;
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 6000);
+                const res = await fetch(`${MASTER_PORTAL_API}?action=getMasterConfig&nocache=${Date.now()}`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const data = await res.json();
+
+                if (data && data.status === "success" && data.config && data.config.SECTION_API_URLS) {
+                    masterCfg = data.config;
+                    masterVersion = data.version || "2026.4";
+                    fetchSuccess = true;
+                }
+            } catch (err) {
+                console.warn("Master Portal offline, using local configuration:", err);
+            }
+
+            subEl.textContent = "Verifying project links in sequence...";
+            let hasMismatch = false;
+
+            for (let i = 0; i < checks.length; i++) {
+                const item = checks[i];
+                const rowEl = document.getElementById(item.id);
+
+                if (rowEl) {
+                    rowEl.className = "scan-row scan-active";
+                    rowEl.textContent = `⏳ ${item.label}: Checking live link...`;
+                }
+
+                await sleep(550);
+
+                const localUrl = (localWafpConfig.SECTION_API_URLS && localWafpConfig.SECTION_API_URLS[item.key]) ? localWafpConfig.SECTION_API_URLS[item.key].trim() : "";
+                const masterUrl = (masterCfg && masterCfg.SECTION_API_URLS && masterCfg.SECTION_API_URLS[item.key]) ? masterCfg.SECTION_API_URLS[item.key].trim() : localUrl;
+
+                if (fetchSuccess && (!masterUrl || localUrl !== masterUrl)) {
+                    hasMismatch = true;
+                    if (rowEl) {
+                        rowEl.className = "scan-row";
+                        rowEl.textContent = `⚠️ ${item.label}: Update Required`;
+                        rowEl.style.color = "#fca5a5";
+                    }
+                } else {
+                    if (rowEl) {
+                        rowEl.className = "scan-row";
+                        rowEl.textContent = `✅ ${item.label}: Verified`;
+                        rowEl.style.color = "#34d399";
+                    }
+                }
+            }
+
+            if (fetchSuccess && (hasMismatch || localWafpConfig.version !== masterVersion)) {
+                masterCfg.version = masterVersion;
+                iconEl.innerHTML = "🔄";
+                titleEl.textContent = "Updates Required";
+                titleEl.style.color = "#f59e0b";
+                subEl.textContent = "New project links detected. Auto-updating now...";
+
+                for (let sec = 5; sec > 0; sec--) {
+                    countBox.style.background = "rgba(245, 158, 11, 0.12)";
+                    countBox.style.borderColor = "rgba(245, 158, 11, 0.4)";
+                    countBox.style.color = "#fbbf24";
+                    countBox.innerHTML = `🔄 Applying updates automatically in <strong>${sec}s</strong>...`;
+                    await sleep(1000);
+                }
+
+                countBox.innerHTML = `⚡ Saving & Refreshing Portal...`;
+                applyMasterConfigAndReload(masterCfg);
+
+            } else {
+                iconEl.innerHTML = "🟢";
+                titleEl.textContent = "System Verified & Ready";
+                titleEl.style.color = "#34d399";
+                subEl.textContent = "All project placard links are verified and up to date.";
+
+                for (let sec = 5; sec > 0; sec--) {
+                    countBox.style.background = "rgba(52, 211, 153, 0.12)";
+                    countBox.style.borderColor = "rgba(52, 211, 153, 0.4)";
+                    countBox.style.color = "#34d399";
+                    countBox.innerHTML = `🚀 Entering login portal in <strong>${sec}s</strong>...`;
+                    await sleep(1000);
+                }
+
+                const modal = document.getElementById("wafpSyncOverlay");
+                if (modal) {
+                    modal.style.transition = "opacity 0.4s ease";
+                    modal.style.opacity = "0";
+                    setTimeout(() => { modal.style.display = "none"; }, 400);
+                }
+            }
+        }
+
+        function applyMasterConfigAndReload(cfg) {
+            if (cfg) {
+                localStorage.setItem("wafp_master_config", JSON.stringify(cfg));
+                const urls = cfg.SECTION_API_URLS || {};
+                const folders = cfg.DEFAULT_FOLDERS || {};
+                const sheets = cfg.SPREADSHEET_IDS || {};
+
+                if (urls.TOC) localStorage.setItem("TOC_API_URL", urls.TOC);
+                if (folders.TOC) localStorage.setItem("TOC_FOLDER_ID", folders.TOC);
+                if (urls.PARKING) localStorage.setItem("PARKING_API_URL", urls.PARKING);
+                if (sheets.PARKING) localStorage.setItem("PARKING_SPREADSHEET_ID", sheets.PARKING);
+                if (urls.BREAKDOWN) localStorage.setItem("BREAKDOWN_API_URL", urls.BREAKDOWN);
+                if (sheets.BREAKDOWN) localStorage.setItem("BREAKDOWN_SPREADSHEET_ID", sheets.BREAKDOWN);
+                if (urls.STAIRCASE) localStorage.setItem("STAIRCASE_API_URL", urls.STAIRCASE);
+                if (folders.STAIRCASE) localStorage.setItem("STAIRCASE_FOLDER_ID", folders.STAIRCASE);
+
+                sessionStorage.clear();
+                window.location.href = window.location.pathname + '?v=' + Date.now();
+            }
+        }
+    </script>
+</body>
+</html>

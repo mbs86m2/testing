@@ -1,0 +1,31 @@
+/* SHARED STYLES FOR TOC CAMERA - STANDARDIZED DARK THEME */
+html, body {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #0b0f19;
+  color: #f8fafc;
+}
+
+/* TIGHT SNUG SAFE AREA TOP PADDING */
+.safe-pt {
+  padding-top: max(0.75rem, constant(safe-area-inset-top, 10px)) !important;
+  padding-top: max(0.75rem, env(safe-area-inset-top, 10px)) !important;
+}
+
+/* LANDSCAPE VIEW OVERLAY FOR MOBILE DEVICES */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  #appWrapper {
+    max-width: 420px !important;
+    margin: 0 auto !important;
+  }
+  #orientationOverlay {
+    display: flex !important;
+  }
+}

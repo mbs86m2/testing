@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wisma Atria Directory</title>
+
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#735B3F">
+
+  <!-- Browser Favicon & Touch Icons -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22120%22%20fill%3D%22%23735B3F%22%2F%3E%3Crect%20x%3D%2224%22%20y%3D%2224%22%20width%3D%22464%22%20height%3D%22464%22%20rx%3D%2296%22%20fill%3D%22none%22%20stroke%3D%22%238C7253%22%20stroke-width%3D%2216%22%2F%3E%3Ctext%20x%3D%22256%22%20y%3D%22290%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%22200%22%20fill%3D%22%23E5DCB8%22%20text-anchor%3D%22middle%22%3EDIR%3C%2Ftext%3E%3Ctext%20x%3D%22256%22%20y%3D%22390%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20sans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2254%22%20fill%3D%22%23FAF7F2%22%20letter-spacing%3D%228%22%20text-anchor%3D%22middle%22%3EWISMA%20ATRIA%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22120%22%20fill%3D%22%23735B3F%22%2F%3E%3Crect%20x%3D%2224%22%20y%3D%2224%22%20width%3D%22464%22%20height%3D%22464%22%20rx%3D%2296%22%20fill%3D%22none%22%20stroke%3D%22%238C7253%22%20stroke-width%3D%2216%22%2F%3E%3Ctext%20x%3D%22256%22%20y%3D%22290%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20sans-serif%22%20font-weight%3D%22900%22%20font-size%3D%22200%22%20fill%3D%22%23E5DCB8%22%20text-anchor%3D%22middle%22%3EDIR%3C%2Ftext%3E%3Ctext%20x%3D%22256%22%20y%3D%22390%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20sans-serif%22%20font-weight%3D%22800%22%20font-size%3D%2254%22%20fill%3D%22%23FAF7F2%22%20letter-spacing%3D%228%22%20text-anchor%3D%22middle%22%3EWISMA%20ATRIA%3C%2Ftext%3E%3C%2Fsvg%3E">
+
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#F8F6F2] text-[#2C241B] font-sans min-h-screen pb-16">
+
+  <!-- Sticky Top Header -->
+  <div class="sticky top-0 z-30 bg-[#735B3F] text-white px-3 pt-3 pb-3 shadow-md">
+    
+    <!-- Top Action Bar -->
+    <div class="relative flex items-center justify-between mb-2 min-h-[36px]">
+      
+      <!-- Back Button to Main Portal -->
+      <a 
+        id="back-portal-link"
+        href="https://mobile-wafp.netlify.app" 
+        title="Back to Main Portal" 
+        class="z-10 w-9 h-9 rounded-xl bg-[#5C4730] hover:bg-[#3D2F1F] text-[#E5DCB8] flex items-center justify-center border border-[#8C7253] active:scale-95 transition shadow-sm shrink-0"
+      >
+        <i class="fa-solid fa-chevron-left text-sm"></i>
+      </a>
+
+      <!-- Dead-Centered Header & Local Wisma Logo -->
+      <div class="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center justify-center text-center px-12 pointer-events-none">
+        <div class="flex items-center justify-center pointer-events-auto">
+          <img 
+            id="main-wisma-logo"
+            src="WISMA-LOGO.png" 
+            alt="Wisma Atria Logo" 
+            class="h-7 w-auto object-contain"
+            onerror="forceFetchWismaLogo(this)"
+          />
+        </div>
+        <h1 class="text-[10px] font-extrabold text-[#E5DCB8] uppercase tracking-wider mt-0.5 pointer-events-auto whitespace-nowrap">
+          MALL &amp; OFFICE DIRECTORY
+        </h1>
+      </div>
+
+      <!-- Settings Gear Button -->
+      <button 
+        id="settings-btn"
+        onclick="openPasswordModal()"
+        title="Admin Directory Management"
+        class="z-10 w-9 h-9 rounded-xl bg-[#5C4730] hover:bg-[#3D2F1F] text-[#E5DCB8] flex items-center justify-center border border-[#8C7253] active:scale-95 transition shadow-sm shrink-0"
+      >
+        <i class="fa-solid fa-gear text-sm"></i>
+      </button>
+
+    </div>
+
+    <!-- Universal Search Input -->
+    <div class="relative mb-2">
+      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#A08967]">
+        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+      </div>
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Search shop name or unit (e.g. 7-Eleven, Starbucks, #B1-02, Prada)..." 
+        class="w-full pl-9 pr-9 py-2 bg-[#FAF8F5] text-[#3D2F1F] placeholder-[#A08967]/70 border border-[#8C7253] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#E5DCB8] transition shadow-inner"
+      />
+      <button 
+        id="clear-search" 
+        class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-[#A08967] hover:text-[#3D2F1F] active:scale-95 transition"
+        title="Clear Search"
+      >
+        <i class="fa-solid fa-xmark text-sm font-bold"></i>
+      </button>
+    </div>
+
+    <!-- Centered Level Tabs Bar -->
+    <div class="flex items-center justify-center gap-1 overflow-x-auto no-scrollbar pt-0.5 text-xs">
+      <button data-level="B1" class="level-btn whitespace-nowrap px-3.5 py-1 rounded-full bg-[#3D2F1F] text-[#E5DCB8] font-bold transition border border-[#8C7253]">B1</button>
+      <button data-level="L1" class="level-btn whitespace-nowrap px-3.5 py-1 rounded-full bg-[#FAF8F5] text-[#5C4730] font-semibold border border-[#E5DCB8]">L1</button>
+      <button data-level="L2" class="level-btn whitespace-nowrap px-3.5 py-1 rounded-full bg-[#FAF8F5] text-[#5C4730] font-semibold border border-[#E5DCB8]">L2</button>
+      <button data-level="L3" class="level-btn whitespace-nowrap px-3.5 py-1 rounded-full bg-[#FAF8F5] text-[#5C4730] font-semibold border border-[#E5DCB8]">L3</button>
+      <button data-level="OFFICE_TOWER" class="level-btn whitespace-nowrap px-3.5 py-1 rounded-full bg-[#FAF8F5] text-[#5C4730] font-semibold border border-[#E5DCB8]">Office Tower</button>
+    </div>
+
+  </div>
+
+  <!-- Mobile Directory List Container -->
+  <div class="px-3 pt-3">
+    <div class="flex justify-between items-center text-[11px] font-bold text-[#735B3F] mb-2 px-1">
+      <span id="results-label">Fetching from Firestore...</span>
+      <span class="text-[#8C7253] text-[10px]">Alphabetical Order (A-Z)</span>
+    </div>
+
+    <div id="directory-list" class="space-y-2"></div>
+
+    <div id="empty-state" class="hidden bg-white rounded-2xl p-8 text-center border border-[#E5DCB8] mt-4 shadow-sm">
+      <i class="fa-solid fa-store-slash text-[#A08967] text-3xl mb-2"></i>
+      <h3 class="text-[#3D2F1F] font-bold text-sm">No matching tenants found</h3>
+      <p class="text-[#A08967] text-xs mt-1">Check spelling or search for unit like "#B1-02"</p>
+    </div>
+  </div>
+
+  <!-- Admin Password Verification Modal -->
+  <div id="password-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-[#FAF8F5] w-full max-w-xs rounded-2xl p-4 shadow-2xl border border-[#8C7253] space-y-3">
+      <div class="flex justify-between items-center border-b border-[#E5DCB8] pb-2">
+        <div class="flex items-center gap-2 text-[#3D2F1F]">
+          <i class="fa-solid fa-lock text-[#735B3F]"></i>
+          <h3 class="font-bold text-xs">Admin Password Required</h3>
+        </div>
+        <button onclick="closePasswordModal()" class="text-[#8C7253] text-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[10px] text-[#735B3F] mb-1">Enter Admin Password:</label>
+        <input 
+          type="password" 
+          id="admin-pass-input" 
+          placeholder="Password..." 
+          class="w-full p-2 bg-white border border-[#E5DCB8] rounded-xl text-xs font-semibold focus:outline-none focus:border-[#735B3F]"
+          onkeydown="if(event.key==='Enter') verifyAndOpenAdmin()"
+        />
+        <p id="pass-error" class="hidden text-rose-600 text-[10px] font-bold mt-1">Incorrect Password!</p>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button onclick="closePasswordModal()" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
+        <button onclick="verifyAndOpenAdmin()" class="flex-1 py-2 bg-[#3D2F1F] text-[#E5DCB8] font-bold rounded-xl text-xs hover:bg-[#5C4730] transition">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#3D2F1F] text-[#E5DCB8] text-xs font-bold px-4 py-2.5 rounded-full shadow-xl opacity-0 pointer-events-none transition duration-300 z-50 flex items-center gap-2 border border-[#8C7253]">
+    <i class="fa-solid fa-check text-emerald-400"></i>
+    <span id="toast-text">Action completed</span>
+  </div>
+
+  <script>
+    const ADMIN_USERS = ["admin m2", "m2", "keekc", "kee", "kee kc", "admin", "master"];
+
+    function getPortalLoggedInUser() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromParam = urlParams.get('user') || urlParams.get('username') || urlParams.get('officer') || urlParams.get('name') || urlParams.get('id');
+      if (fromParam && fromParam.trim()) return fromParam.trim();
+
+      const possibleKeys = [
+        'portal_active_user', 'wafp_officer', 'wafp_logged_officer', 'currentUser', 
+        'wafp_active_officer', 'wafp_user', 'username', 'officer', 'user'
+      ];
+
+      for (let k of possibleKeys) {
+        let val = sessionStorage.getItem(k) || localStorage.getItem(k);
+        if (val && typeof val === 'string' && val.trim()) {
+          return val.trim();
+        }
+      }
+
+      return '';
+    }
+
+    function isUserAdmin() {
+      const name = (getPortalLoggedInUser() || '').toLowerCase();
+      const role = (localStorage.getItem('portal_user_role') || '').toLowerCase();
+      if (role === 'admin') return true;
+      return ADMIN_USERS.some(adminName => name === adminName || name.includes(adminName));
+    }
+
+    function detectLevelFromUnit(unit) {
+      if (!unit) return "B1";
+      const u = unit.toUpperCase().trim();
+      if (u.includes("B1")) return "B1";
+      const match = u.match(/#(\d{1,2})/);
+      if (match) {
+        const floor = parseInt(match[1], 10);
+        if (floor === 1) return "L1";
+        if (floor === 2) return "L2";
+        if (floor === 3) return "L3";
+        if (floor >= 10) return "OFFICE_TOWER";
+      }
+      if (u.startsWith("#01-") || u.startsWith("#1-")) return "L1";
+      if (u.startsWith("#02-") || u.startsWith("#2-")) return "L2";
+      if (u.startsWith("#03-") || u.startsWith("#3-")) return "L3";
+      return "B1";
+    }
+
+    function isOfficeTenant(item) {
+      if (!item) return false;
+      const level = (item.level || '').toUpperCase();
+      if (level === 'OFFICE_TOWER') return true;
+      return detectLevelFromUnit(item.unit) === 'OFFICE_TOWER';
+    }
+
+    // INSTANT UNLOCK FOR ADMINS, PASSWORD PROMPT FOR NON-ADMINS
+    window.openPasswordModal = function() {
+      if (isUserAdmin()) {
+        sessionStorage.setItem('wa_directory_admin', 'authenticated');
+        localStorage.setItem('wa_directory_admin', 'authenticated');
+        window.location.href = "directory-admin.html";
+        return;
+      }
+
+      const errEl = document.getElementById('pass-error');
+      if (errEl) errEl.classList.add('hidden');
+      document.getElementById('admin-pass-input').value = '';
+      document.getElementById('password-modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('admin-pass-input').focus(), 100);
+    };
+
+    window.closePasswordModal = function() {
+      document.getElementById('password-modal').classList.add('hidden');
+    };
+
+    window.verifyAndOpenAdmin = function() {
+      const inputPass = document.getElementById('admin-pass-input').value.trim();
+      const errEl = document.getElementById('pass-error');
+
+      if (inputPass.toLowerCase() === 'wisma123') {
+        sessionStorage.setItem('wa_directory_admin', 'authenticated');
+        localStorage.setItem('wa_directory_admin', 'authenticated');
+        closePasswordModal();
+        window.location.href = "directory-admin.html";
+      } else {
+        if (errEl) errEl.classList.remove('hidden');
+        document.getElementById('admin-pass-input').value = '';
+      }
+    };
+
+    let directoryData = [];
+    let currentLevel = 'B1';
+    let searchQuery = '';
+
+    // Firebase Realtime Listener
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxdJvLJuGgBpOXIj1kRMLjfkFBA1ogAoc",
+      authDomain: "wa-fcc-portal-directory-8b99e.firebaseapp.com",
+      projectId: "wa-fcc-portal-directory-8b99e",
+      storageBucket: "wa-fcc-portal-directory-8b99e.firebasestorage.app",
+      messagingSenderId: "671239854575",
+      appId: "1:671239854575:web:d8beeecdf79f3868cbe1a"
+    };
+
+    let db = null;
+    if (typeof firebase !== 'undefined') {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        db.collection("directory").onSnapshot((snapshot) => {
+          directoryData = [];
+          if (snapshot && !snapshot.empty) {
+            snapshot.forEach(docSnap => {
+              const data = docSnap.data();
+              if (data && data.name) {
+                const itemLevel = detectLevelFromUnit(data.unit);
+                directoryData.push({ id: docSnap.id, status: "Active", ...data, level: itemLevel });
+              }
+            });
+          }
+          render();
+        }, (error) => {
+          console.error("Firestore Error:", error);
+          const resultsLabel = document.getElementById('results-label');
+          if (resultsLabel) resultsLabel.innerText = "Error loading directory. Check connection.";
+          render();
+        });
+      } catch (e) { 
+        console.error("Firebase Init Error:", e);
+        render(); 
+      }
+    } else {
+      render();
+    }
+
+    function cleanStr(str) { return (str || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+    // Singapore Public Holidays Dataset (2026)
+    const SG_HOLIDAYS_2026 = [
+      "2026-01-01", "2026-02-17", "2026-02-18", "2026-03-20", 
+      "2026-04-03", "2026-05-01", "2026-05-27", "2026-05-31", 
+      "2026-08-09", "2026-11-08", "2026-12-25"
+    ];
+
+    function isSingaporePublicHoliday(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+
+      if (SG_HOLIDAYS_2026.includes(dateStr)) return true;
+
+      if (dateObj.getDay() === 1) {
+        const prevSunday = new Date(dateObj);
+        prevSunday.setDate(dateObj.getDate() - 1);
+        const sunYYYY = prevSunday.getFullYear();
+        const sunMM = String(prevSunday.getMonth() + 1).padStart(2, '0');
+        const sunDD = String(prevSunday.getDate()).padStart(2, '0');
+        const sunDateStr = `${sunYYYY}-${sunMM}-${sunDD}`;
+
+        if (SG_HOLIDAYS_2026.includes(sunDateStr)) return true;
+      }
+
+      return false;
+    }
+
+    function cleanDayGroupText(text) {
+      if (!text) return '';
+      let formatted = text;
+      formatted = formatted.replace(/MON\s*(?:&|,)\s*TUE\s*(?:&|,)\s*WED\s*(?:&|,)\s*THU\s*(?:&|,)\s*FRI\s*(?:&|,)\s*SAT\s*(?:&|,)\s*SUN\s*(?:&|,)\s*PH/gi, 'MON to SUN & PH');
+      formatted = formatted.replace(/MON\s*(?:&|,)\s*TUE\s*(?:&|,)\s*WED\s*(?:&|,)\s*THU\s*(?:&|,)\s*FRI\s*(?:&|,)\s*SAT\s*(?:&|,)\s*SUN/gi, 'MON to SUN');
+      formatted = formatted.replace(/MON\s*(?:&|,)\s*TUE\s*(?:&|,)\s*WED\s*(?:&|,)\s*THU\s*(?:&|,)\s*FRI/gi, 'MON to FRI');
+      formatted = formatted.replace(/SAT\s*(?:&|,)\s*SUN\s*(?:&|,)\s*PH/gi, 'WEEKENDS & PH');
+      formatted = formatted.replace(/SAT\s*(?:&|,)\s*SUN/gi, 'WEEKENDS');
+      return formatted;
+    }
+
+    function calculateOperatingStatus(item) {
+      if (!item || isOfficeTenant(item)) return { badgeText: "", badgeClass: "hidden", timeRange: "" };
+
+      const statusType = item.status || 'Active';
+      if (statusType === 'Permanently Close' || statusType === 'Permanently Closed') 
+        return { badgeText: "Permanently Closed", badgeClass: "bg-slate-200 text-slate-800 border border-slate-300 font-bold", timeRange: "Store Closed" };
+      if (statusType === 'Under Renovation') 
+        return { badgeText: "Under Renovation", badgeClass: "bg-amber-100 text-amber-900 border border-amber-300 font-bold", timeRange: "Opening Soon" };
+      if (statusType === 'Vacant') 
+        return { badgeText: "Vacant", badgeClass: "bg-[#E5DCB8]/60 text-[#5C4730] border border-[#8C7253]/40 font-bold", timeRange: "Vacant" };
+
+      const displayHoursText = cleanDayGroupText(item.displayHours || "");
+      const displayUpper = displayHoursText.toUpperCase();
+
+      if (displayUpper.includes("01:00 AM TO 12:59 AM") || displayUpper.includes("24 HOURS") || displayUpper.includes("OPEN 24 HOURS")) {
+        return {
+          badgeText: "Open 24 Hours",
+          badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold",
+          timeRange: displayHoursText || "MON to SUN & PH: 01:00 AM to 12:59 AM"
+        };
+      }
+
+      const now = new Date();
+      const isPH = isSingaporePublicHoliday(now);
+      const isClosedOnPH = /\bPH:\s*CLOSED\b|\bCLOSED\s*(?:WEEKENDS\s*&\s*)?PH\b|\bCLOSED\s*ON\s*PH\b/i.test(displayHoursText);
+
+      if (isPH && isClosedOnPH) {
+        return {
+          badgeText: "Closed Today (Public Holiday)",
+          badgeClass: "bg-rose-50 text-rose-700 border border-rose-200 font-bold",
+          timeRange: displayHoursText
+        };
+      }
+
+      const openStr = item.open || "10:00"; 
+      const closeStr = item.close || "22:00";
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const [openH, openM] = openStr.split(':').map(x => parseInt(x, 10) || 0);
+      const [closeH, closeM] = closeStr.split(':').map(x => parseInt(x, 10) || 0);
+      
+      let openMinutes = openH * 60 + openM;
+      let closeMinutes = closeH * 60 + closeM;
+      if (closeMinutes <= openMinutes) closeMinutes += 24 * 60;
+      
+      let isOpen = (currentMinutes >= openMinutes && currentMinutes <= closeMinutes);
+
+      return {
+        badgeText: isOpen ? "Open Now" : "Closed",
+        badgeClass: isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold' : 'bg-rose-50 text-rose-700 border border-rose-200 font-bold',
+        timeRange: displayHoursText || `${openStr} to ${closeStr}`
+      };
+    }
+
+    function formatMultiLineHours(text) {
+      if (!text) return '';
+      const cleanedText = cleanDayGroupText(text);
+      const lines = cleanedText.split('\n');
+      return lines.map(l => l.trim()).filter(l => l.length > 0).join('<br>');
+    }
+
+    function setActiveLevelPill(level) {
+      currentLevel = level;
+      document.querySelectorAll('.level-btn').forEach(btn => {
+        if (btn.dataset.level === level) {
+          btn.classList.remove('bg-[#FAF8F5]', 'text-[#5C4730]', 'font-semibold');
+          btn.classList.add('bg-[#3D2F1F]', 'text-[#E5DCB8]', 'font-bold');
+        } else {
+          btn.classList.remove('bg-[#3D2F1F]', 'text-[#E5DCB8]', 'font-bold');
+          btn.classList.add('bg-[#FAF8F5]', 'text-[#5C4730]', 'font-semibold');
+        }
+      });
+    }
+
+    function render() {
+      const q = cleanStr(searchQuery);
+
+      const filtered = directoryData.filter(item => {
+        if (!item) return false;
+        
+        if (q.length > 0) {
+          return cleanStr(item.name).includes(q) || cleanStr(item.unit).includes(q);
+        }
+
+        const itemLevel = detectLevelFromUnit(item.unit);
+        if (currentLevel === 'OFFICE_TOWER') { if (itemLevel !== 'OFFICE_TOWER') return false; }
+        else if (itemLevel !== currentLevel) return false;
+        
+        return true;
+      });
+
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+      const resultsLabel = document.getElementById('results-label');
+      const listContainer = document.getElementById('directory-list');
+      const emptyState = document.getElementById('empty-state');
+
+      if (resultsLabel) {
+        if (q.length > 0) {
+          resultsLabel.innerText = `Global Search Results (${filtered.length} found across all floors)`;
+        } else {
+          resultsLabel.innerText = `${filtered.length} item${filtered.length === 1 ? '' : 's'} on ${currentLevel.replace('_', ' ')}`;
+        }
+      }
+      
+      if (!listContainer) return;
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = '';
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+      }
+      if (emptyState) emptyState.classList.add('hidden');
+
+      listContainer.innerHTML = filtered.map(item => {
+        const name = item.name || 'TENANT';
+        const unit = item.unit || '-';
+        const itemLvl = detectLevelFromUnit(unit).replace('_', ' ');
+        const isOffice = isOfficeTenant(item);
+        const statusObj = calculateOperatingStatus(item);
+
+        const unitLabel = q.length > 0 ? `${unit} (${itemLvl})` : unit;
+
+        return `
+          <div class="bg-white p-3 rounded-xl border border-[#E5DCB8]/90 shadow-sm flex items-center justify-between gap-2.5 active:bg-[#FAF8F5] transition">
+            <div class="min-w-0 flex-1">
+              <h3 class="font-bold text-[#2C241B] text-xs leading-tight break-words ${isOffice ? '' : 'mb-1.5'}">${name}</h3>
+              ${isOffice ? '' : `
+                <div class="flex items-start gap-1.5 text-[10px] flex-col sm:flex-row">
+                  <span class="px-1.5 py-0.5 rounded shrink-0 ${statusObj.badgeClass}">${statusObj.badgeText}</span>
+                  <div class="text-[#735B3F] font-medium leading-relaxed mt-0.5">
+                    ${formatMultiLineHours(statusObj.timeRange)}
+                  </div>
+                </div>
+              `}
+            </div>
+            <button onclick="window.copyUnit('${unit}')" class="font-mono text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] text-[#5C4730] border border-[#E5DCB8] shrink-0 active:scale-95 transition">
+              ${unitLabel}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.copyUnit = function(unit) {
+      navigator.clipboard.writeText(unit);
+      showToast(`Unit ${unit} copied!`);
+    };
+
+    function showToast(msg) {
+      const toastText = document.getElementById('toast-text');
+      const toast = document.getElementById('toast');
+      if (toastText) toastText.innerText = msg;
+      if (toast) {
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 1800);
+      }
+    }
+
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-search');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        if (clearBtn) clearBtn.classList.toggle('hidden', searchQuery.length === 0);
+        render();
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+        searchQuery = '';
+        clearBtn.classList.add('hidden');
+        render();
+      });
+    }
+
+    document.querySelectorAll('.level-btn').forEach(btn => {
+      btn.addEventListener('click', () => { setActiveLevelPill(btn.dataset.level); render(); });
+    });
+  </script>
+</body>
+</html>
