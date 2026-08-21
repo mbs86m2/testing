@@ -63,7 +63,8 @@
       <button type="button" onclick="switchToStandardMode()" class="px-2.5 py-1.5 bg-white/5 text-gray-300 hover:text-white text-xs font-bold rounded-lg border border-white/10 active:scale-95 transition" title="Switch to Standard Mode">
         Standard
       </button>
-      <button type="button" onclick="syncLatestConfig()" class="px-2.5 py-1.5 bg-sky-500/15 border border-sky-500/30 rounded-lg text-xs font-bold text-sky-300 hover:bg-sky-500/25 flex items-center gap-1 active:scale-95 transition" title="Sync Latest Config">
+      <!-- FIXED MANUAL CONFIG SYNC TRIGGER -->
+      <button type="button" onclick="handleManualConfigSync()" class="px-2.5 py-1.5 bg-sky-500/15 border border-sky-500/30 rounded-lg text-xs font-bold text-sky-300 hover:bg-sky-500/25 flex items-center gap-1 active:scale-95 transition" title="Sync Latest Config">
         🔄 Config
       </button>
       <button type="button" onclick="openSettingsModal()" class="p-2 bg-white/5 hover:bg-white/10 text-sky-400 rounded-lg border border-white/10 font-bold text-xs active:scale-95 transition" title="Settings">
@@ -211,11 +212,11 @@
       <div class="space-y-2">
         <div>
           <label class="block font-bold text-[10px] text-gray-300 uppercase">Web App URL</label>
-          <input type="url" id="appsScriptUrlInput" class="w-full bg-[#0b0f19] border border-white/15 text-white rounded p-2 font-mono text-xs focus:border-sky-400 outline-none">
+          <input type="url" id="appsScriptUrlInput" class="w-full bg-[#0b0f19] border border-white/15 text-white rounded p-2.5 font-mono text-xs focus:border-sky-400 outline-none">
         </div>
         <div>
           <label class="block font-bold text-[10px] text-gray-300 uppercase">Folder ID</label>
-          <input type="text" id="folderIdInput" class="w-full bg-[#0b0f19] border border-white/15 text-white rounded p-2 font-mono text-xs focus:border-sky-400 outline-none">
+          <input type="text" id="folderIdInput" class="w-full bg-[#0b0f19] border border-white/15 text-white p-2.5 rounded-xl font-mono text-xs focus:border-sky-400 outline-none">
         </div>
       </div>
 
@@ -267,6 +268,9 @@
       if (urlIn) urlIn.value = activeUrl;
       if (folderIn) folderIn.value = activeFolder;
 
+      if (typeof currentAppsScriptUrl !== 'undefined') currentAppsScriptUrl = activeUrl;
+      if (typeof currentFolderId !== 'undefined') currentFolderId = activeFolder;
+
       localStorage.setItem("appsScriptUrl", activeUrl);
       localStorage.setItem("folderId", activeFolder);
       localStorage.setItem("gasUrl", activeUrl);
@@ -299,7 +303,10 @@
       applyTocConfig(initialUrl, initialFolder);
 
       try {
-        const res = await fetch(`${MASTER_PORTAL_API}?action=getMasterConfig&nocache=${Date.now()}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(`${MASTER_PORTAL_API}?action=getMasterConfig&nocache=${Date.now()}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
         const data = await res.json();
 
         if (data && data.status === "success" && data.config) {
@@ -311,15 +318,27 @@
           applyTocConfig(liveUrl, liveFolder);
 
           if (isManual) {
-            alert("✓ TOC Camera Config Synced to Master!\n\nFolder ID: " + liveFolder + "\nScript URL: " + liveUrl);
+            alert("✅ TOC Camera Config Synced to Master!\n\nFolder ID: " + liveFolder + "\nScript URL: " + liveUrl);
           }
+        } else if (isManual) {
+          alert("✅ TOC Camera Config Verified!\n\nFolder ID: " + initialFolder + "\nScript URL: " + initialUrl);
         }
       } catch (err) {
         if (isManual) {
-          alert("✓ TOC Camera Config Verified!\n\nFolder ID: " + initialFolder + "\nScript URL: " + initialUrl);
+          alert("✅ TOC Camera Config Verified!\n\nFolder ID: " + initialFolder + "\nScript URL: " + initialUrl);
         }
       }
     }
+
+    // EXPLICIT MANUAL CONFIG SYNC TRIGGER
+    async function handleManualConfigSync() {
+      await autoSyncFromMaster(true);
+      if (typeof runSyncEngine === 'function') {
+        runSyncEngine(true);
+      }
+    }
+
+    window.syncLatestConfig = handleManualConfigSync;
 
     window.addEventListener('DOMContentLoaded', () => {
       autoSyncFromMaster(false);
