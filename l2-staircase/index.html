@@ -45,7 +45,6 @@
       min-height: 100vh;
     }
     
-    /* Layout alignment wrapper matching Parking Violation app spacing */
     .main-wrapper {
       max-width: 450px;
       margin: 0 auto;
@@ -85,7 +84,6 @@
       letter-spacing: 0.05em;
     }
     
-    /* Navigation Back Arrow Button */
     .back-link {
       display: inline-flex;
       align-items: center;
@@ -115,7 +113,6 @@
       height: 36px;
     }
 
-    /* Main Content Container matching rounded borders and soft shadow */
     .container {
       background: var(--card-bg);
       padding: 24px 18px;
@@ -144,6 +141,7 @@
       border-radius: 10px;
       cursor: pointer;
       margin-bottom: 12px;
+      user-select: none;
       transition: transform 0.1s, opacity 0.2s;
     }
     .btn:active {
@@ -172,7 +170,6 @@
       color: var(--text-muted);
     }
     
-    /* Responsive Flexbox Gallery Layout */
     #gallery {
       display: flex;
       flex-wrap: wrap;
@@ -223,7 +220,6 @@
       border: 1.5px solid #ffffff;
     }
     
-    /* Full-screen Lightbox Modal */
     .modal {
       display: none; 
       position: fixed; 
@@ -264,7 +260,6 @@
       to { transform: scale(1); opacity: 1; }
     }
     
-    /* Success tick styling */
     .success-container {
       display: flex;
       flex-direction: column;
@@ -297,7 +292,6 @@
       to { opacity: 1; transform: scale(1); }
     }
 
-    /* PORTRAIT MODE PROMPT OVERLAY */
     #portrait-prompt {
       display: none;
       position: fixed;
@@ -384,11 +378,12 @@
   <div class="container">
     <p>Tap the button below to take photo, and press upload.</p>
     
-    <!-- Trigger standard camera app on iOS/Android -->
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+    <!-- NATIVE CAMERA INPUT -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
     
-    <button class="btn btn-blue" id="takePhotoBtn">📷 Take Photo</button>
-    <button class="btn btn-green" id="uploadBtn">📤 Upload</button>
+    <!-- NATIVE LABEL ACTION BUTTON (Guarantees Camera Opens Instantly On Mobile) -->
+    <label for="cameraInput" class="btn btn-blue" id="takePhotoBtn">📷 Take Photo</label>
+    <button type="button" class="btn btn-green" id="uploadBtn">📤 Upload</button>
     
     <div id="status">Ready</div>
     <div id="gallery"></div>
@@ -445,10 +440,6 @@
     SCRIPT_URL = getActiveStaircaseApiUrl();
   });
 
-  takePhotoBtn.addEventListener('click', () => {
-    cameraInput.click();
-  });
-
   cameraInput.addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -482,7 +473,6 @@
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Generate precise date/time formats
         const now = new Date();
         const pad = (num) => String(num).padStart(2, '0');
 
@@ -494,5 +484,245 @@
         const minutes = pad(now.getMinutes());
         const seconds = pad(now.getSeconds());
 
-        // 1. Filename format: YYYY-MM-DD at HH.MM.SS.jpeg
-        const filename = `${year}-${month}-${day} at ${hours24}.${minutes}.${seconds}
+        const filename = `${year}-${month}-${day} at ${hours24}.${minutes}.${seconds}.jpeg`;
+
+        let hours12 = now.getHours();
+        const ampm = hours12 >= 12 ? 'PM' : 'AM';
+        hours12 = hours12 % 12;
+        hours12 = hours12 ? hours12 : 12;
+        const hours12Str = pad(hours12);
+
+        const dateLine = `${day}/${month}/${year}`;
+        const timeLine = `${hours12Str}:${minutes}:${seconds} ${ampm}`;
+
+        const fontSize = Math.max(24, Math.round(canvas.width * 0.04));
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+
+        const padding = fontSize * 0.6;
+        const lineSpacing = fontSize * 1.1; 
+
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = Math.max(3, Math.round(fontSize * 0.15));
+
+        ctx.strokeText(timeLine, canvas.width - padding, canvas.height - padding);
+        ctx.fillStyle = "yellow";
+        ctx.fillText(timeLine, canvas.width - padding, canvas.height - padding);
+
+        ctx.strokeText(dateLine, canvas.width - padding, canvas.height - padding - lineSpacing);
+        ctx.fillStyle = "yellow";
+        ctx.fillText(dateLine, canvas.width - padding, canvas.height - padding - lineSpacing);
+
+        const processedDataUrl = canvas.toDataURL('image/jpeg', 0.70);
+        
+        photoQueue.push({
+          base64: processedDataUrl,
+          filename: filename
+        });
+
+        renderGallery();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    cameraInput.value = "";
+  });
+
+  function renderGallery() {
+    galleryDiv.innerHTML = "";
+    
+    if (photoQueue.length === 0) {
+      galleryDiv.style.display = "none";
+      uploadBtn.style.display = "none";
+      statusDiv.innerHTML = "Ready";
+      return;
+    }
+
+    photoQueue.forEach((photo, index) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'gallery-item';
+
+      const img = document.createElement('img');
+      img.src = photo.base64;
+      img.className = 'gallery-img';
+      
+      img.addEventListener('click', () => {
+        if (isUploading) return;
+        imageModal.style.display = "block";
+        modalImg.src = photo.base64;
+      });
+
+      const delBtn = document.createElement('span');
+      delBtn.innerHTML = "&times;"; 
+      delBtn.className = 'delete-btn';
+      
+      delBtn.addEventListener('click', (event) => {
+        if (isUploading) return; 
+        event.stopPropagation();
+        photoQueue.splice(index, 1);
+        renderGallery();
+      });
+
+      itemDiv.appendChild(img);
+      itemDiv.appendChild(delBtn);
+      galleryDiv.appendChild(itemDiv);
+    });
+
+    galleryDiv.style.display = "flex";
+    uploadBtn.style.display = "inline-block";
+    statusDiv.innerHTML = `<span style='color: #34d399;'>📷 Added! (${photoQueue.length} photo(s) ready)</span>`;
+  }
+
+  closeModal.addEventListener('click', () => {
+    imageModal.style.display = "none";
+  });
+  
+  imageModal.addEventListener('click', (e) => {
+    if (e.target === imageModal) {
+      imageModal.style.display = "none";
+    }
+  });
+
+  uploadBtn.addEventListener('click', () => {
+    if (photoQueue.length === 0) return;
+    
+    isUploading = true;
+    takePhotoBtn.style.pointerEvents = 'none';
+    takePhotoBtn.style.opacity = '0.5';
+    uploadBtn.disabled = true;
+    
+    const delBtns = document.querySelectorAll('.delete-btn');
+    delBtns.forEach(btn => btn.style.display = 'none');
+    
+    uploadAllParallel();
+  });
+
+  async function uploadAllParallel() {
+    SCRIPT_URL = getActiveStaircaseApiUrl();
+    const folderId = getActiveStaircaseFolderId();
+
+    let total = photoQueue.length;
+    let completed = 0;
+    statusDiv.innerText = `Uploading ${total} photo(s)...`;
+
+    const uploadPromises = photoQueue.map((item) => {
+      return fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        redirect: "follow",
+        body: JSON.stringify({
+          action: "uploadStaircasePhoto",
+          folderId: folderId,
+          base64Data: item.base64,
+          filename: item.filename
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("HTTP error! Status: " + res.status);
+        return res.json();
+      })
+      .then(res => {
+        if (res.success || res.status === "success") {
+          completed++;
+          statusDiv.innerText = `Uploaded ${completed} of ${total} photos...`;
+          if (res.folderName) lastSavedFolder = res.folderName;
+          return res;
+        } else {
+          throw new Error(res.error || res.message || "Upload failed");
+        }
+      });
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      
+      statusDiv.innerHTML = `
+        <div class="success-container">
+          <div class="success-circle">✔</div>
+          <div class="success-text">All photos uploaded successfully</div>
+          ${lastSavedFolder ? `<div style="font-size:12px; color:#94a3b8; margin-top:8px;">Saved to folder: <strong style="color:#38bdf8;">${lastSavedFolder}</strong></div>` : ''}
+        </div>
+      `;
+      photoQueue = [];
+      galleryDiv.innerHTML = "";
+      galleryDiv.style.display = "none";
+      uploadBtn.style.display = "none";
+    } catch (err) {
+      statusDiv.innerHTML = `<span style='color: #fb7185;'>❌ Upload failed: ${err.message}<br>Please press Upload to try again.</span>`;
+    } finally {
+      takePhotoBtn.style.pointerEvents = 'auto';
+      takePhotoBtn.style.opacity = '1';
+      uploadBtn.disabled = false;
+      isUploading = false;
+      const delBtns = document.querySelectorAll('.delete-btn');
+      delBtns.forEach(btn => btn.style.display = 'flex');
+    }
+  }
+</script>
+
+<!-- ========================================================= -->
+<!-- 5-MINUTE AUTO-RETURN TO WISMA ATRIA FCC PORTAL SCRIPT      -->
+<!-- ========================================================= -->
+<script>
+(function() {
+  const PORTAL_URL = '../index.html';
+  const FIVE_MINS_MS = 5 * 60 * 1000;
+  let idleCheckInterval = null;
+
+  function saveLastActivity() {
+    localStorage.setItem('parking_app_last_active', Date.now().toString());
+  }
+
+  function checkIdleAndReturn() {
+    const lastActive = Number(localStorage.getItem('parking_app_last_active') || Date.now());
+    const elapsed = Date.now() - lastActive;
+
+    if (elapsed >= FIVE_MINS_MS) {
+      saveLastActivity();
+      if (idleCheckInterval) {
+        clearInterval(idleCheckInterval);
+      }
+      
+      try {
+        const link = document.createElement('a');
+        link.href = PORTAL_URL;
+        link.target = '_top';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (e) {
+        try {
+          if (window.top) {
+            window.top.location.href = PORTAL_URL;
+          } else {
+            window.location.href = PORTAL_URL;
+          }
+        } catch (err) {
+          window.location.href = PORTAL_URL;
+        }
+      }
+    }
+  }
+
+  saveLastActivity();
+
+  ['click', 'touchstart', 'mousemove', 'keydown', 'scroll', 'change'].forEach(evt => {
+    window.addEventListener(evt, saveLastActivity, { passive: true });
+  });
+
+  window.addEventListener('pageshow', checkIdleAndReturn);
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      checkIdleAndReturn();
+    } else {
+      saveLastActivity();
+    }
+  });
+
+  idleCheckInterval = setInterval(checkIdleAndReturn, 1000);
+})();
+</script>
+
+</body>
+</html>
