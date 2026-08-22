@@ -34,7 +34,7 @@
       <h1 class="font-bold text-xs sm:text-sm text-[#FAF7F2] tracking-wide">Admin Directory Management</h1>
     </div>
 
-    <!-- Exit Admin / Return Button -->
+    <!-- Exit Admin Button -->
     <button onclick="exitAdminSession()" class="bg-[#5C4730] hover:bg-rose-800 text-[#E5DCB8] hover:text-white font-bold px-3 py-1.5 rounded-xl border border-[#8C7253] text-[11px] flex items-center gap-1.5 transition active:scale-95 shadow-sm">
       <i class="fa-solid fa-right-from-bracket"></i>
       <span>Exit Admin</span>
@@ -87,7 +87,7 @@
         </div>
       </div>
 
-      <!-- Interactive Operating Hours Entry Box (ADD) -->
+      <!-- Interactive Operating Hours Entry Box -->
       <div class="border border-[#E5DCB8] rounded-xl p-2.5 bg-[#FAF8F5] space-y-2">
         <div class="flex items-center justify-between flex-wrap gap-1">
           <label class="font-bold text-[11px] text-[#5C4730]">Operating Schedule Entry</label>
@@ -98,7 +98,6 @@
           </div>
         </div>
 
-        <!-- Day Rows Table Header -->
         <div class="grid grid-cols-12 gap-1 items-center font-bold text-[9px] text-[#735B3F] border-b border-[#E5DCB8] pb-1">
           <span class="col-span-2">Day</span>
           <span class="col-span-4 text-center">Open Time</span>
@@ -107,7 +106,6 @@
           <span class="col-span-1 text-center" title="Override Closed?">Off</span>
         </div>
 
-        <!-- Day Rows -->
         <div id="add-schedule-rows" class="space-y-1.5"></div>
       </div>
 
@@ -210,7 +208,6 @@
         </div>
       </div>
 
-      <!-- Interactive Operating Hours Entry Box (EDIT) -->
       <div class="border border-[#E5DCB8] rounded-xl p-2.5 bg-white space-y-2">
         <div class="flex items-center justify-between flex-wrap gap-1">
           <label class="font-bold text-[11px] text-[#5C4730]">Operating Schedule Entry</label>
@@ -247,14 +244,19 @@
 
   <script>
     // ==============================================================
-    // 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+    // 1. BACK-SWIPE TO DIRECTORY INDEX (Secondary Page Rule)
     // ==============================================================
     (function() {
-      const PORTAL_URL = 'index.html';
+      const SECTION_INDEX_URL = 'index.html';
+      try {
+        document.documentElement.style.overscrollBehaviorX = 'none';
+        document.body.style.overscrollBehaviorX = 'none';
+      } catch(e) {}
+
       if (window.history && window.history.pushState) {
-        window.history.pushState({ isSubApp: true }, '', window.location.href);
+        window.history.pushState({ isSubPage: true }, '', window.location.href);
         window.addEventListener('popstate', function() {
-          window.location.replace(PORTAL_URL);
+          window.location.replace(SECTION_INDEX_URL);
         });
       }
     })();
@@ -291,7 +293,7 @@
                      isUserAdmin();
       if (!isAuth) {
         alert("Unauthorized Access! Password required to access Admin Directory Management.");
-        window.location.href = "index.html";
+        window.location.replace("index.html");
         return false;
       }
       return true;
@@ -304,7 +306,7 @@
     function exitAdminSession() {
       sessionStorage.removeItem('wa_directory_admin');
       localStorage.removeItem('wa_directory_admin');
-      window.location.href = "index.html";
+      window.location.replace("index.html");
     }
 
     window.formatUnitInput = function(el) {
