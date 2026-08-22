@@ -2,6 +2,7 @@
  * =========================================================================
  * TOC CAMERA ENGINE (camera-engine.js)
  * Standalone Unified Engine for Standard & Lite Viewfinders
+ * Includes 20s Battery Saver Auto-Pause & 3-Min Deletion Engine
  * =========================================================================
  */
 
@@ -24,11 +25,14 @@
 const PORTAL_URL = '../index.html';
 const SUPERVISOR_PIN = "1251";
 const ADMIN_USERS = ["admin m2", "m2", "keekc", "kee", "kee kc", "admin", "master"];
+const AUTO_DELETE_MS = 3 * 60 * 1000;    // 3 Minutes Auto-Deletion for Off-Peak
+const CAMERA_INACTIVITY_MS = 20 * 1000;  // 20 Seconds Camera Auto-Pause (Battery Saver)
 
 let currentStream = null;
 let currentFacingMode = "environment";
 let isFlashOn = false;
 let isSyncRunning = false;
+let cameraInactivityTimer = null;
 
 let dbInstance = null;
 const DB_NAME = "TocCameraDB";
@@ -70,8 +74,52 @@ function isUserAdmin() {
   return ADMIN_USERS.some(adminName => name === adminName || name.includes(adminName));
 }
 
+function isPhotoInActiveHours(timestamp) {
+  const d = new Date(timestamp);
+  const hr = d.getHours();
+  return (hr >= 10 && hr < 12) || (hr >= 20 && hr < 23);
+}
+
 // ==============================================================
-// 3. INDEXEDDB LOCAL STORAGE ENGINE
+// 3. 20-SECOND CAMERA INACTIVITY AUTO-PAUSE (BATTERY SAVER)
+// ==============================================================
+function resetCameraInactivityTimer() {
+  if (cameraInactivityTimer) clearTimeout(cameraInactivityTimer);
+  if (currentStream) {
+    cameraInactivityTimer = setTimeout(pauseCameraDueToInactivity, CAMERA_INACTIVITY_MS);
+  }
+}
+
+function pauseCameraDueToInactivity() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
+  }
+
+  const video = document.getElementById("videoFeed");
+  if (video) video.srcObject = null;
+
+  const placeholder = document.getElementById("cameraPlaceholder");
+  const shutterOverlay = document.getElementById("shutterOverlay");
+  const placeholderTitle = document.getElementById("cameraPlaceholderTitle");
+  const placeholderDesc = document.getElementById("cameraPlaceholderDesc");
+  const startBtn = document.getElementById("startCamBtn");
+
+  if (placeholderTitle) placeholderTitle.innerText = "Camera Paused (Battery Saver)";
+  if (placeholderDesc) placeholderDesc.innerText = "Lens turned off after 20s idle. Tap to resume.";
+  if (startBtn) startBtn.innerText = "▶ Resume Camera";
+
+  if (placeholder) placeholder.style.display = "flex";
+  if (shutterOverlay) shutterOverlay.classList.add("hidden");
+}
+
+// Reset 20s camera timer on any touch / interaction
+['touchstart', 'mousedown', 'mousemove', 'click', 'keydown', 'scroll'].forEach(evt => {
+  document.addEventListener(evt, resetCameraInactivityTimer, { passive: true });
+});
+
+// ==============================================================
+// 4. INDEXEDDB LOCAL STORAGE ENGINE
 // ==============================================================
 function initDB() {
   return new Promise((resolve, reject) => {
@@ -147,7 +195,7 @@ async function clearAllLocalPhotos() {
 }
 
 // ==============================================================
-// 4. IN-APP CAMERA STREAM & CAPTURE
+// 5. IN-APP CAMERA STREAM & CAPTURE
 // ==============================================================
 async function startInAppCamera() {
   const video = document.getElementById("videoFeed");
@@ -177,6 +225,7 @@ async function startInAppCamera() {
 
     if (placeholder) placeholder.style.display = "none";
     if (shutterOverlay) shutterOverlay.classList.remove("hidden");
+    resetCameraInactivityTimer();
   } catch (err) {
     console.warn("Camera stream failed, falling back to native file input:", err);
     triggerNativeCameraFallback();
@@ -191,6 +240,8 @@ function triggerNativeCameraFallback() {
 function handleCameraInteraction() {
   if (!currentStream) {
     startInAppCamera();
+  } else {
+    resetCameraInactivityTimer();
   }
 }
 
@@ -215,9 +266,11 @@ async function toggleCameraFlash() {
   } catch (e) {
     console.warn("Flash toggle error:", e);
   }
+  resetCameraInactivityTimer();
 }
 
 function capturePhoto() {
+  resetCameraInactivityTimer();
   const video = document.getElementById("videoFeed");
   if (!video || !currentStream) return;
 
@@ -249,6 +302,7 @@ function capturePhoto() {
 }
 
 function handleImportPhoto(event) {
+  resetCameraInactivityTimer();
   const file = event.target.files[0];
   if (!file) return;
 
@@ -346,7 +400,7 @@ function showCaptureAnimation(base64Data) {
 }
 
 // ==============================================================
-// 5. CLOUD SYNC & CLEANUP ENGINE
+// 6. CLOUD SYNC & CLEANUP ENGINE
 // ==============================================================
 async function runSyncEngine(forceAll = false) {
   if (isSyncRunning) return;
@@ -426,8 +480,36 @@ async function triggerDriveCleanup() {
 }
 
 // ==============================================================
-// 6. UI REFRESH, GALLERY & METRICS
+// 7. UI REFRESH, GALLERY, METRICS & DELETION TIMERS
 // ==============================================================
+function getDeletionTimerBadge(photo) {
+  if (isPhotoInActiveHours(photo.timestamp)) {
+    return {
+      text: "Protected 🔒",
+      class: "bg-emerald-600 text-white border border-emerald-400/40 font-bold"
+    };
+  }
+
+  const elapsed = Date.now() - photo.timestamp;
+  const remaining = AUTO_DELETE_MS - elapsed;
+
+  if (remaining <= 0) {
+    return {
+      text: "Deleting...",
+      class: "bg-rose-600 text-white border border-rose-400/40 font-bold",
+      isExpired: true
+    };
+  }
+
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  return {
+    text: `⏱ ${mins}m ${secs < 10 ? '0' : ''}${secs}s`,
+    class: "bg-black/75 text-amber-300 border border-amber-400/50 font-mono font-bold",
+    isExpired: false
+  };
+}
+
 async function refreshLocalGallery() {
   const grid = document.getElementById("photoGrid");
   const emptyState = document.getElementById("emptyState");
@@ -444,14 +526,33 @@ async function refreshLocalGallery() {
 
   if (emptyState) emptyState.classList.add("hidden");
 
-  grid.innerHTML = photos.map(p => `
-    <div class="relative aspect-square rounded-xl overflow-hidden border border-slate-300 bg-black cursor-pointer group shadow-sm" onclick="openLightbox('${p.id}')">
-      <img src="${p.base64}" class="w-full h-full object-cover">
-      <div class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-bold ${p.synced ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-slate-900'}">
-        ${p.synced ? 'Synced ✓' : 'Queue ⏳'}
+  // Auto-delete expired off-peak photos
+  for (const p of photos) {
+    if (!isPhotoInActiveHours(p.timestamp)) {
+      if (Date.now() - p.timestamp >= AUTO_DELETE_MS) {
+        await deletePhotoFromLocalDB(p.id);
+      }
+    }
+  }
+
+  grid.innerHTML = photos.map(p => {
+    const timerBadge = getDeletionTimerBadge(p);
+    return `
+      <div class="relative aspect-square rounded-xl overflow-hidden border border-slate-300 bg-black cursor-pointer group shadow-sm" onclick="openLightbox('${p.id}')">
+        <img src="${p.base64}" class="w-full h-full object-cover">
+        
+        <!-- TOP-RIGHT BADGE: Sync Status -->
+        <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-extrabold shadow-md ${p.synced ? 'bg-emerald-600 text-white border border-emerald-400/40' : 'bg-amber-500 text-slate-950 border border-amber-300'}">
+          ${p.synced ? 'Synced ✓' : 'Queue ⏳'}
+        </div>
+
+        <!-- BOTTOM-RIGHT BADGE: Protected or Deletion Timer -->
+        <div class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] shadow-md ${timerBadge.class}">
+          ${timerBadge.text}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 async function updateMetrics() {
@@ -466,8 +567,13 @@ async function updateMetrics() {
   if (totalEl) totalEl.innerText = syncedCount;
 }
 
+// Live gallery update & countdown ticker
+setInterval(() => {
+  refreshLocalGallery();
+}, 1000);
+
 // ==============================================================
-// 7. LIGHTBOX PREVIEW
+// 8. LIGHTBOX PREVIEW
 // ==============================================================
 async function openLightbox(id) {
   const photos = await getAllLocalPhotos();
@@ -520,7 +626,7 @@ function closeLightbox() {
 }
 
 // ==============================================================
-// 8. ADMIN PIN LOCK & SETTINGS MODAL
+// 9. ADMIN PIN LOCK & SETTINGS MODAL
 // ==============================================================
 function openSettingsModal() {
   if (isUserAdmin()) {
@@ -596,7 +702,7 @@ function forceResyncAllToCurrentFolder() {
 }
 
 // ==============================================================
-// 9. LIVE TIMING CLOCK (ACTIVE HOURS 10-12 & 20-23)
+// 10. LIVE TIMING CLOCK (ACTIVE HOURS 10-12 & 20-23)
 // ==============================================================
 function updateLiveClock() {
   const timeText = document.getElementById("currentTimeText");
@@ -626,7 +732,7 @@ function updateLiveClock() {
 setInterval(updateLiveClock, 1000);
 
 // ==============================================================
-// 10. INITIALIZATION
+// 11. INITIALIZATION
 // ==============================================================
 function initializeAppEngine(isLite = false) {
   initDB().then(() => {
@@ -642,4 +748,7 @@ function initializeAppEngine(isLite = false) {
 function onAppResume() {
   refreshLocalGallery();
   updateMetrics();
+  if (currentStream) {
+    resetCameraInactivityTimer();
+  }
 }
