@@ -2,7 +2,22 @@
    PARKING VIOLATION LOG ASSISTANT - APPLICATION LOGIC (app.js)
    ============================================================== */
 
-// 1. CONFIGURATION RESOLVERS
+// ==============================================================
+// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// ==============================================================
+(function() {
+  const PORTAL_URL = '../index.html';
+  if (window.history && window.history.pushState) {
+    window.history.pushState({ isSubApp: true }, '', window.location.href);
+    window.addEventListener('popstate', function() {
+      window.location.replace(PORTAL_URL);
+    });
+  }
+})();
+
+// ==============================================================
+// 2. CONFIGURATION RESOLVERS
+// ==============================================================
 function getActiveParkingApiUrl() {
   let masterCfg = null;
   try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
@@ -52,7 +67,9 @@ function isUserAdmin() {
   return ADMIN_USERS.some(adminName => name === adminName || name.includes(adminName));
 }
 
-// 2. STATE & VARIABLES
+// ==============================================================
+// 3. STATE & VARIABLES
+// ==============================================================
 let currentStep = 1;
 let payload = { officer: null, level: null, plateImage: null, noticeImage: null, vehicleImage: null };
 let isSettingsUnlocked = false;
@@ -72,7 +89,9 @@ try {
   batchQueue = [];
 }
 
-// 3. INITIALIZATION
+// ==============================================================
+// 4. INITIALIZATION
+// ==============================================================
 window.addEventListener('load', () => {
   GAS_API_URL = getActiveParkingApiUrl();
   const activeOfficer = getPortalLoggedInUser();
@@ -85,7 +104,9 @@ window.addEventListener('load', () => {
   updatePlateCameraButtonState();
 });
 
-// 4. FORMATTING & HELPERS
+// ==============================================================
+// 5. FORMATTING & HELPERS
+// ==============================================================
 function formatOfficerName(input) {
   if (!input || !input.value) return;
   const start = input.selectionStart;
@@ -134,7 +155,9 @@ function hideGlobalLoader() {
   document.getElementById('loader-overlay').classList.add('hidden');
 }
 
-// 5. API CALL ENGINE
+// ==============================================================
+// 6. API CALL ENGINE
+// ==============================================================
 async function apiCall(action, data = {}) {
   GAS_API_URL = getActiveParkingApiUrl();
   const spreadsheetId = getActiveParkingSpreadsheetId();
@@ -163,7 +186,9 @@ async function apiCall(action, data = {}) {
   }
 }
 
-// 6. LOOKUP & SETTINGS MODAL
+// ==============================================================
+// 7. LOOKUP & SETTINGS MODAL
+// ==============================================================
 function openSettingsPrompt() {
   if (isSettingsUnlocked || isUserAdmin()) {
     isSettingsUnlocked = true;
@@ -354,7 +379,9 @@ function displayRecentViolations(response) {
   }
 }
 
-// 7. RECORD VIEWER, PRINT & EXPORT
+// ==============================================================
+// 8. RECORD VIEWER, PRINT & EXPORT
+// ==============================================================
 function openPhotoViewerModal(record) {
   document.getElementById('modal-detail-plate').innerText = record.plate || record.plateNumber || 'UNKNOWN';
   document.getElementById('modal-detail-meta').innerText = `${record.date || ''} at ${formatTimeTo12Hour(record.time) || ''}`;
@@ -441,7 +468,9 @@ function emailSearchResults() {
   window.location.href = `mailto:?subject=${encodeURIComponent(`Parking Violation Report: ${queryVal}`)}&body=${encodeURIComponent(bodyText)}`;
 }
 
-// 8. RECORD DELETION
+// ==============================================================
+// 9. RECORD DELETION
+// ==============================================================
 function openConfirmDeleteModal(date, time, plate) {
   itemPendingDeletion = { date: date, time: time, plate: plate };
   document.getElementById('del-modal-plate').innerText = plate;
@@ -471,7 +500,9 @@ async function executeRecordDeletion() {
   }
 }
 
-// 9. STEPPER & CAMERA LOGGING
+// ==============================================================
+// 10. STEPPER & CAMERA LOGGING
+// ==============================================================
 function triggerCameraInput(type) {
   document.getElementById('file-' + type).click();
 }
@@ -659,7 +690,9 @@ function changeStep(val) {
   checkValidation();
 }
 
-// 10. BATCH QUEUE & EDITING
+// ==============================================================
+// 11. BATCH QUEUE & EDITING
+// ==============================================================
 function addCurrentToBatchQueue() {
   const officerName = document.getElementById('officer-name-input').value.trim();
   const itemToQueue = {
@@ -902,7 +935,9 @@ function resetApp() {
   if (resultModal) resultModal.classList.add('hidden');
 }
 
-// 11. 5-MINUTE AUTO-RETURN TO PORTAL
+// ==============================================================
+// 12. 5-MINUTE AUTO-RETURN TO PORTAL
+// ==============================================================
 (function() {
   const FIVE_MINS_MS = 5 * 60 * 1000;
   let idleTimer;
