@@ -3,14 +3,14 @@
    ============================================================== */
 
 :root {
-    --bg: #f1f5f9;              /* Soft light slate */
-    --card-bg: #ffffff;         /* Crisp elevated white */
-    --card-border: #e2e8f0;     /* Clean border */
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
     --primary: #0284c7;
     --primary-light: #38bdf8;
     --primary-dark: #0369a1;
-    --text-main: #0f172a;       /* Deep readable charcoal */
-    --text-muted: #475569;      /* Crisp subtext */
+    --text-main: #0f172a;
+    --text-muted: #475569;
     --border: #cbd5e1;
     --success: #059669;
     --success-light: #d1fae5;
@@ -365,9 +365,7 @@ label {
     fill: currentColor;
 }
 
-/* ==============================================================
-   ENTRY DATE & TIME BOX - ALIGNED 42PX HEIGHTS
-   ============================================================== */
+/* ENTRY DATE & TIME BOX */
 .entry-datetime-row {
     display: flex;
     gap: 8px;
@@ -649,7 +647,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 .ref-value { font-weight: 800; color: #0f172a; }
 
 /* ==============================================================
-   PAYNOW QR & OPEN EXIT BARRIER - DEAD CENTERED & EQUAL HEIGHT
+   PAYNOW QR & OPEN EXIT BARRIER - SYMMETRICAL TWIN SQUARES
    ============================================================== */
 .paynow-card {
     background: #ffffff;
@@ -678,19 +676,24 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 .paynow-barrier-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
 }
 
-.paynow-col-left {
+.paynow-col-left, .paynow-col-right {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 155px;
+    max-width: 155px;
+}
+
+.paynow-col-right {
+    display: none; /* Shown dynamically when authorized */
 }
 
 .qr-placeholder {
@@ -698,12 +701,12 @@ input:checked + .slider:before { transform: translateX(16px); }
     height: 155px;
     background-color: #ffffff;
     border: 1px solid #cbd5e1;
-    border-radius: 12px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .qr-placeholder img {
@@ -712,35 +715,23 @@ input:checked + .slider:before { transform: translateX(16px); }
     object-fit: contain;
 }
 
-.paynow-col-right {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 135px;
-    height: 155px; /* EXACT MATCH TO QR HEIGHT */
-}
-
 .btn-open-barrier {
-    width: 100%;
-    height: 100%;
+    width: 155px;
+    height: 155px; /* EXACT SQUARE MATCHING QR */
     background: linear-gradient(135deg, #059669, #10b981);
     color: #ffffff;
     border: none;
-    border-radius: 12px;
-    font-weight: 800;
-    font-size: 11.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    border-radius: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3);
-    padding: 8px 6px;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+    padding: 12px;
     text-align: center;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 .btn-open-barrier:active { transform: scale(0.96); }
@@ -751,16 +742,27 @@ input:checked + .slider:before { transform: translateX(16px); }
     cursor: not-allowed;
 }
 
-.btn-open-barrier svg {
-    width: 26px;
-    height: 26px;
+.barrier-btn-icon {
+    width: 32px;
+    height: 32px;
     fill: currentColor;
 }
 
-.barrier-status-text {
-    font-size: 9.5px;
+.barrier-btn-text {
+    font-size: 12.5px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.paynow-sub-label {
+    font-size: 10.5px;
     font-weight: 700;
-    text-transform: none;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .error-msg {
@@ -781,9 +783,7 @@ input:checked + .slider:before { transform: translateX(16px); }
     line-height: 1.35;
 }
 
-/* ==============================================================
-   MODALS & MODAL ACTION BUTTONS
-   ============================================================== */
+/* Modals */
 .app-modal {
     display: none;
     position: fixed;
@@ -926,7 +926,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     color: #ffffff;
 }
 
-/* HIGH CONTRAST MODAL BUTTONS */
 .modal-primary-btn {
     width: 100%;
     height: 40px;
