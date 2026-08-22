@@ -1,7 +1,6 @@
 /**
  * =========================================================================
  * WISMA ATRIA FCC PORTAL - MODULAR PLACARDS CONFIGURATION
- * All 6 placards preserve their distinct colors with sharp readable text.
  * =========================================================================
  */
 
@@ -62,9 +61,6 @@ const PORTAL_PLACARDS = [
   }
 ];
 
-/**
- * Automatically renders all placards cleanly into #hubView
- */
 function renderPlacards() {
   const container = document.getElementById("hubView");
   if (!container) return;
@@ -91,5 +87,8 @@ function renderPlacards() {
   container.innerHTML = html;
 }
 
-// Render on page load
+// FAIL-SAFE EXECUTION: Runs immediately and on all page events
+renderPlacards();
 document.addEventListener("DOMContentLoaded", renderPlacards);
+window.addEventListener("load", renderPlacards);
+window.addEventListener("pageshow", renderPlacards);
