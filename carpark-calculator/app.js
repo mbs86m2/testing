@@ -1,15 +1,21 @@
 /**
  * Carpark Booth Charges Calculator - Main Application Logic
  * Wisma Atria MCST 1471 (Soft Light Theme)
+ * Includes Portal-Level Back-Swipe Routing & Forward-Swipe Blocking
  */
 
 // ==============================================================
-// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// 1. BACK-SWIPE TO MAIN MOBILE PORTAL (Main Section Rule)
 // ==============================================================
 (function() {
   const PORTAL_URL = '../index.html';
+  try {
+    document.documentElement.style.overscrollBehaviorX = 'none';
+    document.body.style.overscrollBehaviorX = 'none';
+  } catch(e) {}
+
   if (window.history && window.history.pushState) {
-    window.history.pushState({ isSubApp: true }, '', window.location.href);
+    window.history.pushState({ isSectionIndex: true }, '', window.location.href);
     window.addEventListener('popstate', function() {
       window.location.replace(PORTAL_URL);
     });
@@ -27,7 +33,6 @@ const ACCOUNTS_SOURCE_PATH = "portalData/accounts";
 const PERMISSIONS_STORAGE_PATH = "portalData/barrier_permissions";
 const ADMIN_MASTER_PIN = "1251";
 
-// Dedicated Admin Usernames with permanent full access
 const ADMIN_USERNAMES = ["admin", "master", "m2", "keekc"];
 
 let isRTDBReady = false;
@@ -35,7 +40,6 @@ let isUserAuthorized = false;
 let extractedAccounts = [];
 let barrierPermissionsMap = {};
 
-// Load cached permissions immediately from local storage
 try {
     const cached = localStorage.getItem('wafp_cached_barrier_perms');
     if (cached) {
@@ -44,14 +48,12 @@ try {
     }
 } catch(e) {}
 
-// Initialize Firebase RTDB and attach persistent real-time listeners
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     isRTDBReady = true;
 
-    // Real-Time Persistent Listener for Barrier Permissions Node
     firebase.database().ref(PERMISSIONS_STORAGE_PATH).on('value', snap => {
         const data = snap.val();
         if (data && typeof data === 'object') {
@@ -76,7 +78,6 @@ try {
         console.warn("Firebase permissions listener error:", err);
     });
 
-    // Real-Time Listener for Accounts Node
     firebase.database().ref(ACCOUNTS_SOURCE_PATH).on('value', snap => {
         processAccountsSnapshot(snap.val());
         checkOfficerPermission();
@@ -487,7 +488,7 @@ let liveClockInterval = null;
 const PORTAL_URL = "../index.html";
 
 function goToPortal() {
-    window.location.href = PORTAL_URL;
+    window.location.replace(PORTAL_URL);
 }
 
 function lockOrientation() {
@@ -527,18 +528,9 @@ function selectAllText(elem) {
 });
 
 const sgPublicHolidays = new Set([
-    // 2026
     "2026-01-01", "2026-02-17", "2026-02-18", "2026-03-20", "2026-04-03", 
     "2026-05-01", "2026-05-27", "2026-05-31", "2026-06-01", "2026-08-09", 
-    "2026-08-10", "2026-11-08", "2026-11-09", "2026-12-25",
-    // 2027
-    "2027-01-01", "2027-02-06", "2027-02-07", "2027-02-08", "2027-03-10", 
-    "2027-03-26", "2027-05-01", "2027-05-17", "2027-05-20", "2027-08-09", 
-    "2027-10-29", "2027-12-25",
-    // 2028
-    "2028-01-01", "2028-01-26", "2028-01-27", "2028-02-27", "2028-02-28", 
-    "2028-04-14", "2028-05-01", "2028-05-05", "2028-05-08", "2028-08-09", 
-    "2028-10-17", "2028-12-25"
+    "2026-08-10", "2026-11-08", "2026-11-09", "2026-12-25"
 ]);
 
 window.onload = function() {
