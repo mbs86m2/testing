@@ -382,6 +382,22 @@
 </div>
 
 <script>
+  // ==============================================================
+  // 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+  // ==============================================================
+  (function() {
+    const PORTAL_URL = '../index.html';
+    if (window.history && window.history.pushState) {
+      window.history.pushState({ isSubApp: true }, '', window.location.href);
+      window.addEventListener('popstate', function() {
+        window.location.replace(PORTAL_URL);
+      });
+    }
+  })();
+
+  // ==============================================================
+  // 2. CONFIGURATION RESOLVERS
+  // ==============================================================
   function getActiveStaircaseApiUrl() {
     let masterCfg = null;
     try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
@@ -641,14 +657,10 @@
       delBtns.forEach(btn => btn.style.display = 'flex');
     }
   }
-</script>
 
-<!-- 5-Minute Inactivity Auto-Return to Portal -->
-<script>
-(function() {
-  const PORTAL_URL = '../index.html';
-  const FIVE_MINS_MS = 5 * 60 * 1000;
+  // 5-Minute Inactivity Auto-Return
   let idleCheckInterval = null;
+  const FIVE_MINS_MS = 5 * 60 * 1000;
 
   function saveLastActivity() {
     localStorage.setItem('parking_app_last_active', Date.now().toString());
@@ -661,7 +673,7 @@
     if (elapsed >= FIVE_MINS_MS) {
       saveLastActivity();
       if (idleCheckInterval) clearInterval(idleCheckInterval);
-      window.location.href = PORTAL_URL;
+      window.location.replace(PORTAL_URL);
     }
   }
 
@@ -677,7 +689,6 @@
   });
 
   idleCheckInterval = setInterval(checkIdleAndReturn, 1000);
-})();
 </script>
 
 </body>
