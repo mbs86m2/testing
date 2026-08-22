@@ -2,18 +2,27 @@
  * =========================================================================
  * TOC CAMERA ENGINE (camera-engine.js)
  * Standalone Unified Engine for Standard & Lite Viewfinders
- * Hardware Adaptive: <=2GB RAM Default + 20s Auto-Pause & 3-Min Deletion
+ * Includes Strict Back-Swipe Routing & Forward-Swipe Blocking
  * =========================================================================
  */
 
 // ==============================================================
-// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// 1. UNIVERSAL BACK-SWIPE ROUTER & FORWARD-SWIPE KILLER
+// (Both index.html & lite.html return STRAIGHT to Main Mobile Portal)
 // ==============================================================
 (function() {
   const PORTAL_URL = '../index.html';
+  
+  // Disable native forward/back overscroll gesture bounce
+  try {
+    document.documentElement.style.overscrollBehaviorX = 'none';
+    document.body.style.overscrollBehaviorX = 'none';
+  } catch(e) {}
+
   if (window.history && window.history.pushState) {
     window.history.pushState({ isSubApp: true }, '', window.location.href);
     window.addEventListener('popstate', function() {
+      // replace() destroys forward history buffer and jumps to Main Portal
       window.location.replace(PORTAL_URL);
     });
   }
@@ -43,20 +52,20 @@ function goToPortal() {
 }
 
 // ==============================================================
-// 3. HARDWARE DETECTION (RESET TO <= 2GB RAM DEFAULT)
+// 3. HARDWARE DETECTION (<= 2GB RAM DEFAULT + APPLE SAFE)
 // ==============================================================
 function isDeviceLowEnd() {
-  // 1. Apple Devices (All iPhones & iPads) are ALWAYS high-performance
+  // All Apple iPhones & iPads are ALWAYS high-performance
   const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) || 
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isApple) return false;
 
-  // 2. Android: Check deviceMemory (Only flag if <= 2GB RAM)
+  // Android: Check deviceMemory (Only flag if <= 2GB RAM)
   if (typeof navigator.deviceMemory !== 'undefined' && navigator.deviceMemory > 0) {
     return navigator.deviceMemory <= 2;
   }
 
-  // 3. Android: Check legacy Android 4-7 OS versions
+  // Android: Check legacy Android 4-7 OS versions
   const isLegacyAndroid = /Android [4-7]\b/i.test(navigator.userAgent);
   return isLegacyAndroid;
 }
@@ -64,44 +73,38 @@ function isDeviceLowEnd() {
 function autoDetectHardwareAndRoute() {
   const isLitePage = window.location.pathname.endsWith('lite.html');
 
-  // If iPhone or modern device, clear any old accidental cache locks
   if (!isDeviceLowEnd() && !isLitePage) {
     if (localStorage.getItem('toc_preferred_mode') === 'lite') {
       localStorage.removeItem('toc_preferred_mode');
     }
   }
 
-  // If genuinely low-end (<= 2GB RAM), auto-route to Lite
   if (isDeviceLowEnd() && !isLitePage) {
     console.log("⚡ Low-end hardware (<=2GB RAM) detected. Routing to Lite Mode...");
     window.location.replace('lite.html?auto=true');
     return;
   }
 
-  // If user explicitly chose Lite on a high-end device
   const manualPref = localStorage.getItem('toc_preferred_mode');
   if (manualPref === 'lite' && !isLitePage) {
     window.location.replace('lite.html');
   }
 }
 
-// Standard -> Lite is ALWAYS allowed
 function switchToLiteMode() {
   localStorage.setItem('toc_preferred_mode', 'lite');
-  window.location.href = "lite.html";
+  window.location.replace("lite.html");
 }
 
-// Lite -> Standard: Unlocks on iPhone and all devices >= 3GB RAM
 function switchToStandardMode() {
   if (isDeviceLowEnd()) {
     alert("⚠️ Standard Viewfinder is disabled on devices with 2GB RAM or less to prevent browser crashes.\n\nLite Mode is locked for your device's stability.");
     return;
   }
   localStorage.setItem('toc_preferred_mode', 'standard');
-  window.location.href = "index.html";
+  window.location.replace("index.html");
 }
 
-// Run hardware routing check immediately
 autoDetectHardwareAndRoute();
 
 function getPortalLoggedInUser() {
@@ -167,7 +170,6 @@ function pauseCameraDueToInactivity() {
   if (shutterOverlay) shutterOverlay.classList.add("hidden");
 }
 
-// Reset 20s camera timer on any interaction
 ['touchstart', 'mousedown', 'mousemove', 'click', 'keydown', 'scroll'].forEach(evt => {
   document.addEventListener(evt, resetCameraInactivityTimer, { passive: true });
 });
@@ -262,7 +264,6 @@ async function startInAppCamera() {
     currentStream.getTracks().forEach(track => track.stop());
   }
 
-  // 3.5s Watchdog: If camera stream stalls, auto-route to Lite
   const watchdogTimer = setTimeout(() => {
     if (!currentStream && !window.location.pathname.endsWith('lite.html')) {
       console.warn("Camera stream took too long. Auto-routing to Lite Mode...");
@@ -635,7 +636,6 @@ async function updateMetrics() {
   if (totalEl) totalEl.innerText = syncedCount;
 }
 
-// Live gallery update & countdown ticker
 setInterval(() => {
   refreshLocalGallery();
 }, 1000);
