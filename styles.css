@@ -1,22 +1,20 @@
 /* ==============================================================
-   WISMA ATRIA FCC PORTAL - SOFT LIGHT THEME (HIGH CONTRAST)
+   WISMA ATRIA FCC PORTAL - SOFT LIGHT THEME
    ============================================================== */
 
 :root {
-    --bg-color: #f1f5f9;       /* Soft light slate - easy on eyes */
-    --card-bg: #ffffff;        /* Crisp elevated white card */
-    --card-border: #e2e8f0;    /* Clean border */
+    --bg-color: #f1f5f9;       /* Soft warm slate */
+    --card-bg: #ffffff;        /* Elevated white card */
+    --card-border: #e2e8f0;    /* Subtle border */
     
-    /* High-Contrast Accessible Colors for Placards */
     --accent-emerald: #059669;
-    --accent-brown: #854d0e;   /* Rich Warm Leather Bronze */
-    --accent-yellow: #a16207;  /* High-contrast warm gold */
+    --accent-brown: #854d0e;
+    --accent-yellow: #a16207;
     --accent-purple: #7e22ce;
     --accent-blue: #0284c7;
     --accent-rose: #e11d48;
     
-    /* High-Contrast Sharp Typography */
-    --text-main: #0f172a;      /* Deep charcoal black */
+    --text-main: #0f172a;      /* Sharp deep slate */
     --text-sub: #475569;       /* Crisp slate subtext */
 }
 
@@ -37,18 +35,14 @@ html, body {
 }
 
 /* LANDSCAPE ORIENTATION NOTICE */
-.landscape-overlay { 
-    display: none; 
-}
+.landscape-overlay { display: none; }
 
 @media screen and (orientation: landscape) and (max-height: 550px) {
     .landscape-overlay {
         display: flex !important; 
         position: fixed; 
-        top: 0; 
-        left: 0; 
-        width: 100vw; 
-        height: 100vh;
+        top: 0; left: 0; 
+        width: 100vw; height: 100vh;
         background: #0f172a; 
         z-index: 999999; 
         color: #f8fafc; 
@@ -58,26 +52,17 @@ html, body {
         text-align: center; 
         padding: 20px;
     }
-    .landscape-overlay h2 { 
-        font-size: 1.2rem; 
-        margin-bottom: 6px; 
-        color: #38bdf8; 
-    }
-    .landscape-overlay p { 
-        font-size: 0.85rem; 
-        color: #94a3b8; 
-        max-width: 320px; 
-    }
+    .landscape-overlay h2 { font-size: 1.2rem; margin-bottom: 6px; color: #38bdf8; }
+    .landscape-overlay p { font-size: 0.85rem; color: #94a3b8; max-width: 320px; }
 }
 
 /* HEADER BAR */
 header {
     position: fixed; 
-    top: 0; 
-    left: 0; 
+    top: 0; left: 0; 
     width: 100%; 
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.95); 
+    background: rgba(255, 255, 255, 0.96); 
     backdrop-filter: blur(14px); 
     -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid #e2e8f0;
@@ -119,12 +104,6 @@ header h1 {
     white-space: nowrap;
 }
 
-@media (max-width: 380px) { 
-    header h1 { 
-        font-size: 0.95rem; 
-    } 
-}
-
 .logout-btn {
     position: absolute; 
     left: 12px; 
@@ -132,8 +111,7 @@ header h1 {
     background: #ffffff;
     border: 1px solid #fecdd3; 
     border-radius: 8px; 
-    width: 36px; 
-    height: 36px;
+    width: 36px; height: 36px;
     display: none; 
     align-items: center; 
     justify-content: center; 
@@ -142,11 +120,7 @@ header h1 {
     transition: background 0.2s, transform 0.1s; 
     z-index: 10;
 }
-
-.logout-btn:active { 
-    transform: scale(0.92); 
-    background: #ffe4e6;
-}
+.logout-btn:active { transform: scale(0.92); background: #ffe4e6; }
 
 .settings-btn {
     position: absolute; 
@@ -155,8 +129,7 @@ header h1 {
     background: #ffffff;
     border: 1px solid #cbd5e1; 
     border-radius: 8px; 
-    width: 36px; 
-    height: 36px;
+    width: 36px; height: 36px;
     display: none; 
     align-items: center; 
     justify-content: center; 
@@ -167,11 +140,7 @@ header h1 {
     transition: background 0.2s, transform 0.1s; 
     z-index: 10;
 }
-
-.settings-btn:active { 
-    transform: scale(0.92); 
-    background: #f8fafc;
-}
+.settings-btn:active { transform: scale(0.92); background: #f8fafc; }
 
 /* MAIN CONTENT WRAPPER */
 .wrapper {
@@ -179,7 +148,7 @@ header h1 {
     max-width: 480px; 
     margin: 0 auto; 
     padding: 0 12px 24px 12px;
-    padding-top: calc(64px + max(10px, env(safe-area-inset-top)));
+    padding-top: calc(72px + max(10px, env(safe-area-inset-top)));
     display: flex; 
     flex-direction: column; 
     min-height: 100vh;
@@ -282,10 +251,8 @@ footer {
 /* MODALS & OVERLAYS */
 .modal-overlay {
     position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%;
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
     background: rgba(15, 23, 42, 0.6); 
     backdrop-filter: blur(6px); 
     -webkit-backdrop-filter: blur(6px);
@@ -383,9 +350,7 @@ footer {
     align-items: center;
 }
 
-.search-box input {
-    padding-right: 32px;
-}
+.search-box input { padding-right: 32px; }
 
 .search-clear-btn {
     position: absolute;
