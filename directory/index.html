@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Wisma Atria Directory</title>
 
   <!-- PWA & Mobile Web App Meta Tags -->
@@ -30,13 +30,13 @@
 </head>
 <body class="bg-[#F8F6F2] text-[#2C241B] font-sans min-h-screen pb-16">
 
-  <!-- Sticky Top Header -->
-  <div class="sticky top-0 z-30 bg-[#735B3F] text-white px-3 pt-3 pb-3 shadow-md">
+  <!-- Sticky Top Header (With iPhone Notch & Dynamic Island Clearance) -->
+  <div class="sticky top-0 z-30 bg-[#735B3F] text-white px-3 pb-3 shadow-md" style="padding-top: max(12px, env(safe-area-inset-top, 16px));">
     
     <!-- Top Action Bar -->
     <div class="relative flex items-center justify-between mb-2 min-h-[36px]">
       
-      <!-- Back Button to Main Portal (Fixed to preserve login session) -->
+      <!-- Back Button (Relative Link: Preserves Login Session & Prevents Rescan) -->
       <a 
         id="back-portal-link"
         href="../index.html" 
@@ -83,7 +83,7 @@
         type="text" 
         id="search-input" 
         placeholder="Search shop name or unit (e.g. 7-Eleven, Starbucks, #B1-02, Prada)..." 
-        class="w-full pl-9 pr-9 py-2 bg-[#FAF8F5] text-[#3D2F1F] placeholder-[#A08967]/70 border border-[#8C7253] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#E5DCB8] transition shadow-inner"
+        class="w-full pl-9 pr-9 py-2 bg-[#FAF8F5] text-[#3D2F1F] placeholder-[#A08967]/70 border border-[#8C7253] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#E5DCB8] transition shadow-inner font-semibold"
       />
       <button 
         id="clear-search" 
@@ -109,7 +109,7 @@
   <div class="px-3 pt-3">
     <div class="flex justify-between items-center text-[11px] font-bold text-[#735B3F] mb-2 px-1">
       <span id="results-label">Fetching from Firestore...</span>
-      <span class="text-[#8C7253] text-[10px]">Alphabetical Order (A-Z)</span>
+      <span class="text-[#8C7253] text-[10px] font-bold">Alphabetical Order (A-Z)</span>
     </div>
 
     <div id="directory-list" class="space-y-2"></div>
@@ -251,7 +251,6 @@
     let currentLevel = 'B1';
     let searchQuery = '';
 
-    // Firebase Realtime Listener
     const firebaseConfig = {
       apiKey: "AIzaSyBxdJvLJuGgBpOXIj1kRMLjfkFBA1ogAoc",
       authDomain: "wa-fcc-portal-directory-8b99e.firebaseapp.com",
@@ -294,7 +293,6 @@
 
     function cleanStr(str) { return (str || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
-    // Singapore Public Holidays Dataset (2026)
     const SG_HOLIDAYS_2026 = [
       "2026-01-01", "2026-02-17", "2026-02-18", "2026-03-20", 
       "2026-04-03", "2026-05-01", "2026-05-27", "2026-05-31", 
@@ -517,4 +515,4 @@
     });
   </script>
 </body>
-</html>s
+</html>
