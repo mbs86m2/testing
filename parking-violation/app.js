@@ -1,14 +1,20 @@
 /* ==============================================================
    PARKING VIOLATION LOG ASSISTANT - APPLICATION LOGIC (app.js)
+   Includes Portal-Level Back-Swipe Routing & Forward-Swipe Blocking
    ============================================================== */
 
 // ==============================================================
-// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// 1. BACK-SWIPE TO MAIN MOBILE PORTAL (Main Section Rule)
 // ==============================================================
 (function() {
   const PORTAL_URL = '../index.html';
+  try {
+    document.documentElement.style.overscrollBehaviorX = 'none';
+    document.body.style.overscrollBehaviorX = 'none';
+  } catch(e) {}
+
   if (window.history && window.history.pushState) {
-    window.history.pushState({ isSubApp: true }, '', window.location.href);
+    window.history.pushState({ isSectionIndex: true }, '', window.location.href);
     window.addEventListener('popstate', function() {
       window.location.replace(PORTAL_URL);
     });
@@ -931,8 +937,7 @@ function resetApp() {
     nextBtn.classList.remove('hidden');
   }
 
-  const resultModal = document.getElementById('result-modal');
-  if (resultModal) resultModal.classList.add('hidden');
+  const resultModal = document.getElementById('result-modal').classList.add('hidden');
 }
 
 // ==============================================================
@@ -945,7 +950,7 @@ function resetApp() {
   function resetTimer() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      window.location.href = PORTAL_URL;
+      window.location.replace(PORTAL_URL);
     }, FIVE_MINS_MS);
   }
 
