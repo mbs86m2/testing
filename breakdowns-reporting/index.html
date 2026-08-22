@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="WA Breakdown">
-    <meta name="theme-color" content="#0b0f19">
+    <meta name="theme-color" content="#f1f5f9">
 
     <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/color/180/warning-shield.png">
     <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/color/192/warning-shield.png">
@@ -25,33 +25,33 @@
             font-size: 16px !important;
         }
         select option {
-            background-color: #161e2e;
-            color: #f8fafc;
+            background-color: #ffffff;
+            color: #0f172a;
         }
     </style>
 </head>
-<body class="bg-[#0b0f19] text-[#f8fafc] min-h-screen flex items-center justify-center p-3 sm:p-4">
+<body class="bg-[#f1f5f9] text-[#0f172a] min-h-screen flex items-center justify-center p-3 sm:p-4">
 
     <!-- PORTRAIT MODE RECOMMENDED PROMPT OVERLAY -->
-    <div id="portraitPrompt" class="fixed inset-0 bg-[#0b0f19]/95 backdrop-blur-md z-50 hidden flex-col items-center justify-center text-center p-6 transition-all duration-300">
+    <div id="portraitPrompt" class="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-md z-50 hidden flex-col items-center justify-center text-center p-6 transition-all duration-300">
         <div class="animate-bounce text-6xl mb-4">📱</div>
         <h2 class="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
             <span>🔄</span> Please Rotate Your Device
         </h2>
-        <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
+        <p class="text-xs text-gray-300 max-w-xs leading-relaxed">
             The Breakdown Reporting Portal is optimized for <strong class="text-sky-400 font-bold">Portrait Mode</strong>. Please turn your phone vertically to continue.
         </p>
     </div>
 
-    <div class="bg-[#161e2e] border border-white/10 rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-lg">
+    <div class="bg-white border border-[#e2e8f0] rounded-2xl shadow-xl p-4 sm:p-6 w-full max-w-lg">
         
         <!-- MOBILE-OPTIMIZED HEADER CONTAINER -->
-        <div class="border-b border-white/10 pb-3 mb-4 flex items-center justify-between gap-1 sm:gap-2">
+        <div class="border-b border-slate-200 pb-3 mb-4 flex items-center justify-between gap-1 sm:gap-2">
             
             <!-- Left: Back Arrow Icon Button -->
             <div class="shrink-0 flex items-center">
                 <a href="../index.html" title="Back to Portal" 
-                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-sky-400 border border-white/10 transition-colors shadow-sm">
+                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-sky-700 border border-slate-300 transition-colors shadow-sm">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
                     </svg>
@@ -60,16 +60,16 @@
 
             <!-- Center: Title & Subtitle -->
             <div class="flex-1 text-center min-w-0 px-1">
-                <h1 class="text-sm sm:text-base font-extrabold tracking-tight flex items-center justify-center gap-1 whitespace-nowrap bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+                <h1 class="text-sm sm:text-base font-extrabold tracking-tight flex items-center justify-center gap-1 whitespace-nowrap bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                     <span class="text-base sm:text-lg">🚨</span> Breakdown Report
                 </h1>
-                <p class="text-[10px] sm:text-xs font-medium text-gray-400 truncate">Lifts &amp; Escalators</p>
+                <p class="text-[10px] sm:text-xs font-bold text-slate-500 truncate uppercase tracking-wider">Lifts &amp; Escalators</p>
             </div>
 
-            <!-- Right: FCC Follow-Up Button (Revealed Only For Admin M2 / Keekc) -->
+            <!-- Right: FCC Follow-Up Button -->
             <div class="shrink-0 flex items-center">
                 <a id="fccLinkBtn" href="fcc-followup.html" onclick="navigateToFCC(event)" 
-                   class="hidden inline-flex items-center justify-center text-[10px] sm:text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 transition-colors py-1.5 px-2.5 rounded-lg shadow-sm whitespace-nowrap border border-sky-400/30">
+                   class="hidden inline-flex items-center justify-center text-[10px] sm:text-xs font-bold text-white bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 transition-colors py-1.5 px-2.5 rounded-lg shadow-sm whitespace-nowrap border border-sky-500">
                     <span>🛡️ FCC Follow Up</span>
                 </a>
             </div>
@@ -82,17 +82,17 @@
 
             <!-- 1. Name -->
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Name *</label>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1">Name *</label>
                 <input type="text" id="officerName" name="officer_name" required placeholder="Enter your name" 
                        onblur="autoCapitalizeInput(this)"
-                       class="w-full p-2.5 bg-[#0b0f19] border border-white/15 rounded-lg text-white placeholder-gray-500 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none text-sm">
+                       class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold placeholder-gray-400 focus:border-sky-600 focus:ring-1 focus:ring-sky-600 outline-none text-sm">
             </div>
 
             <!-- 2. Asset Brand / Type -->
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Asset Brand / Type *</label>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1">Asset Brand / Type *</label>
                 <select id="assetCategory" name="asset_category" required onchange="updateAssetsAndIssues()" 
-                        class="w-full p-2.5 bg-[#0b0f19] border border-white/15 rounded-lg text-white focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none text-sm">
+                        class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:border-sky-600 focus:ring-1 focus:ring-sky-600 outline-none text-sm">
                     <option value="">-- Select Asset Category --</option>
                     <option value="Escalator (HITACHI)">Escalator (HITACHI)</option>
                     <option value="Escalator (OTIS)">Escalator (OTIS)</option>
@@ -103,78 +103,78 @@
 
             <!-- 3. Specific Asset Unit -->
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Specific Asset Unit *</label>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1">Specific Asset Unit *</label>
                 <select id="assetUnit" name="asset_unit" required disabled 
-                        class="w-full p-2.5 bg-[#0b0f19]/60 border border-white/10 rounded-lg text-gray-400 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none text-sm disabled:opacity-60">
+                        class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 font-semibold focus:border-sky-600 focus:ring-1 focus:ring-sky-600 outline-none text-sm disabled:opacity-60">
                     <option value="">-- Select Category First --</option>
                 </select>
             </div>
 
             <!-- 4. Issue / Fault Dropdown -->
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Issue / Fault *</label>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1">Issue / Fault *</label>
                 <select id="issueType" name="issue_type" required disabled onchange="handleIssueSelect()" 
-                        class="w-full p-2.5 bg-[#0b0f19]/60 border border-white/10 rounded-lg text-gray-400 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none text-sm disabled:opacity-60">
+                        class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 font-semibold focus:border-sky-600 focus:ring-1 focus:ring-sky-600 outline-none text-sm disabled:opacity-60">
                     <option value="">-- Select Category First --</option>
                 </select>
             </div>
 
             <!-- STEP 1 WARNING BANNER -->
-            <div id="step1Warning" class="hidden p-3 rounded-lg bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-semibold leading-relaxed shadow-sm">
-                ⚠️ <strong>STEP 1 REQUIRED:</strong> Click <span class="text-rose-400 font-bold">"🚨 1. Report Breakdown"</span> below to alert FCC Supervisors before entering Action Taken!
+            <div id="step1Warning" class="hidden p-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold leading-relaxed shadow-sm">
+                ⚠️ <strong>STEP 1 REQUIRED:</strong> Click <span class="text-rose-700 font-extrabold">"🚨 1. Report Breakdown"</span> below to alert FCC Supervisors before entering Action Taken!
             </div>
 
             <!-- SAME OFFICER CHECKBOX SECTION (REVEALED AFTER STEP 1) -->
-            <div id="step2OfficerSection" class="hidden bg-[#151d30] p-3 rounded-lg border border-sky-500/30 text-xs space-y-2">
+            <div id="step2OfficerSection" class="hidden bg-sky-50 p-3 rounded-lg border border-sky-200 text-xs space-y-2">
                 <div class="flex items-center space-x-2">
-                    <input type="checkbox" id="sameOfficerCheck" checked onchange="toggleOfficer2Input()" class="w-4 h-4 text-sky-500 rounded bg-[#0b0f19] border-white/20 cursor-pointer">
-                    <label for="sameOfficerCheck" class="font-bold text-sky-200 cursor-pointer">
+                    <input type="checkbox" id="sameOfficerCheck" checked onchange="toggleOfficer2Input()" class="w-4 h-4 text-sky-600 rounded border-slate-300 cursor-pointer">
+                    <label for="sameOfficerCheck" class="font-extrabold text-sky-900 cursor-pointer">
                         ☑ Same officer performing Action Taken?
                     </label>
                 </div>
 
                 <div id="officer2Container" class="hidden pt-1 space-y-1">
-                    <label class="block font-semibold text-gray-300">Action Officer Name *</label>
+                    <label class="block font-bold text-slate-700">Action Officer Name *</label>
                     <input type="text" id="actionOfficerName" name="action_officer_name" placeholder="Enter name of officer performing action" onblur="autoCapitalizeInput(this)"
-                           class="w-full p-2 bg-[#0b0f19] border border-white/15 rounded text-white outline-none focus:border-sky-400 text-xs">
+                           class="w-full p-2 bg-white border border-slate-300 rounded text-slate-900 font-semibold outline-none focus:border-sky-600 text-xs">
                 </div>
             </div>
 
             <!-- 5. Action Taken / Result Dropdown -->
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Action Taken / Result</label>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1">Action Taken / Result</label>
                 <select id="actionResult" name="action_result" disabled onchange="toggleRemarksRequirement()" 
-                        class="w-full p-2.5 bg-[#0b0f19]/60 border border-white/10 rounded-lg text-gray-400 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none text-sm disabled:opacity-60">
+                        class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 font-semibold focus:border-sky-600 focus:ring-1 focus:ring-sky-600 outline-none text-sm disabled:opacity-60">
                     <option value="">-- Complete Step 1 First --</option>
                 </select>
             </div>
 
             <!-- 6. Remarks / Description -->
             <div>
-                <label id="remarksLabel" class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">Remarks / Description (Optional)</label>
+                <label id="remarksLabel" class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-1">Remarks / Description (Optional)</label>
                 <textarea id="remarksDescription" name="remarks_description" rows="3" placeholder="Provide details or location notes..." onblur="autoCapitalizeInput(this)"
-                          class="w-full p-2.5 bg-[#0b0f19] border border-white/15 rounded-lg text-white placeholder-gray-500 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none text-sm"></textarea>
+                          class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-gray-400 focus:border-sky-600 focus:ring-1 focus:ring-sky-600 outline-none text-sm"></textarea>
             </div>
 
             <!-- 7. PHOTO / VIDEO UPLOAD -->
             <div class="text-center pt-1">
-                <label class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">📷 Take Photo / Video Evidence (Optional)</label>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-800 mb-2">📷 Take Photo / Video Evidence (Optional)</label>
                 <input type="file" id="photoInput" name="photo" accept="image/*,video/*" capture="environment" 
-                       class="block mx-auto text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500/15 file:text-sky-400 hover:file:bg-sky-500/25 file:border file:border-sky-500/30 cursor-pointer">
+                       class="block mx-auto text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 file:border file:border-sky-300 cursor-pointer">
             </div>
 
-            <div id="statusMsg" class="hidden text-center text-xs font-semibold p-3 rounded-lg"></div>
+            <div id="statusMsg" class="hidden text-center text-xs font-bold p-3 rounded-lg"></div>
 
             <!-- SUBMIT BUTTONS -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
                 <button type="button" onclick="triggerSubmit('initial_report')" id="btnInitial"
-                        class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-3 px-3 rounded-lg transition duration-200 text-xs shadow-lg shadow-rose-600/20 flex flex-col items-center justify-center cursor-pointer">
+                        class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white font-extrabold py-3 px-3 rounded-lg transition duration-200 text-xs shadow-md shadow-rose-600/20 flex flex-col items-center justify-center cursor-pointer">
                     <span class="text-sm font-extrabold">🚨 1. Report Breakdown</span>
                     <span class="text-[10px] font-normal opacity-90">(1st Alert to FCC)</span>
                 </button>
 
                 <button type="button" onclick="triggerSubmit('action_outcome')" id="btnOutcome" disabled
-                        class="w-full bg-gradient-to-r from-sky-600 to-blue-500 text-white font-bold py-3 px-3 rounded-lg text-xs shadow-lg flex flex-col items-center justify-center opacity-40 cursor-not-allowed transition duration-200">
+                        class="w-full bg-gradient-to-r from-sky-600 to-blue-600 text-white font-extrabold py-3 px-3 rounded-lg text-xs shadow-md flex flex-col items-center justify-center opacity-40 cursor-not-allowed transition duration-200">
                     <span class="text-sm font-extrabold">✅ 2. Report Action Taken</span>
                     <span class="text-[10px] font-normal opacity-90">(Reset / Need Follow Up)</span>
                 </button>
@@ -323,8 +323,8 @@
 
             if (selectedCategory && subAssetData[selectedCategory]) {
                 unitSelect.disabled = false; 
-                unitSelect.classList.remove("bg-[#0b0f19]/60", "text-gray-400"); 
-                unitSelect.classList.add("bg-[#0b0f19]", "text-white");
+                unitSelect.classList.remove("bg-slate-100", "text-slate-500"); 
+                unitSelect.classList.add("bg-slate-50", "text-slate-900");
                 
                 const defaultUnit = document.createElement("option"); defaultUnit.value = ""; defaultUnit.textContent = "-- Select Specific Unit --";
                 unitSelect.appendChild(defaultUnit);
@@ -333,8 +333,8 @@
                 });
 
                 issueSelect.disabled = false; 
-                issueSelect.classList.remove("bg-[#0b0f19]/60", "text-gray-400"); 
-                issueSelect.classList.add("bg-[#0b0f19]", "text-white");
+                issueSelect.classList.remove("bg-slate-100", "text-slate-500"); 
+                issueSelect.classList.add("bg-slate-50", "text-slate-900");
                 
                 const defaultIssue = document.createElement("option"); defaultIssue.value = ""; defaultIssue.textContent = "-- Select Issue --";
                 issueSelect.appendChild(defaultIssue);
@@ -349,8 +349,8 @@
                 actionSelect.dataset.options = isLift ? "lift" : "escalator";
 
             } else {
-                unitSelect.disabled = true; unitSelect.classList.add("bg-[#0b0f19]/60", "text-gray-400"); unitSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
-                issueSelect.disabled = true; issueSelect.classList.add("bg-[#0b0f19]/60", "text-gray-400"); issueSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
+                unitSelect.disabled = true; unitSelect.classList.add("bg-slate-100", "text-slate-500"); unitSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
+                issueSelect.disabled = true; issueSelect.classList.add("bg-slate-100", "text-slate-500"); issueSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
                 actionSelect.innerHTML = `<option value="">-- Select Category First --</option>`;
             }
         }
@@ -407,7 +407,7 @@
 
             if (actionResult.includes("Follow") || actionResult.includes("Need Follow Up")) {
                 remarksInput.required = true;
-                remarksLabel.innerHTML = 'Remarks / Description <span class="text-rose-400 font-bold">* (Required for Follow Up)</span>';
+                remarksLabel.innerHTML = 'Remarks / Description <span class="text-rose-600 font-extrabold">* (Required for Follow Up)</span>';
             } else {
                 remarksInput.required = false;
                 remarksLabel.innerHTML = 'Remarks / Description (Optional)';
@@ -579,12 +579,12 @@
 
                     if (type === 'initial_report') {
                         isStep1Done = true;
-                        statusMsg.className = "text-center text-xs font-bold p-3 rounded-lg bg-emerald-950/50 text-emerald-300 border border-emerald-500/40";
+                        statusMsg.className = "text-center text-xs font-bold p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300";
                         statusMsg.textContent = "🚨 Step 1 Complete! FCC Supervisors alerted. Now select Action Taken below.";
                         statusMsg.classList.remove('hidden');
 
                         btnInitial.disabled = true;
-                        btnInitial.className = "w-full bg-[#161e2e] text-gray-500 font-bold py-3 px-3 rounded-lg text-xs cursor-not-allowed opacity-50 border border-white/10";
+                        btnInitial.className = "w-full bg-slate-100 text-slate-400 font-bold py-3 px-3 rounded-lg text-xs cursor-not-allowed opacity-50 border border-slate-300";
 
                         document.getElementById('officerName').readOnly = true;
                         document.getElementById('assetCategory').disabled = true;
@@ -594,18 +594,18 @@
                         document.getElementById('step2OfficerSection').classList.remove('hidden');
                         populateActionDropdown();
                         document.getElementById('actionResult').disabled = false;
-                        document.getElementById('actionResult').classList.remove("bg-[#0b0f19]/60", "text-gray-400");
-                        document.getElementById('actionResult').classList.add("bg-[#0b0f19]", "text-white");
+                        document.getElementById('actionResult').classList.remove("bg-slate-100", "text-slate-500");
+                        document.getElementById('actionResult').classList.add("bg-slate-50", "text-slate-900");
 
                         btnOutcome.disabled = false;
-                        btnOutcome.className = "w-full bg-gradient-to-r from-sky-600 to-blue-500 hover:from-sky-500 hover:to-blue-400 text-white font-bold py-3 px-3 rounded-lg text-xs shadow-lg cursor-pointer transition duration-200";
+                        btnOutcome.className = "w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold py-3 px-3 rounded-lg text-xs shadow-md cursor-pointer transition duration-200";
 
                         const warningBanner = document.getElementById("step1Warning");
-                        warningBanner.className = "p-3 rounded-lg bg-[#151d30] border border-sky-500/30 text-sky-200 text-xs font-semibold leading-relaxed shadow-sm";
-                        warningBanner.innerHTML = "👇 <strong>STEP 2:</strong> Select <strong>Action Taken / Result</strong> below and click <span class='text-sky-400 font-bold'>'✅ 2. Report Action Taken'</span>.";
+                        warningBanner.className = "p-3 rounded-lg bg-sky-50 border border-sky-200 text-sky-900 text-xs font-semibold leading-relaxed shadow-sm";
+                        warningBanner.innerHTML = "👇 <strong>STEP 2:</strong> Select <strong>Action Taken / Result</strong> below and click <span class='text-sky-700 font-bold'>'✅ 2. Report Action Taken'</span>.";
 
                     } else {
-                        statusMsg.className = "text-center text-xs font-bold p-3 rounded-lg bg-emerald-950/50 text-emerald-300 border border-emerald-500/40";
+                        statusMsg.className = "text-center text-xs font-bold p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300";
                         statusMsg.textContent = "✅ Step 2 Complete! Action report submitted & Google Sheet updated!";
                         statusMsg.classList.remove('hidden');
 
@@ -616,7 +616,7 @@
                 }
             })
             .catch(err => {
-                statusMsg.className = "text-center text-xs font-bold p-3 rounded-lg bg-rose-950/50 text-rose-300 border border-rose-500/40";
+                statusMsg.className = "text-center text-xs font-bold p-3 rounded-lg bg-rose-50 text-rose-800 border border-rose-300";
                 statusMsg.textContent = "⚠️ Report logged to Netlify (Sync Notice: " + err.message + ")";
                 statusMsg.classList.remove('hidden');
                 btnInitial.disabled = false;
