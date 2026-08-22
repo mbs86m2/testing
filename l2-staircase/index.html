@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0b0f19">
+  <meta name="theme-color" content="#f1f5f9">
   <link rel="manifest" href="../manifest.json">
     
   <!-- FAVICON & MOBILE HOME SCREEN SHORTCUT ICONS -->
@@ -20,14 +20,14 @@
 
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #161e2e;
-      --card-border: rgba(255, 255, 255, 0.08);
-      --primary: #38bdf8;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --success: #34d399;
-      --danger: #fb7185;
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --primary: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --success: #059669;
+      --danger: #e11d48;
     }
 
     * {
@@ -50,13 +50,13 @@
       margin: 0 auto;
     }
 
-    /* Styled Header Box matching Portal standard */
+    /* Styled Header Box */
     .header-box {
       background-color: var(--card-bg);
       padding: 10px 12px;
       border-radius: 16px;
       border: 1px solid var(--card-border);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -70,7 +70,7 @@
       font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.2px;
-      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+      background: linear-gradient(135deg, #0284c7, #4338ca);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       white-space: nowrap;
@@ -79,7 +79,7 @@
       margin: 2px 0 0 0;
       font-size: 10px;
       color: var(--text-muted);
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
@@ -90,23 +90,19 @@
       justify-content: center;
       width: 36px;
       height: 36px;
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
       border-radius: 10px;
       text-decoration: none;
       cursor: pointer;
       transition: background-color 0.2s ease, transform 0.1s;
     }
-    .back-link:hover {
-      background-color: rgba(255, 255, 255, 0.12);
-    }
-    .back-link:active {
-      transform: scale(0.95);
-    }
+    .back-link:hover { background-color: #e2e8f0; }
+    .back-link:active { transform: scale(0.95); }
     .back-link svg {
       width: 18px;
       height: 18px;
-      color: #38bdf8;
+      color: #0284c7;
     }
     .header-spacer {
       width: 36px;
@@ -117,12 +113,13 @@
       background: var(--card-bg);
       padding: 24px 18px;
       border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
       border: 1px solid var(--card-border);
     }
     .container p {
       font-size: 13px;
       color: var(--text-muted);
+      font-weight: 500;
       margin-top: 0;
       margin-bottom: 20px;
     }
@@ -144,21 +141,19 @@
       user-select: none;
       transition: transform 0.1s, opacity 0.2s;
     }
-    .btn:active {
-      transform: scale(0.98);
-    }
+    .btn:active { transform: scale(0.98); }
     .btn-blue { 
-      background: linear-gradient(135deg, #0284c7, #38bdf8); 
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      background: linear-gradient(135deg, #0369a1, #0284c7); 
+      box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25);
     }
     .btn-green { 
-      background: linear-gradient(135deg, #059669, #34d399); 
-      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+      background: linear-gradient(135deg, #059669, #10b981); 
+      box-shadow: 0 3px 8px rgba(5, 150, 105, 0.25);
       display: none; 
     }
     .btn:disabled { 
-      background: #334155; 
-      color: #94a3b8; 
+      background: #cbd5e1; 
+      color: #64748b; 
       box-shadow: none;
       cursor: not-allowed; 
       transform: none;
@@ -177,9 +172,9 @@
       gap: 12px;
       margin-top: 20px;
       padding: 12px;
-      border: 1.5px dashed rgba(56, 189, 248, 0.3);
+      border: 1.5px dashed #0284c7;
       border-radius: 12px;
-      background: #0b0f19;
+      background: #f8fafc;
       display: none;
       max-height: 250px;
       overflow-y: auto;
@@ -196,14 +191,14 @@
       height: 100%;
       object-fit: cover;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid #cbd5e1;
       cursor: pointer;
     }
     .delete-btn {
       position: absolute;
       top: -6px;
       right: -6px;
-      background-color: #ef4444;
+      background-color: #e11d48;
       color: white;
       width: 22px;
       height: 22px;
@@ -214,7 +209,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       user-select: none;
       z-index: 10;
       border: 1.5px solid #ffffff;
@@ -229,9 +224,9 @@
       top: 0;
       width: 100%; 
       height: 100%; 
-      background-color: rgba(11, 15, 25, 0.95); 
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background-color: rgba(15, 23, 42, 0.7); 
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       box-sizing: border-box;
     }
     .modal-content {
@@ -240,20 +235,19 @@
       max-width: 90%;
       max-height: 80%;
       border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      border: 2px solid #ffffff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
       animation: zoom 0.2s ease-in-out;
     }
     .close-modal {
       position: absolute;
       top: 15px;
       right: 20px;
-      color: #f8fafc;
+      color: #ffffff;
       font-size: 36px;
       font-weight: bold;
       cursor: pointer;
       user-select: none;
-      line-height: 1;
     }
     @keyframes zoom {
       from { transform: scale(0.9); opacity: 0; }
@@ -271,19 +265,18 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: rgba(52, 211, 153, 0.15);
-      border: 1.5px solid rgba(52, 211, 153, 0.4);
+      background: #d1fae5;
+      border: 1.5px solid #a7f3d0;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #34d399;
+      color: #059669;
       font-size: 32px;
-      box-shadow: 0 0 20px rgba(52, 211, 153, 0.25);
     }
     .success-text {
       font-size: 16px;
       font-weight: 800;
-      color: #34d399;
+      color: #059669;
       margin-top: 12px;
       line-height: 1.3;
     }
@@ -297,7 +290,7 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: rgba(11, 15, 25, 0.96);
+      background: rgba(15, 23, 42, 0.96);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       color: #ffffff;
@@ -318,7 +311,6 @@
       align-items: center;
       justify-content: center;
       margin-bottom: 16px;
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
     }
     .phone-icon-svg {
       width: 36px;
@@ -333,9 +325,7 @@
     }
 
     @media screen and (orientation: landscape) and (max-height: 600px) {
-      #portrait-prompt {
-        display: flex !important;
-      }
+      #portrait-prompt { display: flex !important; }
     }
   </style>
 </head>
@@ -355,33 +345,26 @@
 </div>
 
 <div class="main-wrapper">
-  <!-- Styled Header Box Section -->
   <header class="header-box">
-    <!-- Circular Back Arrow Button -->
     <a class="back-link" href="../index.html" target="_top" title="Back to Portal">
       <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
       </svg>
     </a>
     
-    <!-- Centered Header Text -->
     <div class="header-text">
       <h1>Wisma Atria</h1>
       <p>L2 Staircase Photo</p>
     </div>
 
-    <!-- Empty Spacer to maintain flexbox alignment -->
     <div class="header-spacer"></div>
   </header>
 
-  <!-- Main content wrapper card -->
   <div class="container">
     <p>Tap the button below to take photo, and press upload.</p>
     
-    <!-- NATIVE CAMERA INPUT -->
+    <!-- Native camera input & label button trigger -->
     <input type="file" id="cameraInput" accept="image/*" capture="environment" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
-    
-    <!-- NATIVE LABEL ACTION BUTTON (Guarantees Camera Opens Instantly On Mobile) -->
     <label for="cameraInput" class="btn btn-blue" id="takePhotoBtn">📷 Take Photo</label>
     <button type="button" class="btn btn-green" id="uploadBtn">📤 Upload</button>
     
@@ -397,9 +380,6 @@
 </div>
 
 <script>
-  // =========================================================
-  // DYNAMIC MASTER PORTAL CONFIGURATION RESOLVER
-  // =========================================================
   function getActiveStaircaseApiUrl() {
     let masterCfg = null;
     try { masterCfg = JSON.parse(localStorage.getItem("wafp_master_config")); } catch (e) {}
@@ -571,7 +551,7 @@
 
     galleryDiv.style.display = "flex";
     uploadBtn.style.display = "inline-block";
-    statusDiv.innerHTML = `<span style='color: #34d399;'>📷 Added! (${photoQueue.length} photo(s) ready)</span>`;
+    statusDiv.innerHTML = `<span style='color: #059669;'>📷 Added! (${photoQueue.length} photo(s) ready)</span>`;
   }
 
   closeModal.addEventListener('click', () => {
@@ -641,7 +621,7 @@
         <div class="success-container">
           <div class="success-circle">✔</div>
           <div class="success-text">All photos uploaded successfully</div>
-          ${lastSavedFolder ? `<div style="font-size:12px; color:#94a3b8; margin-top:8px;">Saved to folder: <strong style="color:#38bdf8;">${lastSavedFolder}</strong></div>` : ''}
+          ${lastSavedFolder ? `<div style="font-size:12px; color:#475569; margin-top:8px;">Saved to folder: <strong style="color:#0284c7;">${lastSavedFolder}</strong></div>` : ''}
         </div>
       `;
       photoQueue = [];
@@ -649,7 +629,7 @@
       galleryDiv.style.display = "none";
       uploadBtn.style.display = "none";
     } catch (err) {
-      statusDiv.innerHTML = `<span style='color: #fb7185;'>❌ Upload failed: ${err.message}<br>Please press Upload to try again.</span>`;
+      statusDiv.innerHTML = `<span style='color: #e11d48;'>❌ Upload failed: ${err.message}<br>Please press Upload to try again.</span>`;
     } finally {
       takePhotoBtn.style.pointerEvents = 'auto';
       takePhotoBtn.style.opacity = '1';
@@ -661,9 +641,7 @@
   }
 </script>
 
-<!-- ========================================================= -->
-<!-- 5-MINUTE AUTO-RETURN TO WISMA ATRIA FCC PORTAL SCRIPT      -->
-<!-- ========================================================= -->
+<!-- 5-Minute Inactivity Auto-Return to Portal -->
 <script>
 (function() {
   const PORTAL_URL = '../index.html';
@@ -680,44 +658,20 @@
 
     if (elapsed >= FIVE_MINS_MS) {
       saveLastActivity();
-      if (idleCheckInterval) {
-        clearInterval(idleCheckInterval);
-      }
-      
-      try {
-        const link = document.createElement('a');
-        link.href = PORTAL_URL;
-        link.target = '_top';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (e) {
-        try {
-          if (window.top) {
-            window.top.location.href = PORTAL_URL;
-          } else {
-            window.location.href = PORTAL_URL;
-          }
-        } catch (err) {
-          window.location.href = PORTAL_URL;
-        }
-      }
+      if (idleCheckInterval) clearInterval(idleCheckInterval);
+      window.location.href = PORTAL_URL;
     }
   }
 
   saveLastActivity();
-
   ['click', 'touchstart', 'mousemove', 'keydown', 'scroll', 'change'].forEach(evt => {
     window.addEventListener(evt, saveLastActivity, { passive: true });
   });
 
   window.addEventListener('pageshow', checkIdleAndReturn);
   document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'visible') {
-      checkIdleAndReturn();
-    } else {
-      saveLastActivity();
-    }
+    if (document.visibilityState === 'visible') checkIdleAndReturn();
+    else saveLastActivity();
   });
 
   idleCheckInterval = setInterval(checkIdleAndReturn, 1000);
