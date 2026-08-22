@@ -2,7 +2,7 @@
  * =========================================================================
  * TOC CAMERA ENGINE (camera-engine.js)
  * Standalone Unified Engine for Standard & Lite Viewfinders
- * Hardware Adaptive: <4GB RAM Lock, 20s Auto-Pause & 3-Min Deletion
+ * Hardware Adaptive: Apple Engine Aware + Android <4GB RAM Lock
  * =========================================================================
  */
 
@@ -43,19 +43,30 @@ function goToPortal() {
 }
 
 // ==============================================================
-// 3. HARDWARE DETECTION & STRICT <4GB RAM MODE ROUTING
+// 3. HARDWARE DETECTION: APPLE AWARE + ANDROID <4GB RAM LOCK
 // ==============================================================
 function isDeviceLowEnd() {
-  const isLowRAM = (navigator.deviceMemory && navigator.deviceMemory < 4);
-  const isLowCPU = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+  // 1. Apple Devices (iPhones/iPads) are ALWAYS high-performance with dedicated hardware video chips
+  const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isApple) return false;
+
+  // 2. Android: Check Chrome's deviceMemory API (< 4GB RAM)
+  if (typeof navigator.deviceMemory !== 'undefined') {
+    return navigator.deviceMemory < 4;
+  }
+
+  // 3. Android: Check older OS versions or budget hardware indicators
   const isOlderAndroid = /Android [4-9]\b|Android 10\b/i.test(navigator.userAgent);
-  return isLowRAM || isLowCPU || isOlderAndroid;
+  const isLowCPU = (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
+
+  return isOlderAndroid || isLowCPU;
 }
 
 function autoDetectHardwareAndRoute() {
   const isLitePage = window.location.pathname.endsWith('lite.html');
 
-  // If hardware is < 4GB RAM, force Lite Mode to prevent system lag
+  // If device is genuinely low-end (< 4GB RAM Android), force Lite Mode
   if (isDeviceLowEnd() && !isLitePage) {
     console.log("⚡ Device has < 4GB RAM. Auto-routing to Lite Mode for performance safety...");
     window.location.replace('lite.html?auto=true');
@@ -75,7 +86,7 @@ function switchToLiteMode() {
   window.location.href = "lite.html";
 }
 
-// Lite -> Standard is BLOCKED on <4GB RAM devices to prevent system lag
+// Lite -> Standard is BLOCKED on genuine <4GB RAM devices
 function switchToStandardMode() {
   if (isDeviceLowEnd()) {
     alert("⚠️ Standard Viewfinder is disabled on devices with less than 4GB RAM to prevent system lag, overheating, and browser crashes.\n\nLite Mode is locked for your device's stability.");
