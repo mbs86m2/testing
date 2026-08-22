@@ -30,7 +30,7 @@
         }
     </style>
 </head>
-<body class="bg-[#f1f5f9] text-[#0f172a] min-h-screen flex items-center justify-center p-3 sm:p-4">
+<body class="bg-[#f1f5f9] text-[#0f172a] min-h-screen flex items-center justify-center p-3 sm:p-4" style="padding-top: max(16px, env(safe-area-inset-top, 24px));">
 
     <!-- PORTRAIT MODE RECOMMENDED PROMPT OVERLAY -->
     <div id="portraitPrompt" class="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-md z-50 hidden flex-col items-center justify-center text-center p-6 transition-all duration-300">
@@ -124,7 +124,7 @@
                 ⚠️ <strong>STEP 1 REQUIRED:</strong> Click <span class="text-rose-700 font-extrabold">"🚨 1. Report Breakdown"</span> below to alert FCC Supervisors before entering Action Taken!
             </div>
 
-            <!-- SAME OFFICER CHECKBOX SECTION (REVEALED AFTER STEP 1) -->
+            <!-- SAME OFFICER CHECKBOX SECTION -->
             <div id="step2OfficerSection" class="hidden bg-sky-50 p-3 rounded-lg border border-sky-200 text-xs space-y-2">
                 <div class="flex items-center space-x-2">
                     <input type="checkbox" id="sameOfficerCheck" checked onchange="toggleOfficer2Input()" class="w-4 h-4 text-sky-600 rounded border-slate-300 cursor-pointer">
