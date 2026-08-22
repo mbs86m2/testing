@@ -2,7 +2,7 @@
  * =========================================================================
  * TOC CAMERA ENGINE (camera-engine.js)
  * Standalone Unified Engine for Standard & Lite Viewfinders
- * Includes 20s Battery Saver Auto-Pause & 3-Min Deletion Engine
+ * Hardware Adaptive: <4GB RAM Lock, 20s Auto-Pause & 3-Min Deletion
  * =========================================================================
  */
 
@@ -42,13 +42,51 @@ function goToPortal() {
   window.location.replace(PORTAL_URL);
 }
 
+// ==============================================================
+// 3. HARDWARE DETECTION & STRICT <4GB RAM MODE ROUTING
+// ==============================================================
+function isDeviceLowEnd() {
+  const isLowRAM = (navigator.deviceMemory && navigator.deviceMemory < 4);
+  const isLowCPU = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+  const isOlderAndroid = /Android [4-9]\b|Android 10\b/i.test(navigator.userAgent);
+  return isLowRAM || isLowCPU || isOlderAndroid;
+}
+
+function autoDetectHardwareAndRoute() {
+  const isLitePage = window.location.pathname.endsWith('lite.html');
+
+  // If hardware is < 4GB RAM, force Lite Mode to prevent system lag
+  if (isDeviceLowEnd() && !isLitePage) {
+    console.log("⚡ Device has < 4GB RAM. Auto-routing to Lite Mode for performance safety...");
+    window.location.replace('lite.html?auto=true');
+    return;
+  }
+
+  // If user previously chose Lite manually on higher-end hardware
+  const manualPref = localStorage.getItem('toc_preferred_mode');
+  if (manualPref === 'lite' && !isLitePage) {
+    window.location.replace('lite.html');
+  }
+}
+
+// Standard -> Lite is ALWAYS allowed
 function switchToLiteMode() {
+  localStorage.setItem('toc_preferred_mode', 'lite');
   window.location.href = "lite.html";
 }
 
+// Lite -> Standard is BLOCKED on <4GB RAM devices to prevent system lag
 function switchToStandardMode() {
+  if (isDeviceLowEnd()) {
+    alert("⚠️ Standard Viewfinder is disabled on devices with less than 4GB RAM to prevent system lag, overheating, and browser crashes.\n\nLite Mode is locked for your device's stability.");
+    return;
+  }
+  localStorage.setItem('toc_preferred_mode', 'standard');
   window.location.href = "index.html";
 }
+
+// Run hardware routing check immediately
+autoDetectHardwareAndRoute();
 
 function getPortalLoggedInUser() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -81,7 +119,7 @@ function isPhotoInActiveHours(timestamp) {
 }
 
 // ==============================================================
-// 3. 20-SECOND CAMERA INACTIVITY AUTO-PAUSE (BATTERY SAVER)
+// 4. 20-SECOND CAMERA INACTIVITY AUTO-PAUSE (BATTERY SAVER)
 // ==============================================================
 function resetCameraInactivityTimer() {
   if (cameraInactivityTimer) clearTimeout(cameraInactivityTimer);
@@ -113,13 +151,13 @@ function pauseCameraDueToInactivity() {
   if (shutterOverlay) shutterOverlay.classList.add("hidden");
 }
 
-// Reset 20s camera timer on any touch / interaction
+// Reset 20s camera timer on any interaction
 ['touchstart', 'mousedown', 'mousemove', 'click', 'keydown', 'scroll'].forEach(evt => {
   document.addEventListener(evt, resetCameraInactivityTimer, { passive: true });
 });
 
 // ==============================================================
-// 4. INDEXEDDB LOCAL STORAGE ENGINE
+// 5. INDEXEDDB LOCAL STORAGE ENGINE
 // ==============================================================
 function initDB() {
   return new Promise((resolve, reject) => {
@@ -195,7 +233,7 @@ async function clearAllLocalPhotos() {
 }
 
 // ==============================================================
-// 5. IN-APP CAMERA STREAM & CAPTURE
+// 6. IN-APP CAMERA STREAM & CAPTURE
 // ==============================================================
 async function startInAppCamera() {
   const video = document.getElementById("videoFeed");
@@ -208,6 +246,14 @@ async function startInAppCamera() {
     currentStream.getTracks().forEach(track => track.stop());
   }
 
+  // 3.5s Watchdog: If camera stream stalls on this hardware, auto-route to Lite
+  const watchdogTimer = setTimeout(() => {
+    if (!currentStream && !window.location.pathname.endsWith('lite.html')) {
+      console.warn("Camera stream took too long. Auto-routing to Lite Mode...");
+      window.location.replace('lite.html?fallback=true');
+    }
+  }, 3500);
+
   const constraints = {
     video: {
       facingMode: { ideal: currentFacingMode },
@@ -219,6 +265,7 @@ async function startInAppCamera() {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    clearTimeout(watchdogTimer);
     currentStream = stream;
     video.srcObject = stream;
     await video.play();
@@ -227,8 +274,13 @@ async function startInAppCamera() {
     if (shutterOverlay) shutterOverlay.classList.remove("hidden");
     resetCameraInactivityTimer();
   } catch (err) {
-    console.warn("Camera stream failed, falling back to native file input:", err);
-    triggerNativeCameraFallback();
+    clearTimeout(watchdogTimer);
+    console.warn("Camera stream failed, auto-switching to Lite Mode:", err);
+    if (!window.location.pathname.endsWith('lite.html')) {
+      window.location.replace('lite.html?fallback=true');
+    } else {
+      triggerNativeCameraFallback();
+    }
   }
 }
 
@@ -400,7 +452,7 @@ function showCaptureAnimation(base64Data) {
 }
 
 // ==============================================================
-// 6. CLOUD SYNC & CLEANUP ENGINE
+// 7. CLOUD SYNC & CLEANUP ENGINE
 // ==============================================================
 async function runSyncEngine(forceAll = false) {
   if (isSyncRunning) return;
@@ -480,7 +532,7 @@ async function triggerDriveCleanup() {
 }
 
 // ==============================================================
-// 7. UI REFRESH, GALLERY, METRICS & DELETION TIMERS
+// 8. UI REFRESH, GALLERY, METRICS & DELETION TIMERS
 // ==============================================================
 function getDeletionTimerBadge(photo) {
   if (isPhotoInActiveHours(photo.timestamp)) {
@@ -526,7 +578,7 @@ async function refreshLocalGallery() {
 
   if (emptyState) emptyState.classList.add("hidden");
 
-  // Auto-delete expired off-peak photos
+  // Auto-delete expired off-peak photos past 3 mins
   for (const p of photos) {
     if (!isPhotoInActiveHours(p.timestamp)) {
       if (Date.now() - p.timestamp >= AUTO_DELETE_MS) {
@@ -573,7 +625,7 @@ setInterval(() => {
 }, 1000);
 
 // ==============================================================
-// 8. LIGHTBOX PREVIEW
+// 9. LIGHTBOX PREVIEW
 // ==============================================================
 async function openLightbox(id) {
   const photos = await getAllLocalPhotos();
@@ -626,7 +678,7 @@ function closeLightbox() {
 }
 
 // ==============================================================
-// 9. ADMIN PIN LOCK & SETTINGS MODAL
+// 10. ADMIN PIN LOCK & SETTINGS MODAL
 // ==============================================================
 function openSettingsModal() {
   if (isUserAdmin()) {
@@ -702,7 +754,7 @@ function forceResyncAllToCurrentFolder() {
 }
 
 // ==============================================================
-// 10. LIVE TIMING CLOCK (ACTIVE HOURS 10-12 & 20-23)
+// 11. LIVE TIMING CLOCK (ACTIVE HOURS 10-12 & 20-23)
 // ==============================================================
 function updateLiveClock() {
   const timeText = document.getElementById("currentTimeText");
@@ -732,7 +784,7 @@ function updateLiveClock() {
 setInterval(updateLiveClock, 1000);
 
 // ==============================================================
-// 11. INITIALIZATION
+// 12. INITIALIZATION
 // ==============================================================
 function initializeAppEngine(isLite = false) {
   initDB().then(() => {
