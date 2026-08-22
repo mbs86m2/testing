@@ -2,7 +2,7 @@
  * =========================================================================
  * TOC CAMERA ENGINE (camera-engine.js)
  * Standalone Unified Engine for Standard & Lite Viewfinders
- * Hardware Adaptive: Apple Engine Aware + Android <4GB RAM Lock
+ * Hardware Adaptive: <=2GB RAM Default + 20s Auto-Pause & 3-Min Deletion
  * =========================================================================
  */
 
@@ -43,37 +43,42 @@ function goToPortal() {
 }
 
 // ==============================================================
-// 3. HARDWARE DETECTION: APPLE AWARE + ANDROID <4GB RAM LOCK
+// 3. HARDWARE DETECTION (RESET TO <= 2GB RAM DEFAULT)
 // ==============================================================
 function isDeviceLowEnd() {
-  // 1. Apple Devices (iPhones/iPads) are ALWAYS high-performance with dedicated hardware video chips
+  // 1. Apple Devices (All iPhones & iPads) are ALWAYS high-performance
   const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) || 
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isApple) return false;
 
-  // 2. Android: Check Chrome's deviceMemory API (< 4GB RAM)
-  if (typeof navigator.deviceMemory !== 'undefined') {
-    return navigator.deviceMemory < 4;
+  // 2. Android: Check deviceMemory (Only flag if <= 2GB RAM)
+  if (typeof navigator.deviceMemory !== 'undefined' && navigator.deviceMemory > 0) {
+    return navigator.deviceMemory <= 2;
   }
 
-  // 3. Android: Check older OS versions or budget hardware indicators
-  const isOlderAndroid = /Android [4-9]\b|Android 10\b/i.test(navigator.userAgent);
-  const isLowCPU = (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
-
-  return isOlderAndroid || isLowCPU;
+  // 3. Android: Check legacy Android 4-7 OS versions
+  const isLegacyAndroid = /Android [4-7]\b/i.test(navigator.userAgent);
+  return isLegacyAndroid;
 }
 
 function autoDetectHardwareAndRoute() {
   const isLitePage = window.location.pathname.endsWith('lite.html');
 
-  // If device is genuinely low-end (< 4GB RAM Android), force Lite Mode
+  // If iPhone or modern device, clear any old accidental cache locks
+  if (!isDeviceLowEnd() && !isLitePage) {
+    if (localStorage.getItem('toc_preferred_mode') === 'lite') {
+      localStorage.removeItem('toc_preferred_mode');
+    }
+  }
+
+  // If genuinely low-end (<= 2GB RAM), auto-route to Lite
   if (isDeviceLowEnd() && !isLitePage) {
-    console.log("⚡ Device has < 4GB RAM. Auto-routing to Lite Mode for performance safety...");
+    console.log("⚡ Low-end hardware (<=2GB RAM) detected. Routing to Lite Mode...");
     window.location.replace('lite.html?auto=true');
     return;
   }
 
-  // If user previously chose Lite manually on higher-end hardware
+  // If user explicitly chose Lite on a high-end device
   const manualPref = localStorage.getItem('toc_preferred_mode');
   if (manualPref === 'lite' && !isLitePage) {
     window.location.replace('lite.html');
@@ -86,10 +91,10 @@ function switchToLiteMode() {
   window.location.href = "lite.html";
 }
 
-// Lite -> Standard is BLOCKED on genuine <4GB RAM devices
+// Lite -> Standard: Unlocks on iPhone and all devices >= 3GB RAM
 function switchToStandardMode() {
   if (isDeviceLowEnd()) {
-    alert("⚠️ Standard Viewfinder is disabled on devices with less than 4GB RAM to prevent system lag, overheating, and browser crashes.\n\nLite Mode is locked for your device's stability.");
+    alert("⚠️ Standard Viewfinder is disabled on devices with 2GB RAM or less to prevent browser crashes.\n\nLite Mode is locked for your device's stability.");
     return;
   }
   localStorage.setItem('toc_preferred_mode', 'standard');
@@ -257,7 +262,7 @@ async function startInAppCamera() {
     currentStream.getTracks().forEach(track => track.stop());
   }
 
-  // 3.5s Watchdog: If camera stream stalls on this hardware, auto-route to Lite
+  // 3.5s Watchdog: If camera stream stalls, auto-route to Lite
   const watchdogTimer = setTimeout(() => {
     if (!currentStream && !window.location.pathname.endsWith('lite.html')) {
       console.warn("Camera stream took too long. Auto-routing to Lite Mode...");
