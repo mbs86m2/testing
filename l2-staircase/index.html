@@ -12,7 +12,7 @@
   <meta name="theme-color" content="#f1f5f9">
   <link rel="manifest" href="../manifest.json">
     
-  <!-- FAVICON & MOBILE HOME SCREEN SHORTCUT ICONS -->
+  <!-- Shortcut Icons -->
   <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/camera.png">
   <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/camera.png">
   <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/180/camera.png">
@@ -39,6 +39,8 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 16px;
+      /* DYNAMIC NOTCH / STATUS BAR CLEARANCE */
+      padding-top: max(16px, env(safe-area-inset-top, 24px));
       background-color: var(--bg);
       color: var(--text-main);
       text-align: center;
@@ -50,7 +52,6 @@
       margin: 0 auto;
     }
 
-    /* Styled Header Box */
     .header-box {
       background-color: var(--card-bg);
       padding: 10px 12px;
@@ -311,6 +312,7 @@
       align-items: center;
       justify-content: center;
       margin-bottom: 16px;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
     }
     .phone-icon-svg {
       width: 36px;
