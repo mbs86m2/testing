@@ -1,11 +1,24 @@
 /**
  * Carpark Booth Charges Calculator - Main Application Logic
- * Wisma Atria MCST 1471 (Standardized Dark Theme)
+ * Wisma Atria MCST 1471 (Soft Light Theme)
  */
 
-// -------------------------------------------------------------
-// FIREBASE REALTIME DATABASE CONFIGURATION
-// -------------------------------------------------------------
+// ==============================================================
+// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// ==============================================================
+(function() {
+  const PORTAL_URL = '../index.html';
+  if (window.history && window.history.pushState) {
+    window.history.pushState({ isSubApp: true }, '', window.location.href);
+    window.addEventListener('popstate', function() {
+      window.location.replace(PORTAL_URL);
+    });
+  }
+})();
+
+// ==============================================================
+// 2. FIREBASE REALTIME DATABASE CONFIGURATION
+// ==============================================================
 const firebaseConfig = {
     databaseURL: "https://wa-fcc-portal-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
@@ -22,7 +35,7 @@ let isUserAuthorized = false;
 let extractedAccounts = [];
 let barrierPermissionsMap = {};
 
-// 1. Load cached permissions immediately from local storage
+// Load cached permissions immediately from local storage
 try {
     const cached = localStorage.getItem('wafp_cached_barrier_perms');
     if (cached) {
@@ -31,7 +44,7 @@ try {
     }
 } catch(e) {}
 
-// 2. Initialize Firebase RTDB and attach persistent real-time listeners
+// Initialize Firebase RTDB and attach persistent real-time listeners
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -63,7 +76,7 @@ try {
         console.warn("Firebase permissions listener error:", err);
     });
 
-    // Real-Time Listener for Accounts Node (Extracts accounts & embedded permissions)
+    // Real-Time Listener for Accounts Node
     firebase.database().ref(ACCOUNTS_SOURCE_PATH).on('value', snap => {
         processAccountsSnapshot(snap.val());
         checkOfficerPermission();
@@ -190,19 +203,14 @@ function getLoggedInOfficerName() {
             if (typeof val === 'string' && val.trim()) return val.trim();
         }
     }
-
     return null;
 }
 
 function isOfficerPermitted(officerName) {
     if (!officerName) return false;
-    
-    if (isAccountAdmin(officerName)) {
-        return true;
-    }
+    if (isAccountAdmin(officerName)) return true;
 
     const normName = officerName.trim().toLowerCase();
-
     const cleanKey = sanitizeRTDBKey(officerName);
     if (barrierPermissionsMap[cleanKey] === true || barrierPermissionsMap[cleanKey] === "true") return true;
     if (barrierPermissionsMap[officerName] === true || barrierPermissionsMap[officerName] === "true") return true;
@@ -226,7 +234,6 @@ function isOfficerPermitted(officerName) {
             if (rawPerm === true || rawPerm === "true" || rawPerm === 1 || rawPerm === "admin") return true;
         }
     }
-
     return false;
 }
 
@@ -257,9 +264,9 @@ function checkOfficerPermission() {
     }
 }
 
-// -------------------------------------------------------------
-// OFFICER LOGIN
-// -------------------------------------------------------------
+// ==============================================================
+// 3. OFFICER LOGIN MODAL
+// ==============================================================
 function openOfficerAuthModal(prefillUsername = '') {
     const userInput = document.getElementById('officerUsernameInput');
     const passInput = document.getElementById('officerPasswordInput');
@@ -273,11 +280,8 @@ function openOfficerAuthModal(prefillUsername = '') {
 
     document.getElementById('officerAuthModal').style.display = 'flex';
     setTimeout(() => {
-        if (!userInput.value) {
-            userInput.focus();
-        } else {
-            passInput.focus();
-        }
+        if (!userInput.value) userInput.focus();
+        else passInput.focus();
     }, 150);
 }
 
@@ -332,9 +336,9 @@ function submitOfficerAuth() {
     }
 }
 
-// -------------------------------------------------------------
-// ADMIN PANEL
-// -------------------------------------------------------------
+// ==============================================================
+// 4. ADMIN ACCESS CONTROL MODAL
+// ==============================================================
 function openAdminModal() {
     const currentOfficer = getLoggedInOfficerName();
     
@@ -473,9 +477,9 @@ async function setOfficerAccessStatus(officerName, newStatus) {
     }
 }
 
-// -------------------------------------------------------------
-// CALCULATOR CORE ENGINE & SG PUBLIC HOLIDAYS
-// -------------------------------------------------------------
+// ==============================================================
+// 5. CALCULATOR ENGINE & PUBLIC HOLIDAYS
+// ==============================================================
 let currentVehicle = 'car';
 let isRealTimeMode = true;
 let liveClockInterval = null;
@@ -548,7 +552,6 @@ window.onload = function() {
     runCalculation();
     resetIdleTimer();
     lockOrientation();
-
     checkOfficerPermission();
 };
 
@@ -583,20 +586,20 @@ function toggleRealTimeMode(enabled) {
     let modeLabel = document.getElementById('liveModeLabel');
 
     if (enabled) {
-        liveBox.style.background = 'rgba(52, 211, 153, 0.1)';
-        liveBox.style.borderColor = 'rgba(52, 211, 153, 0.3)';
+        liveBox.style.background = '#d1fae5';
+        liveBox.style.borderColor = '#a7f3d0';
         liveDot.style.backgroundColor = 'var(--success)';
         liveDot.style.animation = 'pulse 1.6s infinite';
         modeLabel.innerText = 'Exit: Real-Time Clock';
-        modeLabel.style.color = '#34d399';
+        modeLabel.style.color = '#065f46';
         runCalculation();
     } else {
-        liveBox.style.background = 'rgba(245, 158, 11, 0.1)';
-        liveBox.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        liveBox.style.background = '#fef3c7';
+        liveBox.style.borderColor = '#fde68a';
         liveDot.style.backgroundColor = 'var(--warning)';
         liveDot.style.animation = 'none';
         modeLabel.innerText = 'Exit: Manual Locked Mode';
-        modeLabel.style.color = '#facc15';
+        modeLabel.style.color = '#92400e';
         let exitVal = document.getElementById('settingsExitTime').value;
         if (exitVal) {
             let d = new Date(exitVal);
@@ -906,9 +909,9 @@ function formatMins(minutes) {
     return (hrs > 0) ? `${hrs}h ${rem}m` : `${rem} mins`;
 }
 
-// -------------------------------------------------------------
-// CLOUD RELAY TRIGGER (AUTHORIZED ONLY)
-// -------------------------------------------------------------
+// ==============================================================
+// 6. CLOUD RELAY TRIGGER (AUTHORIZED ONLY)
+// ==============================================================
 async function triggerOpenExitBarrier() {
     if (!isUserAuthorized) {
         alert("Unauthorized: You do not have permission to open the barrier.");
