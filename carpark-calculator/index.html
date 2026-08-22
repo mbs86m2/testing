@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0b0f19">
+    <meta name="theme-color" content="#f1f5f9">
     <title>Carpark Booth Charges Calculator</title>
 
-    <!-- Custom Embedded SVG Favicon & Mobile Touch Icon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%230f172a'/><stop offset='100%25' stop-color='%2338bdf8'/></linearGradient></defs><rect width='512' height='512' rx='120' fill='url(%23g)'/><path d='M160 100 h110 a85 85 0 0 1 0 170 h-50 v140 h-60 Z' fill='%23ffffff'/><circle cx='370' cy='370' r='45' fill='%2334d399'/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%230f172a'/><stop offset='100%25' stop-color='%2338bdf8'/></linearGradient></defs><rect width='512' height='512' rx='120' fill='url(%23g)'/><path d='M160 100 h110 a85 85 0 0 1 0 170 h-50 v140 h-60 Z' fill='%23ffffff'/><circle cx='370' cy='370' r='45' fill='%2334d399'/></svg>">
 
-    <!-- Stylesheet -->
     <link rel="stylesheet" href="styles.css">
 
-    <!-- Firebase App & Realtime Database SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-<!-- Landscape Orientation Warning Overlay -->
+<!-- Landscape Warning Overlay -->
 <div class="landscape-warning">
     <div class="warning-icon-wrapper">
         <svg viewBox="0 0 24 24">
@@ -30,7 +27,7 @@
     <div class="warning-sub">Please rotate your device upright for the best experience.</div>
 </div>
 
-<!-- Officer Login & Password Verification Modal -->
+<!-- Officer Login Modal -->
 <div id="officerAuthModal" class="app-modal">
     <div class="app-modal-content">
         <div class="app-modal-header">
@@ -54,10 +51,10 @@
             <div class="setting-info">Password characters are automatically capitalized.</div>
         </div>
 
-        <button type="button" class="vehicle-btn active" style="margin-top: 10px;" onclick="submitOfficerAuth()">
+        <button type="button" class="modal-primary-btn" onclick="submitOfficerAuth()">
             Login &amp; Authenticate
         </button>
-        <button type="button" class="vehicle-btn" style="background:#0b0f19; color:var(--text-main); margin-top: 6px;" onclick="closeOfficerAuthModal()">
+        <button type="button" class="modal-secondary-btn" onclick="closeOfficerAuthModal()">
             Cancel
         </button>
     </div>
@@ -86,7 +83,8 @@
             <div style="text-align:center; padding: 25px; color: var(--text-muted); font-size: 12px;">Loading accounts from portalData/accounts...</div>
         </div>
 
-        <button type="button" class="vehicle-btn" style="background:#0b0f19; color:var(--text-main); margin-top: 4px;" onclick="closeAdminModal()">Close</button>
+        <!-- RECTIFIED CLEAR CLOSE BUTTON -->
+        <button type="button" class="modal-primary-btn" onclick="closeAdminModal()">Close</button>
     </div>
 </div>
 
@@ -123,7 +121,7 @@
     <!-- TAB 1: MAIN CALCULATOR VIEW -->
     <div id="view-main" class="tab-view active">
         
-        <!-- PayNow + Barrier Action Box -->
+        <!-- PayNow + Barrier Action Box (CENTERED) -->
         <div class="paynow-card">
             <div class="paynow-header">
                 <svg style="width:18px;height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M3,11H5V13H3V11M11,5H13V9H11V5M9,11H13V15H11V13H9V11M15,11H17V13H15V11M19,11H21V13H19V11M3,15H5V19H3V15M19,15H21V19H19V15M11,17H13V19H11V17M15,17H17V19H15V17M5,5H9V9H5V5M5,3A2,2 0 0,0 3,5V9A2,2 0 0,0 5,11H9A2,2 0 0,0 9,3H5M7,7H7.01V7.01H7V7M15,5H19V9H15V5M15,3A2,2 0 0,0 13,5V9A2,2 0 0,0 15,11H19A2,2 0 0,0 19,3H15M17,7H17.01V7.01H17V7M5,17H7V19H5V17Z"/></svg>
@@ -135,7 +133,7 @@
                     <div class="qr-placeholder">
                         <img src="MCST 1471.jpeg" alt="PayNow QR Code">
                     </div>
-                    <span style="font-size: 10px; color: var(--text-muted); text-align: center;">Scan to Pay</span>
+                    <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-align: center;">Scan to Pay</span>
                 </div>
 
                 <div class="paynow-col-right" id="barrierContainer">
@@ -171,6 +169,7 @@
                 </div>
             </div>
 
+            <!-- ENTRY DATE & TIME ROW -->
             <div class="entry-datetime-row">
                 <div class="form-group">
                     <label>Entry Date</label>
@@ -188,7 +187,7 @@
             </div>
         </div>
 
-        <!-- Live Real-time Exit Indicator Status -->
+        <!-- Live Status -->
         <div id="liveStatusContainer" class="live-status-box">
             <div class="live-status-left">
                 <div class="pulsing-dot" id="liveDot"></div>
@@ -220,10 +219,8 @@
 
     </div>
 
-    <!-- TAB 2: SETTINGS & MANUAL OVERRIDE VIEW -->
+    <!-- TAB 2: SETTINGS VIEW -->
     <div id="view-settings" class="tab-view">
-        
-        <!-- Quick Rates Reference -->
         <div class="card card-compact">
             <h2>
                 <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M7 10H17V12H7V10M7 6H17V8H7V6M7 14H12V16H7V14"/></svg>
@@ -240,7 +237,7 @@
                     <span class="ref-label">Day Sub. 30-min block:</span>
                     <span class="ref-value">$1.70</span>
                 </div>
-                <div class="ref-row" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 3px; margin-top: 3px;">
+                <div class="ref-row" style="border-top: 1px dashed #e2e8f0; padding-top: 3px; margin-top: 3px;">
                     <span class="ref-label">Night (5:01pm - 7:00am):</span>
                     <span class="ref-value">$5.00 / entry</span>
                 </div>
@@ -256,33 +253,32 @@
                     <span class="ref-label">Day Sub. 30-min block:</span>
                     <span class="ref-value">$1.70</span>
                 </div>
-                <div class="ref-row" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 3px; margin-top: 3px;">
+                <div class="ref-row" style="border-top: 1px dashed #e2e8f0; padding-top: 3px; margin-top: 3px;">
                     <span class="ref-label">Night (5:01pm - 7:00am):</span>
                     <span class="ref-value">$5.00 / entry</span>
                 </div>
             </div>
 
-            <div class="ref-section" style="background-color: rgba(225, 29, 72, 0.1); border-color: rgba(251, 113, 133, 0.3);">
-                <div class="ref-section-title" style="color: #fb7185; border-color: rgba(251, 113, 133, 0.3);">Surcharges &amp; Motorcycles</div>
+            <div class="ref-section" style="background-color: #fee2e2; border-color: #fca5a5;">
+                <div class="ref-section-title" style="color: #991b1b; border-color: #fca5a5;">Surcharges &amp; Motorcycles</div>
                 <div class="ref-row">
-                    <span class="ref-label" style="color: #fb7185;">Lunch Surcharge (Entry 12pm - 2pm):</span>
-                    <span class="ref-value" style="color: #fb7185;">+$1.10</span>
+                    <span class="ref-label" style="color: #991b1b;">Lunch Surcharge (Entry 12pm - 2pm):</span>
+                    <span class="ref-value" style="color: #991b1b;">+$1.10</span>
                 </div>
-                <div class="ref-row" style="border-top: 1px dashed rgba(251, 113, 133, 0.3); padding-top: 3px; margin-top: 3px;">
-                    <span class="ref-label" style="color: #34d399;">Motorcycle Flat Rate:</span>
-                    <span class="ref-value" style="color: #34d399;">$4.00 / entry</span>
+                <div class="ref-row" style="border-top: 1px dashed #fca5a5; padding-top: 3px; margin-top: 3px;">
+                    <span class="ref-label" style="color: #065f46;">Motorcycle Flat Rate:</span>
+                    <span class="ref-value" style="color: #065f46;">$4.00 / entry</span>
                 </div>
             </div>
         </div>
 
-        <!-- Time & Rate Overrides -->
         <div class="card card-compact">
             <h2>
                 <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.49,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.51,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.51,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.49,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
                 Time &amp; Rate Overrides
             </h2>
 
-            <div class="switch-row" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 8px;">
+            <div class="switch-row" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
                 <div>
                     <div class="switch-label">Real-Time Live Exit Mode</div>
                     <div class="setting-info">When enabled, exit time updates continuously to current time.</div>
@@ -331,7 +327,6 @@
     </button>
 </nav>
 
-<!-- Main Application Logic Script -->
 <script src="app.js"></script>
 </body>
 </html>
