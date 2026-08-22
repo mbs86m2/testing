@@ -2,18 +2,24 @@
  * =========================================================================
  * FCC FOLLOW-UP DASHBOARD ENGINE (followup.js)
  * Live Google Sheets Integration, Search & Status Updates
+ * Includes Section-Level Back-Swipe Routing
  * =========================================================================
  */
 
 // ==============================================================
-// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// 1. BACK-SWIPE TO BREAKDOWN INDEX (Secondary Page Rule)
 // ==============================================================
 (function() {
-  const PORTAL_URL = '../index.html';
+  const SECTION_INDEX_URL = 'index.html';
+  try {
+    document.documentElement.style.overscrollBehaviorX = 'none';
+    document.body.style.overscrollBehaviorX = 'none';
+  } catch(e) {}
+
   if (window.history && window.history.pushState) {
-    window.history.pushState({ isSubApp: true }, '', window.location.href);
+    window.history.pushState({ isSubPage: true }, '', window.location.href);
     window.addEventListener('popstate', function() {
-      window.location.replace(PORTAL_URL);
+      window.location.replace(SECTION_INDEX_URL);
     });
   }
 })();
@@ -131,7 +137,7 @@ function autoCapitalizeInput(element) {
 let inactivityTimer;
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(() => { window.location.replace(PORTAL_URL); }, 5 * 60 * 1000);
+  inactivityTimer = setTimeout(() => { window.location.replace("index.html"); }, 5 * 60 * 1000);
 }
 ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(evt => document.addEventListener(evt, resetInactivityTimer, true));
 resetInactivityTimer();
