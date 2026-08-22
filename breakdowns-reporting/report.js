@@ -2,16 +2,22 @@
  * =========================================================================
  * BREAKDOWN REPORTING ENGINE (report.js)
  * Step 1 (Initial Alert) & Step 2 (Action Taken) Logic
+ * Includes Portal-Level Back-Swipe Routing
  * =========================================================================
  */
 
 // ==============================================================
-// 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+// 1. BACK-SWIPE TO MAIN MOBILE PORTAL (Main Section Rule)
 // ==============================================================
 (function() {
   const PORTAL_URL = '../index.html';
+  try {
+    document.documentElement.style.overscrollBehaviorX = 'none';
+    document.body.style.overscrollBehaviorX = 'none';
+  } catch(e) {}
+
   if (window.history && window.history.pushState) {
-    window.history.pushState({ isSubApp: true }, '', window.location.href);
+    window.history.pushState({ isSectionIndex: true }, '', window.location.href);
     window.addEventListener('popstate', function() {
       window.location.replace(PORTAL_URL);
     });
