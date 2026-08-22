@@ -36,7 +36,7 @@
     <!-- Top Action Bar -->
     <div class="relative flex items-center justify-between mb-2 min-h-[36px]">
       
-      <!-- Back Button (Relative Link: Preserves Login Session & Prevents Rescan) -->
+      <!-- Back Button -->
       <a 
         id="back-portal-link"
         href="../index.html" 
@@ -46,7 +46,7 @@
         <i class="fa-solid fa-chevron-left text-sm"></i>
       </a>
 
-      <!-- Dead-Centered Header & Local Wisma Logo -->
+      <!-- Centered Header & Local Wisma Logo -->
       <div class="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center justify-center text-center px-12 pointer-events-none">
         <div class="flex items-center justify-center pointer-events-auto">
           <img 
@@ -158,6 +158,19 @@
   </div>
 
   <script>
+    // ==============================================================
+    // 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+    // ==============================================================
+    (function() {
+      const PORTAL_URL = '../index.html';
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ isSubApp: true }, '', window.location.href);
+        window.addEventListener('popstate', function() {
+          window.location.replace(PORTAL_URL);
+        });
+      }
+    })();
+
     const ADMIN_USERS = ["admin m2", "m2", "keekc", "kee", "kee kc", "admin", "master"];
 
     function getPortalLoggedInUser() {
@@ -212,7 +225,6 @@
       return detectLevelFromUnit(item.unit) === 'OFFICE_TOWER';
     }
 
-    // INSTANT UNLOCK FOR ADMINS, PASSWORD PROMPT FOR NON-ADMINS
     window.openPasswordModal = function() {
       if (isUserAdmin()) {
         sessionStorage.setItem('wa_directory_admin', 'authenticated');
