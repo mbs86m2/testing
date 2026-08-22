@@ -246,6 +246,19 @@
   </div>
 
   <script>
+    // ==============================================================
+    // 1. UNIVERSAL BACK-SWIPE PORTAL GUARD (iOS & Android)
+    // ==============================================================
+    (function() {
+      const PORTAL_URL = 'index.html';
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ isSubApp: true }, '', window.location.href);
+        window.addEventListener('popstate', function() {
+          window.location.replace(PORTAL_URL);
+        });
+      }
+    })();
+
     const ADMIN_USERS = ["admin m2", "m2", "keekc", "kee", "kee kc", "admin", "master"];
 
     function getPortalLoggedInUser() {
@@ -260,11 +273,8 @@
 
       for (let k of possibleKeys) {
         let val = sessionStorage.getItem(k) || localStorage.getItem(k);
-        if (val && typeof val === 'string' && val.trim()) {
-          return val.trim();
-        }
+        if (val && typeof val === 'string' && val.trim()) return val.trim();
       }
-
       return '';
     }
 
@@ -297,7 +307,6 @@
       window.location.href = "index.html";
     }
 
-    // Auto-Format Unit Input (e.g. b102 -> #B1-02)
     window.formatUnitInput = function(el) {
       if (!el) return;
       let val = el.value.trim().toUpperCase();
