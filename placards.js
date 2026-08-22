@@ -1,7 +1,7 @@
 /**
  * =========================================================================
  * WISMA ATRIA FCC PORTAL - MODULAR PLACARDS CONFIGURATION
- * Edit or add placards here without ever touching index.html
+ * All 6 placards preserve their distinct colors with sharp readable text.
  * =========================================================================
  */
 
